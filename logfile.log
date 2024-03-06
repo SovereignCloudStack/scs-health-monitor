@@ -1,0 +1,30 @@
+root - WARNING - This will get logged to a file
+root - WARNING - This will get logged to a file
+root - WARNING - This will get logged to a file
+root - DEBUG - This is a debug message
+root - DEBUG - This is a debug message
+root - INFO - This is an info message
+root - WARNING - This is a warning message
+root - ERROR - This is an error message
+root - CRITICAL - This is a critical message
+root - ERROR - Variable raised an error
+root - INFO - This is an info message
+root - WARNING - This is a warning message
+root - ERROR - This is an error message
+root - CRITICAL - This is a critical message
+root - ERROR - Variable raised an error
+root - INFO - This is an info message
+root - WARNING - This is a warning message
+root - ERROR - This is an error message
+root - CRITICAL - This is a critical message
+root - ERROR - Variable raised an error
+root - DEBUG - This is a debug message Variable
+root - INFO - This is an info message
+root - WARNING - This is a warning message
+root - ERROR - This is an error message
+root - CRITICAL - This is a critical message
+root - DEBUG - This is a debug message Variable
+root - INFO - This is an info message Variable
+root - WARNING - This is a warning message
+root - ERROR - This is an error message
+root - CRITICAL - This is a critical message
