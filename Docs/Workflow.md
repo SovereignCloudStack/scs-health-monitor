@@ -15,6 +15,15 @@ Adding fixes to the project:
 
 ## Command cheatsheet
 ``` bash
+# create python virtual environment
+python3 -m venv env/<environment_name>
+
+# activate the python virtual environment in windows command prompt
+env\<environment_name>\Scripts\activate   
+
+# activate the python virtual environment in Unix or MacOS
+source env/<environment_name>/bin/activate
+
 # install all the python dependencies
 python -m pip install -r requirements.txt 
 ```
