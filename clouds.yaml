@@ -1,0 +1,9 @@
+clouds:
+  gx:
+    region_name:
+    auth_type:
+    auth_url:
+    identity_api_version:
+    interface:
+    application_credential_id:
+    application_credential_secret:
