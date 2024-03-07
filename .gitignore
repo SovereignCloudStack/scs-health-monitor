@@ -10,6 +10,7 @@ clouds.yaml
 env.yaml
 venv
 .venv
+.idea
 
 # Distribution / packaging
 .Python
