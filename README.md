@@ -26,6 +26,6 @@ behave -t @tag     # Run scenarios with a specific tag
 ```
 
 ## Collaborators
-- Piotr Bigos (@piobig2871)\
-- Erik Kostelanský (@Erik-Kostelansky-dNation)
-- Katarina Trentau (@fraugable)
+- Piotr Bigos [@piobig2871](https://github.com/piobig2871)
+- Erik Kostelanský [@Erik-Kostelansky-dNation](https://github.com/Erik-Kostelansky-dNation)
+- Katarina Trentau [@fraugable](https://github.com/fraugabel)

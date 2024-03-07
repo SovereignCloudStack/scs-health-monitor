@@ -2,8 +2,6 @@ from environment_setup import before_all, after_all
 import yaml
 from behave import given, when, then
 import openstack
-from openstack.config import loader
-import time
 
 def before_all(context):
     before_all(context)
