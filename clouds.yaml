@@ -1,9 +1,9 @@
 clouds:
   gx:
-    region_name: RegionOne
-    auth_type: v3applicationcredential
-    auth_url: https://api.gx-scs.sovereignit.cloud:5000
-    identity_api_version: 3
-    interface: public
-    application_credential_id: 192a488542a4439e8f6956b145bbd6ea
-    application_credential_secret: UVnZV-o6Ophhp3f4Rx22g3MtmKgHTx2PKGR6d0Ri7h4GFR6n7DlkclW-4DKDyFzbsp1L6DFf2jASrX5lAwjGxw
+    region_name:
+    auth_type:
+    auth_url:
+    identity_api_version:
+    interface:
+    application_credential_id:
+    application_credential_secret:
