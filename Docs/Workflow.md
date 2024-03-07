@@ -1,3 +1,35 @@
+# Environment setup 
+
+1) Create [venv](https://docs.python.org/3/library/venv.html)
+2) In this repository (under main directory) you have to create two files that will be referenced by `env.yaml` and `clouds.yaml`
+3) env.yaml:
+```
+   OS_AUTH_TYPE: ""
+   OS_AUTH_URL: ""
+   OS_IDENTITY_API_VERSION: ""
+   OS_REGION_NAME: ""
+   OS_INTERFACE: ""
+   OS_APPLICATION_CREDENTIAL_ID: ""
+   OS_APPLICATION_CREDENTIAL_SECRET: ""
+   OS_PROJECT_NAME: ""
+   OS_USER_DOMAIN_NAME: ""
+   OS_PROJECT_DOMAIN_NAME: ""
+
+   ```
+4) clouds.yaml:
+```
+clouds:
+  gx:
+    region_name:
+    auth_type:
+    auth_url:
+    identity_api_version:
+    interface:
+    application_credential_id:
+    application_credential_secret:
+```
+
+   
 # GIT workflow 
 Issues should be created [here](https://github.com/SovereignCloudStack/issues/labels/SCS-VP12). The issue should be clearly defined and also have an asignee and label "SCS-VP12" defined.
 
