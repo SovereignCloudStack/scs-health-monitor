@@ -33,3 +33,12 @@ class StepsDef:
         assert networks, "Failed to list networks. No networks found."
         for net in networks:
             print(f"- {net['name']} ({net['id']})")
+
+    @then('I should be able to create a network with name {networkName}')
+    def then_i_should_be_able_to_create_a_network(context, networkName):
+        network = context.client.network.find_network(name_or_id=networkName)
+        assert network is None, f"Network with {networkName} already exists"
+        example_network = context.client.network.create_network(
+            name=networkName
+        )
+        print(example_network)

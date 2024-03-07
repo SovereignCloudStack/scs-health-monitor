@@ -23,6 +23,14 @@ Here are some basic commands to run the tests:
 behave              # Run all scenarios
 behave features/   # Run scenarios in a specific feature file
 behave -t @tag     # Run scenarios with a specific tag
+
+# EXAMPLES
+
+# Runs openstack_create_network.feature feature
+behave .\features\openstack_create_network.feature
+
+#runs both features
+behave
 ```
 
 ## Collaborators
