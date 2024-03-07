@@ -1,1 +1,1 @@
-import loggerClass
+import loggerClassConfigYML

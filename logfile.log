@@ -1,30 +1,7 @@
-root - WARNING - This will get logged to a file
-root - WARNING - This will get logged to a file
-root - WARNING - This will get logged to a file
-root - DEBUG - This is a debug message
-root - DEBUG - This is a debug message
-root - INFO - This is an info message
-root - WARNING - This is a warning message
-root - ERROR - This is an error message
-root - CRITICAL - This is a critical message
-root - ERROR - Variable raised an error
-root - INFO - This is an info message
-root - WARNING - This is a warning message
-root - ERROR - This is an error message
-root - CRITICAL - This is a critical message
-root - ERROR - Variable raised an error
-root - INFO - This is an info message
-root - WARNING - This is a warning message
-root - ERROR - This is an error message
-root - CRITICAL - This is a critical message
-root - ERROR - Variable raised an error
-root - DEBUG - This is a debug message Variable
-root - INFO - This is an info message
-root - WARNING - This is a warning message
-root - ERROR - This is an error message
-root - CRITICAL - This is a critical message
-root - DEBUG - This is a debug message Variable
-root - INFO - This is an info message Variable
-root - WARNING - This is a warning message
-root - ERROR - This is an error message
-root - CRITICAL - This is a critical message
+2024-03-07 08:07:21,731 - loggerFromYml - DEBUG - This is a debug message
+2024-03-07 08:09:32,145 - loggerClassConfigYML - DEBUG - This is a debug message
+2024-03-07 08:14:53,025 - loggerClassConfigYML - DEBUG - This is a debug message
+2024-03-07 08:14:53,025 - loggerClassConfigYML - INFO - This is an info message
+2024-03-07 08:14:53,026 - loggerClassConfigYML - WARNING - This is a warning message
+2024-03-07 08:14:53,026 - loggerClassConfigYML - ERROR - This is an error message
+2024-03-07 08:14:53,026 - loggerClassConfigYML - CRITICAL - This is a critical message
