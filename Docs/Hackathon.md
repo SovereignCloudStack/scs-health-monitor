@@ -10,8 +10,8 @@ export OS_AUTH_URL=https://api.gx-scs.sovereignit.cloud:5000
 export OS_IDENTITY_API_VERSION=3
 export OS_REGION_NAME="RegionOne"
 export OS_INTERFACE=public
-export OS_APPLICATION_CREDENTIAL_ID=192a488542a4439e8f6956b145bbd6ea
-export OS_APPLICATION_CREDENTIAL_SECRET=UVnZV-o6Ophhp3f4Rx22g3MtmKgHTx2PKGR6d0Ri7h4GFR6n7DlkclW-4DKDyFzbsp1L6DFf2jASrX5lAwjGxw
+export OS_APPLICATION_CREDENTIAL_ID=<credential_ID>
+export OS_APPLICATION_CREDENTIAL_SECRET=<credential_secret>
 ```
 3) Update the docker file:
 ```

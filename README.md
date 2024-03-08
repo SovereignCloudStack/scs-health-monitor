@@ -23,9 +23,22 @@ Here are some basic commands to run the tests:
 behave              # Run all scenarios
 behave features/   # Run scenarios in a specific feature file
 behave -t @tag     # Run scenarios with a specific tag
+
+# EXAMPLES
+
+# Runs openstack_create_network.feature feature
+behave ./features/openstack_create_network.feature
+
+#runs both features
+behave
 ```
 
 ## Collaborators
 - Piotr Bigos [@piobig2871](https://github.com/piobig2871)
 - Erik Kostelanský [@Erik-Kostelansky-dNation](https://github.com/Erik-Kostelansky-dNation)
 - Katarina Trentau [@fraugable](https://github.com/fraugabel)
+
+## Useful links
+
+### [Openstack python SDK documentation](https://docs.openstack.org/openstacksdk/latest/user/)
+### [Openstack CLI tool documentation](https://docs.openstack.org/python-openstackclient/latest/)
