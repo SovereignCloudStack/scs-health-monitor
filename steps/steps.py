@@ -18,15 +18,9 @@ class StepsDef:
             env = yaml.safe_load(file)
         return env
 
-    #region GIVEN clauses
-
     @given('I have the OpenStack environment variables set')
     def given_i_have_openstack_env_vars_set(context):
         context.env = StepsDef.load_env_from_yaml()
-
-    #endregion
-        
-    #region WHEN clauses
 
     @when('I connect to OpenStack')
     def when_i_connect_to_openstack(context):
@@ -37,9 +31,6 @@ class StepsDef:
         network = context.client.network.find_network(name_or_id=networkName)
         assert network is not None, f"Network with {networkName} doesn't exists"
 
-    #endregion
-
-    #region THEN clauses
     @then('I should be able to list networks')
     def then_i_should_be_able_to_list_networks(context):
         networks = context.client.network.networks()
@@ -62,5 +53,3 @@ class StepsDef:
         assert network is not None, f"Network with {networkName} doesn't already exists"
         example_network = context.client.network.delete_network(network)
         print(example_network)
-        
-    #endregion    
