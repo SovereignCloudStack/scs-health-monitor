@@ -51,7 +51,7 @@ Adding fixes to the project:
 python3 -m venv env/<environment_name>
 
 # activate the python virtual environment in windows command prompt
-env\<environment_name>\Scripts\activate   
+env/<environment_name>/Scripts/activate   
 
 # activate the python virtual environment in Unix or MacOS
 source env/<environment_name>/bin/activate

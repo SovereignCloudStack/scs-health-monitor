@@ -37,3 +37,8 @@ behave
 - Piotr Bigos [@piobig2871](https://github.com/piobig2871)
 - Erik Kostelanský [@Erik-Kostelansky-dNation](https://github.com/Erik-Kostelansky-dNation)
 - Katarina Trentau [@fraugable](https://github.com/fraugabel)
+
+## Useful links
+
+### [Openstack python SDK documentation](https://docs.openstack.org/openstacksdk/latest/user/)
+### [Openstack CLI tool documentation](https://docs.openstack.org/python-openstackclient/latest/)
