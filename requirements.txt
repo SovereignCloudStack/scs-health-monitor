@@ -59,6 +59,7 @@ typing_extensions==4.10.0
 urllib3==2.2.1
 wcwidth==0.2.13
 wrapt==1.16.0
+yml==0.0.1
 zipp==3.17.0
 attrs==23.2.0
 autopage==0.5.2
