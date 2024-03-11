@@ -42,3 +42,4 @@ behave
 
 ### [Openstack python SDK documentation](https://docs.openstack.org/openstacksdk/latest/user/)
 ### [Openstack CLI tool documentation](https://docs.openstack.org/python-openstackclient/latest/)
+### [Parameterisation of tests using scenario outlines](https://jenisys.github.io/behave.example/tutorials/tutorial04.html)
