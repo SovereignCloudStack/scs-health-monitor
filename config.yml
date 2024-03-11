@@ -16,8 +16,8 @@ handlers:
 loggers:
   sampleLogger:
     level: DEBUG
-    handlers: [console, file_handler]  # Add 'file_handler' here
+    handlers: [console, file_handler]
     propagate: no
 root:
   level: DEBUG
-  handlers: [console, file_handler]  # Add 'file_handler' here
+  handlers: [console, file_handler]
