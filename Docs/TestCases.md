@@ -17,7 +17,7 @@ The script follows these general steps:
 10) Cleans up all resources created in reverse order
 
 ### Inputs
-
+TODO list inputs for test cases in api_monitor.sh shell script
 
 ## Gherkin test cases using behave in python (Target state)
 The target state involves rewriting the test cases into Gherkin language, a structured way to describe test cases, and implementing them using Behave in Python. This transition would provide several benefits:
