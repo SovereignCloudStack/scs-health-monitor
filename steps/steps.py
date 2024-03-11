@@ -2,6 +2,7 @@ from environment_setup import before_all, after_all
 import yaml
 from behave import given, when, then
 import openstack
+import libs.loggerClass as log
 
 def before_all(context):
     before_all(context)
@@ -35,6 +36,7 @@ class StepsDef:
     def then_i_should_be_able_to_list_networks(context):
         networks = context.client.network.networks()
         assert networks, "Failed to list networks. No networks found."
+        print("5")
         for net in networks:
             print(f"- {net['name']} ({net['id']})")
 
@@ -53,3 +55,5 @@ class StepsDef:
         assert network is not None, f"Network with {networkName} doesn't already exists"
         example_network = context.client.network.delete_network(network)
         print(example_network)
+
+        
