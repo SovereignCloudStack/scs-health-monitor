@@ -7,7 +7,7 @@ read config yml, set version number if not specified
 or print error, open a logger instance and print log messages
 '''
 try:
-    with open('config.yml', 'r') as f:
+    with open('libs/loggerConfig.yml', 'r') as f:
         config = yaml.safe_load(f.read())
         if 'version' not in config:
             config['version'] = 1
