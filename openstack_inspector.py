@@ -1,5 +1,6 @@
 import openstack
 import yaml
+import libs.loggerClass as log
 
 class Inspector:
 
@@ -18,16 +19,20 @@ class Inspector:
             networks = self.client.network.networks()
             for net in networks:
                 if net["name"] == network_name:
+                    log.logger.info(f"Network found: {network_name}")
                     return True
                 else: continue
             #TODO: log all of the networks to logfile
         except Exception as e:
+            log.logger.error(f"Error while checking network existence: {e}")
             print(f"Error while checking network existence: {e}")
 
 
 # Example usage:
 inspector = Inspector()
 if inspector.check_network_existence("ext01"):
+    log.logger.info("Network exists!")
     print("Network exists!")
 else:
+    log.logger.info("Network does not exist.")
     print("Network does not exist.")
