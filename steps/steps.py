@@ -49,4 +49,4 @@ class StepsDef:
         assert network is not None, f"Network with {network_name} doesn't exists"
         context.client.network.delete_network(network_name)
         network = context.client.network.find_network(name_or_id=network_name)
-        assert network is None, f"Network called {network_name} was deleted"
+        assert network is None, f"Network called {network_name} wasn't deleted"
