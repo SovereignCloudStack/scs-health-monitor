@@ -1,7 +1,16 @@
-import loggerClass as log
+from loggerClass import Logger
 
-log.logger.debug('This is a debug message')
-log.logger.info('This is an info message')
-log.logger.warning('This is a warning message')
-log.logger.error('This is an error message')
-log.logger.critical('This is a critical message')
+class AnotherClass:
+    def __init__(self):
+        # Create an instance of Logger within AnotherClass
+        self.log = Logger(name='another_logger', log_file='another.log')
+
+    def some_method(self):
+        logger_instance = self.log.logger  # Access the logger directly
+        logger_instance.info('Logging from AnotherClass')
+        logger_instance.debug('Debug message from AnotherClass')
+
+# Example usage:
+if __name__ == "__main__":
+    another_instance = AnotherClass()
+    another_instance.some_method()

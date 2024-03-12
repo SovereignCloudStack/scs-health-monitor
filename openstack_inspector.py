@@ -1,6 +1,5 @@
 import openstack
 import yaml
-import logging
 from libs.loggerClass import Logger
 
 class Inspector:
@@ -8,13 +7,19 @@ class Inspector:
         self.env_file_path = env_file_path
         self.env = self.load_env_from_yaml()
         self.client = openstack.connect(cloud="gx")
-        self.log = Logger(name='inspector_logger', level=logging.DEBUG, log_file='logfile.log')
-        self.logger = self.log.getLogger()
+        self.log = Logger(name='inspector_logger', log_file='logfile.log')
+        self.logger_instance = self.log.getLogger()
+        #self.logger_instance = self.log.logger # basically the same
+
+    def exampleLog(self):
+        self.logger_instance.info('Logging from AnotherClass')
+        self.logger_instance.debug('Debug message from AnotherClass')
+
 
     def load_env_from_yaml(self):
         with open(self.env_file_path, 'r') as file:
             env = yaml.safe_load(file)
-            self.logger.debug("success:found environment variables")
+        #    self.logger_instance.debug("success:found environment variables")
         return env
 
     def check_network_existence(self, network_name):
@@ -31,15 +36,17 @@ class Inspector:
             print(f"Error while checking network existence: {e}")
 
 # Example usage:
-inspector = Inspector()
-if inspector.check_network_existence("ext01"):
-    print("Network exists!")
-else:
-    print("Network does not exist.")
+if __name__ == "__main__":
+
+    inspector = Inspector()
+    inspector.exampleLog()
+    if inspector.check_network_existence("ext01"):
+        print("Network exists!")
+    else:
+        print("Network does not exist.")
 
 
-new_rootlogger = Logger()
-logger_instance = new_rootlogger.getLogger()
-
-logger_instance.info('This is an info message')
-logger_instance.debug('This is a debug message')
+# new_rootlogger = Logger()
+# logger_instance = new_rootlogger.getLogger()
+# logger_instance.info('This is an info message')
+# logger_instance.debug('This is a debug message')

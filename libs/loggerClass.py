@@ -22,10 +22,6 @@ class Logger:
     def getLogger(self):
         return self.logger
 
-    # @property
-    # def logger(self):
-    #     return self._log
-
 # Example usage:
 # new_rootlogger = Logger()
 # logger_instance = new_rootlogger.getLogger()
