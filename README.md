@@ -20,7 +20,7 @@ To get started with the SCS Health Monitor project, follow these steps:
 Here are some basic commands to run the tests:
 
 ```bash
-behave              # Run all scenarios
+behave             # Run all scenarios
 behave features/   # Run scenarios in a specific feature file
 behave -t @tag     # Run scenarios with a specific tag
 
@@ -32,6 +32,23 @@ behave ./features/openstack_create_network.feature
 #runs both features
 behave
 ```
+
+There is a possibility to run it on the [behavex](https://github.com/hrcorval/behavex) framework as well. To get more information, [here](https://pypi.org/project/behavex/) is a link to the documentation.
+Here are some basic commands to run the tests:
+
+```bash
+behavex                            # Run all scenarios parallel - not recomended 
+behavex --parallel-scheme feature  # Run all of the scenarios, but parallel only the features
+behavex features/                  # Run scenarios in a specific feature file
+behavex -t @tag                    # Run scenarios with a specific tag
+
+# EXAMPLES
+
+# Runs openstack_create_network.feature feature
+behavex ./features/openstack_create_network.feature
+```
+
+
 
 ## Collaborators
 - Piotr Bigos [@piobig2871](https://github.com/piobig2871)
