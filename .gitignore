@@ -12,6 +12,7 @@ venv
 .venv
 .idea
 output/
+.DS_Store
 
 
 # Distribution / packaging
