@@ -18,7 +18,7 @@ except Exception as e:
 
 
 logger = logging.getLogger(__name__)
-logger.info('loggerClass called')
+logger.debug('loggerClass called')
 
 #behave_main.main(['--no-capture'])
 

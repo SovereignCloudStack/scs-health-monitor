@@ -8,10 +8,12 @@ class Inspector:
         self.env_file_path = env_file_path
         self.env = self.load_env_from_yaml()
         self.client = openstack.connect(cloud="gx")
+        log.logger.info("connecting to OpenStack")
 
     def load_env_from_yaml(self):
         with open(self.env_file_path, 'r') as file:
             env = yaml.safe_load(file)
+            log.logger.debug("success: found environment variables")
         return env
 
     def check_network_existence(self, network_name):
