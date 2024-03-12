@@ -1,6 +1,7 @@
 import logging
 import logging.config
 import yaml
+#from behave import __main__ as behave_main
 
 '''
 read config yml, set version number if not specified
@@ -19,4 +20,5 @@ except Exception as e:
 logger = logging.getLogger(__name__)
 logger.info('loggerClass called')
 
+#behave_main.main(['--no-capture'])
 

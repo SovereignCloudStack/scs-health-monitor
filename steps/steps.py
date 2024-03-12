@@ -36,7 +36,6 @@ class StepsDef:
     def then_i_should_be_able_to_list_networks(context):
         networks = context.client.network.networks()
         assert networks, "Failed to list networks. No networks found."
-        print("5")
         for net in networks:
             print(f"- {net['name']} ({net['id']})")
 
