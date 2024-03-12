@@ -11,6 +11,8 @@ env.yaml
 venv
 .venv
 .idea
+output/
+
 
 # Distribution / packaging
 .Python
