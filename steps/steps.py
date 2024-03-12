@@ -27,32 +27,25 @@ class StepsDef:
     def when_i_connect_to_openstack(context):
         context.client = openstack.connect(cloud="gx")
 
-    @when('A network with name {networkName} exists')
-    def when_i_connect_to_openstack(context, networkName):
-        network = context.client.network.find_network(name_or_id=networkName)
-        assert network is not None, f"Network with {networkName} doesn't exists"
+    @when('A network with name {network_name} exists')
+    def when_i_connect_to_openstack(context, network_name: str):
+        network = context.client.network.find_network(name_or_id=network_name)
+        assert network is not None, f"Network with {network_name} doesn't exists"
 
     @then('I should be able to list networks')
     def then_i_should_be_able_to_list_networks(context):
         networks = context.client.network.networks()
         assert networks, "Failed to list networks. No networks found."
-        for net in networks:
-            print(f"- {net['name']} ({net['id']})")
 
-    @then('I should be able to create a network with name {networkName}')
-    def then_i_should_be_able_to_create_a_network(context, networkName):
-        network = context.client.network.find_network(name_or_id=networkName)
-        assert network is None, f"Network with {networkName} already exists"
-        example_network = context.client.network.create_network(
-            name=networkName
-        )
-        print(example_network)
+    @then('I should be able to create a network with name {network_name}')
+    def then_i_should_be_able_to_create_a_network(context, network_name: str):
+        network = context.client.network.find_network(name_or_id=network_name)
+        assert network is None, f"Network with {network_name} already exists"
+        context.client.network.create_network(name=network_name)
 
-    @then('I should be able to delete a network with name {networkName}')
-    def then_i_should_be_able_to_create_a_network(context, networkName):
-        network = context.client.network.find_network(name_or_id=networkName)
-        assert network is not None, f"Network with {networkName} doesn't already exists"
-        example_network = context.client.network.delete_network(network)
-        print(example_network)
-
-        
+    @then('I should be able to delete a network with name {network_name}')
+    def then_i_should_be_able_to_delete_a_network(context, network_name: str):
+        network = context.client.network.find_network(name_or_id=network_name)
+        assert network is not None, f"Network with {network_name} doesn't exists"
+        context.client.network.delete_network(network)
+        assert not context.client.network.find_network(name_or_id=network), f"Network called {network_name} already deleted"
