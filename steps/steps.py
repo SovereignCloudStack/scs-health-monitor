@@ -44,8 +44,9 @@ class StepsDef:
         context.client.network.create_network(name=network_name)
 
     @then('I should be able to delete a network with name {network_name}')
-    def then_i_should_be_able_to_create_a_network(context, network_name):
+    def then_i_should_be_able_to_delete_a_network(context, network_name):
         network = context.client.network.find_network(name_or_id=network_name)
-        assert network is not None, f"Network with {network_name} doesn't already exists"
-        example_network = context.client.network.delete_network(network)
-        assert example_network is None
+        assert network is not None, f"Network with {network_name} doesn't exists"
+        context.client.network.delete_network(network_name)
+        network = context.client.network.find_network(name_or_id=network_name)
+        assert network is None, f"Network called {network_name} was deleted"
