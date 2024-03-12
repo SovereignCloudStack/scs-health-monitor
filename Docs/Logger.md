@@ -1,81 +1,28 @@
-# Logger Config:
+# loggerClass:
 
-* you configure the logger in the loggerConfig.yml, which can be renamed and looks like this:
-
+* can be configured seperately for each instance as follows:
 ```
-version: 1
-formatters:
-  simple:
-    format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-handlers:
-  console:
-    class: logging.StreamHandler
-    level: DEBUG
-    formatter: simple
-    stream: ext://sys.stdout
-  file_handler:
-    class: logging.FileHandler
-    filename: logfile.log # Set logfile 
-    level: DEBUG          # Set LogLevel
-    formatter: simple
-loggers:
-  sampleLogger:
-    level: DEBUG
-    handlers: [console, file_handler]  # Add 'file_handler' here
-    propagate: no
-root:
-  level: DEBUG
-  handlers: [console, file_handler]  # Add 'file_handler' here
+new_rootlogger = Logger()
+logger_instance = new_rootlogger.getLogger()
+
+logger_instance.info('This is an info message')
+logger_instance.debug('This is a debug message')
+
+new_otherlogger = Logger(name='other_logger', level=logging.DEBUG, log_file='otherlog.log')
+logger_instance = new_otherlogger.getLogger()
+
+logger_instance.info('This is an info message')
+logger_instance.debug('This is a debug message')
 ```
-
-* The class is in the libs/loggerClass.py file and reads the config-file makes sure that the version tag is given and provides handler and formatter objects:
+* the output looks like this:
 ```
-import logging
-import logging.config
-import yaml
+logfile.log:
+2024-03-12 15:58:49,810 - root - INFO - This is an info message
+2024-03-12 15:58:49,811 - root - DEBUG - This is a debug message
+2024-03-12 16:09:22,905 - root - INFO - This is an info message
+2024-03-12 16:09:22,905 - root - DEBUG - This is a debug message
 
-'''
-read config yml, set version number if not specified
-or print error, open a logger instance and print log messages
-'''
-try:
-    with open('config.yml', 'r') as f:
-        config = yaml.safe_load(f.read())
-        if 'version' not in config:
-            config['version'] = 1
-        logging.config.dictConfig(config)
-except Exception as e:
-         print(f"Error loading logging configuration: {e}")
-
-
-# Set up the handlers and formatters
-handlers = config['handlers']
-formatters = config['formatters']
-
-for handler_config in handlers:
-     handler_name = handler_config['name']
-     handler_class = eval(handler_config['class'])
-     handler = handler_class(*handler_config.get('args', []))
-     handler.setLevel(handler_config['level'])
-     handler.setFormatter(logging.Formatter(formatters[handler_config['formatter']]['format']))
-     logging.getLogger().addHandler(handler)
-
-# Test Logging
-
-logger = logging.getLogger(__name__)
-logger.debug('This is a debug message')
-logger.info('This is an info message')
-logger.warning('This is a warning message')
-logger.error('This is an error message')
-logger.critical('This is a critical message')
-```
-* the Logger can be implemented like in the Exemplefile runLogger.py file
-```
-import loggerClass as log
-
-log.logger.debug('This is a debug message')
-log.logger.info('This is an info message')
-log.logger.warning('This is a warning message')
-log.logger.error('This is an error message')
-log.logger.critical('This is a critical message')
-```
+otherlog.log:
+2024-03-12 16:09:22,906 - other_logger - INFO - This is an info message
+2024-03-12 16:09:22,906 - other_logger - DEBUG - This is a debug message
+``` 
