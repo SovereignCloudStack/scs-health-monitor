@@ -1,5 +1,7 @@
+@network
+@create
 Feature: OpenStack Network Creation
-
+	
 	Scenario Outline: Connect to OpenStack and create a network
 		Given I have the OpenStack environment variables set
 		When I connect to OpenStack
