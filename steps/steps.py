@@ -42,10 +42,24 @@ class StepsDef:
         network = context.client.network.find_network(name_or_id=network_name)
         assert network is None, f"Network with {network_name} already exists"
         context.client.network.create_network(name=network_name)
+        assert context.client.network.find_network(
+            name_or_id=network), f"Network called {network_name} created"
+
 
     @then('I should be able to delete a network with name {network_name}')
     def then_i_should_be_able_to_delete_a_network(context, network_name: str):
         network = context.client.network.find_network(name_or_id=network_name)
         assert network is not None, f"Network with {network_name} doesn't exists"
         context.client.network.delete_network(network)
-        assert not context.client.network.find_network(name_or_id=network), f"Network called {network_name} already deleted"
+        assert not context.client.network.find_network(name_or_id=network), \
+            f"Network called {network_name} already deleted"
+
+    @then('I should be able to create a jumphost with name {jumphost_name}')
+    def then_i_should_be_able_to_create_a_network(context, jumphost_name: str):
+        server = context.client.network.find_network(name_or_id=jumphost_name)
+        assert server is None, f"Jumphost with {jumphost_name} already exists"
+        context.client.compute.create_server(name=jumphost_name)
+
+        # context.client.network.delete_network(server)
+        # assert context.client.network.find_network(
+        #     name_or_id=server), f"Jumphost called {jumphost_name} created"
