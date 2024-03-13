@@ -1,3 +1,5 @@
+@network
+@cleanup
 Feature: Delete openstack network
 
 	Scenario Outline: Connect to OpenStack and delete a network
