@@ -4,12 +4,13 @@ from libs.loggerClass import Logger
 
 class Inspector:
     def __init__(self, env_file_path="env.yaml"):
-        self.env_file_path = env_file_path
-        self.env = self.load_env_from_yaml()
-        self.client = openstack.connect(cloud="gx")
         self.log = Logger(name='inspector_logger', log_file='logfile.log')
         self.logger_instance = self.log.getLogger()
         #self.logger_instance = self.log.logger # basically the same
+        self.env_file_path = env_file_path
+        self.env = self.load_env_from_yaml()
+        self.client = openstack.connect(cloud="gx")
+        
 
     def exampleLog(self):
         self.logger_instance.info('Logging from AnotherClass')
