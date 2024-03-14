@@ -59,7 +59,7 @@ behavex --tags=cleanup
 ## Collaborators
 - Piotr Bigos [@piobig2871](https://github.com/piobig2871)
 - Erik Kostelanský [@Erik-Kostelansky-dNation](https://github.com/Erik-Kostelansky-dNation)
-- Katarina Trentau [@fraugable](https://github.com/fraugabel)
+- Katharina Trentau [@fraugabel](https://github.com/fraugabel)
 
 ## Useful links
 
