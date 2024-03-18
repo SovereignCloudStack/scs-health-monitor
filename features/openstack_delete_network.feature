@@ -10,5 +10,5 @@ Feature: Delete openstack network
 
 		Examples: Test networks
 			| network_name |
-			| test02	   |
-			| test03	   |
+			| network01	   |
+			| network02	   |
