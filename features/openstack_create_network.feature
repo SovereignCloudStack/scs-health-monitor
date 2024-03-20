@@ -1,5 +1,7 @@
+@network
+@create
 Feature: OpenStack Network Creation
-
+	
 	Scenario Outline: Connect to OpenStack and create a network
 		Given I have the OpenStack environment variables set
 		When I connect to OpenStack
@@ -7,5 +9,5 @@ Feature: OpenStack Network Creation
 
 		Examples: Test networks
 			| network_name |
-			| test02	   |
-			| test03	   |
+			| network01	   |
+			| network02	   |

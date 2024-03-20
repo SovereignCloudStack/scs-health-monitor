@@ -1,3 +1,4 @@
+@network
 Feature: OpenStack Network Listing
 
 	Scenario: Connect to OpenStack and list networks

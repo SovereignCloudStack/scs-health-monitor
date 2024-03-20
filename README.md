@@ -31,6 +31,9 @@ behave ./features/openstack_create_network.feature
 
 #runs both features
 behave
+
+# Runs tests tagged with "network" tag
+behave --tags=network
 ```
 
 There is a possibility to run it on the [behavex](https://github.com/hrcorval/behavex) framework as well. To get more information, [here](https://pypi.org/project/behavex/) is a link to the documentation.
@@ -46,6 +49,9 @@ behavex -t @tag                    # Run scenarios with a specific tag
 
 # Runs openstack_create_network.feature feature
 behavex ./features/openstack_create_network.feature
+
+# Runs tests tagged with "cleanup" tag
+behavex --tags=cleanup
 ```
 
 
@@ -53,7 +59,7 @@ behavex ./features/openstack_create_network.feature
 ## Collaborators
 - Piotr Bigos [@piobig2871](https://github.com/piobig2871)
 - Erik Kostelanský [@Erik-Kostelansky-dNation](https://github.com/Erik-Kostelansky-dNation)
-- Katarina Trentau [@fraugable](https://github.com/fraugabel)
+- Katharina Trentau [@fraugabel](https://github.com/fraugabel)
 
 ## Useful links
 
