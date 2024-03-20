@@ -1,14 +1,4 @@
-Incorporating the new Gherkin test cases using Behave into your existing `TestCases.md` file would be a good approach, as it keeps all test-related documentation consolidated in one place. This way, your colleagues and programmers can easily find all relevant information about the testing procedures and frameworks used in your project. Here's a suggested structure on how to update your `TestCases.md` file:
-
----
-
 # Test Cases
-
-The purpose of this repository is to provide a tool to test the reliability and performance of the OpenStack API. It creates a real environment with routers, networks, jump hosts, virtual machines (VMs), etc., and collects statistics on API call performance and resource creation times.
-
-## api_monitor.sh for OpenStack script (Original state)
-
-[Provide a brief description and link to the bash script as you have now]
 
 ## Gherkin Test Cases Using Behave in Python (Target State)
 
@@ -32,10 +22,6 @@ With the evolution of our testing approach, we are transitioning to Gherkin test
   - Delete networks: `behave ./features/openstack_delete_network.feature`
   - Delete routers: `behave ./features/openstack_delete_router.feature`
 
-### Usage
-
-[Include instructions on how to run the Behave tests, similar to what you have in the README.MD]
-
 ---
 
 This structure allows you to maintain a clear separation between the original state (bash script) and the target state (Behave with Gherkin) while providing a comprehensive overview of the testing strategies employed in your project.
@@ -43,10 +29,6 @@ This structure allows you to maintain a clear separation between the original st
 Regarding the `README.md` file, ensure it contains a concise overview and quickstart instructions for using the test suite, while `TestCases.md` can offer more in-depth documentation on the test cases and their execution.
 
 ----
-
-Certainly! To guide your colleagues and programmers on the necessary actions to take, you can add a section in your `TestCases.md` detailing the steps to restructure and execute the feature files. Here's how you can elaborate on the instructions:
-
----
 
 ## Behave Test Execution Order and Structure
 
@@ -86,12 +68,7 @@ By following these guidelines, the test suite will execute in a manner that resp
 ---
 
 These instructions provide a clear roadmap for your team to restructure the Behave feature files and understand the execution order, which is pivotal for the integrity and success of your OpenStack API testing.
-
-----
-
-Certainly! Here are some recommended actions presented in a way that suggests rather than dictates the changes, allowing your team to decide on the best course of action:
-
----
+___
 
 #### Recommended Actions
 
@@ -124,7 +101,7 @@ To enhance the organization and execution of the Behave tests, the following act
 
 These recommendations are meant to serve as a starting point for discussion and adaptation based on the team's specific context and needs.
 
-----------
+---
 
 As a part-time helper aiming to provide best practices for Python development, especially in the context of Behave tests, here are some recommended actions for structuring the `steps.py` script:
 

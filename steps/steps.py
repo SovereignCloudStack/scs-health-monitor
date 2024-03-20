@@ -94,7 +94,6 @@ class StepsDef:
         subnet = context.client.network.create_subnet(name=subnet_name, network_id=network.id, ip_version=4,
                                                       cidr='10.0.0.0/24')
         assert subnet is not None, f"Failed to create subnet with name {subnet_name}"
-        context.subnet = subnet
 
     @then('I should be able to delete a subnet with name {subnet_name}')
     def then_i_should_be_able_to_delete_a_subnet(context, subnet_name: str):
