@@ -1,4 +1,4 @@
-from prometheus_client import start_http_server, Counter, push_to_gateway, write_to_textfile, REGISTRY
+from prometheus_client import start_http_server, Counter, push_to_gateway, REGISTRY
 import time
 import logging
 import json
@@ -28,7 +28,6 @@ def update_metrics():
         root_logger.warning('This is a warning message') 
         parse_json_report('<path to repo>/scs-health-monitor/output/report.json')       
         push_to_gateway('http://localhost:3008', job='exporterTest', registry=REGISTRY)
-        write_to_textfile('./test.prom', REGISTRY)
         time.sleep(5)
 
 def parse_json_report(json_file):
