@@ -316,7 +316,6 @@
           "orderByTime": "ASC",
           "policy": "default",
           "query": "SELECT ((count(\"return_code\")-sum(\"return_code\"))/count(\"return_code\")) FROM \"$mycloud\" WHERE (\"cmd\" =~ /^$mycmd$/ AND \"method\" =~ /^$mymethod$/) AND $timeFilter",
-//((count($mycloud{cmd=~"$mycmd", method=~"$mymethod"} - sum($mycloud{cmd=~"$mycmd", method=~"$mymethod"})) / count($mycloud{cmd=~"$mycmd", method=~"$mymethod"})) * 100)
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -418,8 +417,7 @@
           "measurement": "/^$mycloud$/",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT count(\"return_code\") FROM \"$mycloud\" WHERE (\"cmd\" = 'ssh') AND $timeFilter GROUP BY time($__interval) fill(null)", 
-          //count_over_time($mycloud{cmd="ssh"}[$__interval])
+          "query": "SELECT count(\"return_code\") FROM \"$mycloud\" WHERE (\"cmd\" = 'ssh') AND $timeFilter GROUP BY time($__interval) fill(null)",
           "rawQuery": false,
           "refId": "A",
           "resultFormat": "time_series",
