@@ -70,3 +70,14 @@ Make sure to replace "./Values/PrometheusStackValues" with the actual path to yo
 Remember to replace placeholders such as my-kube-prometheus-stack and my-prometheus-pushgateway with appropriate names for your deployments.
 
 Once you've executed these commands, Prometheus stack and Prometheus Pushgateway should be set up and accessible on your local Kubernetes cluster.
+
+7) Uninstall helm chart
+If you want to reinstall or remove the deployed observability stack, you can use the following commands: 
+
+```bash
+# List deployed helm charts
+helm list
+
+# Delete helm chart (all deployed k8s resources) with name <chart_name>
+helm uninstall <chart_name>
+```
