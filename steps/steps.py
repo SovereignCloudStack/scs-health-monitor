@@ -52,7 +52,6 @@ class StepsDef:
     @then('I should be able to create a router with name {router_name}')
     def then_i_should_be_able_to_create_a_router(context, router_name: str):
         router = context.client.network.create_router(name=router_name)
-        # time.sleep(3)
         assert router is not None, f"Failed to create router with name {router_name}"
 
     @then('I should be able to delete a router with name {router_name}')
@@ -73,7 +72,6 @@ class StepsDef:
         network = context.client.network.find_network(name_or_id=network_name)
         assert network is None, f"Network with {network_name} already exists"
         network = context.client.network.create_network(name=network_name)
-        # time.sleep(5)
         assert not context.client.network.find_network(
             name_or_id=network), f"Network called {network} created"
 
@@ -87,14 +85,13 @@ class StepsDef:
             f"Network called {network_name} already deleted"
 
     @then('I should be able to create a jumphost with name {jumphost_name}')
-    def then_i_should_be_able_to_create_a_network(context, jumphost_name: str):
+    def then_i_should_be_able_to_create_a_jumphost(context, jumphost_name: str):
         server = context.client.network.find_network(name_or_id=jumphost_name)
         assert server is None, f"Jumphost with {jumphost_name} already exists"
         context.client.compute.create_server(name=jumphost_name)
-
-        # context.client.network.delete_network(server)
-        # assert context.client.network.find_network(
-        #     name_or_id=server), f"Jumphost called {jumphost_name} created"
+        context.client.network.delete_network(server)
+        assert context.client.network.find_network(
+            name_or_id=server), f"Jumphost called {jumphost_name} created"
         assert not context.client.network.find_network(name_or_id=network), f"Network called {network_name} already deleted"
 
     @then('I should be able to list subnets')
@@ -108,7 +105,6 @@ class StepsDef:
         assert network is not None, f"Network with name {network_name} does not exist"
         subnet = context.client.network.create_subnet(name=subnet_name, network_id=network.id, ip_version=4,
                                                       cidr=cidr)
-        # time.sleep(5)
         assert not context.client.network.find_network(name_or_id=subnet), f"Failed to create subnet with name {subnet}"
 
     @then('I should be able to delete a subnet with name {subnet_name}')

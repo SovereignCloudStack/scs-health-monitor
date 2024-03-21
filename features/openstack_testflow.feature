@@ -28,11 +28,11 @@ Feature:
     Then I should be able to create a subnet with name <subnet_name> in network <network_name> with <cidr>
 
     Examples: Test subnets
-      | subnet_name | network_name | cidr      |
-      | subnet01    | network01    | 10.0.0.1/8|
-      | subnet02    | network01    | 10.0.1.1/8|
-      | subnet01    | network02    | 10.0.2.1/8|
-      | subnet02    | network02    | 10.0.3.1/8|
+      | subnet_name | network_name | cidr       |
+      | subnet01    | network01    | 10.0.1.0/24|
+      | subnet02    | network01    | 10.0.2.0/24|
+      | subnet03    | network02    | 10.0.3.0/24|
+      | subnet04    | network02    | 10.0.4.0/24|
 
   Scenario: Connect to OpenStack and list networks
       Given I have the OpenStack environment variables set
@@ -60,8 +60,8 @@ Feature:
       | subnet_name | network_name |
       | subnet01    | network01    |
       | subnet02    | network01    |
-      | subnet01    | network02    |
-      | subnet02    | network02    |
+      | subnet03    | network02    |
+      | subnet04    | network02    |
 
   Scenario Outline: Connect to OpenStack and delete a network
     Given I have the OpenStack environment variables set
