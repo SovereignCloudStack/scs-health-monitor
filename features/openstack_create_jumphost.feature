@@ -6,6 +6,6 @@ Feature: OpenStack Jumphost Creation
 		Then I should be able to create a jumphost with name <jumphost_name>
 
 		Examples: Test jumphost
-			| jumphost_name |
-			| test02	    |
-			| test03	    |
+			| jumphost_name     |
+			| jumphost01	    |
+			| jumphost02	    |

@@ -13,18 +13,8 @@ def after_all(context):
 
 class StepsDef:
 
-    @staticmethod
-    def load_env_from_yaml():
-        with open("env.yaml", 'r+') as file:
-            env = yaml.safe_load(file)
-        return env
-
-    @given('I have the OpenStack environment variables set')
-    def given_i_have_openstack_env_vars_set(context):
-        context.env = StepsDef.load_env_from_yaml()
-
-    @when('I connect to OpenStack')
-    def when_i_connect_to_openstack(context):
+    @given('I connect to OpenStack')
+    def given_i_connect_to_openstack(context):
         context.client = openstack.connect(cloud="gx")
 
     @when('A router with name {router_name} exists')
@@ -92,7 +82,8 @@ class StepsDef:
         context.client.network.delete_network(server)
         assert context.client.network.find_network(
             name_or_id=server), f"Jumphost called {jumphost_name} created"
-        assert not context.client.network.find_network(name_or_id=network), f"Network called {network_name} already deleted"
+        assert not context.client.network.find_network(name_or_id=network),\
+            f"Network called {network_name} already deleted"
 
     @then('I should be able to list subnets')
     def then_i_should_be_able_to_list_subnets(context):
@@ -114,3 +105,28 @@ class StepsDef:
         context.client.network.delete_subnet(subnet.id)
         assert not context.client.network.find_subnet(
             name_or_id=subnet_name), f"Subnet with name {subnet_name} was not deleted"
+
+    @then('I should be able to create a security group <security_group> with <description>')
+    def then_I_should_be_able_to_create_a_security_group(self, security_group_name: str, desc: str):
+        security_groups = conn.network.security_groups()
+        assert security_group_name not in security_groups, f"security group named: {security_group.name} already exists"
+        security_group = conn.network.create_security_group(
+            name=security_group_name,
+            description=desc)
+        assert security_group is not None, f"Security group with name {security_group.name} was not found"
+
+    @then("I should be able to create security group rule <rule>")
+    def then_I_should_be_able_to_create_security_rule(self, security_group, direction: str ='ingress',
+                                                      ethertype:str ='IPv4', protocol: str='tcp',
+                                                      port_range_min: int=80, port_range_max: int=80,
+                                                      remote_ip_prefix='0.0.0.0/0'):
+        conn.network.create_security_group_rule(
+            security_group_id=security_group.id,
+            direction=direction,
+            ethertype=ethertype,
+            protocol=protocol,
+            port_range_min=port_range_min,
+            port_range_max=port_range_max,
+            remote_ip_prefix=remote_ip_prefix)
+
+
