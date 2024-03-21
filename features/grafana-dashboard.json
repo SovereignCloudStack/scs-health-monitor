@@ -3,10 +3,7 @@
     "list": [
       {
         "builtIn": 1,
-        "datasource": {
-          "type": "datasource",
-          "uid": "grafana"
-        },
+        "datasource": "-- Grafana --",
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -21,7 +18,7 @@
       }
     ]
   },
-  "description": "OpenStack scenario testing https://github.com/SovereignCloudStack/openstack-health-monitor",
+  "description": "OpenStack scenario testing https://github.com/SovereignCloudStack/scs-health-monitor",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
@@ -34,18 +31,22 @@
       "keepTime": false,
       "tags": [],
       "targetBlank": false,
-      "title": "openstack-health-monitor (github)",
+      "title": "scs-health-monitor (github)",
       "tooltip": "",
       "type": "link",
-      "url": "https://github.com/SovereignCloudStack/openstack-health-monitor"
+      "url": "https://github.com/SovereignCloudStack/scs-health-monitor"
     }
   ],
   "liveNow": true,
   "panels": [
     {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
       "datasource": {
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
+        "type": "prometheus",
+        "uid": "${datasource}"
       },
       "description": "",
       "fieldConfig": {
@@ -144,8 +145,8 @@
     },
     {
       "datasource": {
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
+        "type": "prometheus",
+        "uid": "${datasource}"
       },
       "description": "",
       "fieldConfig": {
@@ -245,10 +246,10 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
-      },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -315,6 +316,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "query": "SELECT ((count(\"return_code\")-sum(\"return_code\"))/count(\"return_code\")) FROM \"$mycloud\" WHERE (\"cmd\" =~ /^$mycmd$/ AND \"method\" =~ /^$mymethod$/) AND $timeFilter",
+//((count($mycloud{cmd=~"$mycmd", method=~"$mymethod"} - sum($mycloud{cmd=~"$mycmd", method=~"$mymethod"})) / count($mycloud{cmd=~"$mycmd", method=~"$mymethod"})) * 100)
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -351,10 +353,10 @@
       "type": "gauge"
     },
     {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
-      },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -416,7 +418,8 @@
           "measurement": "/^$mycloud$/",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT count(\"return_code\") FROM \"$mycloud\" WHERE (\"cmd\" = 'ssh') AND $timeFilter GROUP BY time($__interval) fill(null)",
+          "query": "SELECT count(\"return_code\") FROM \"$mycloud\" WHERE (\"cmd\" = 'ssh') AND $timeFilter GROUP BY time($__interval) fill(null)", 
+          //count_over_time($mycloud{cmd="ssh"}[$__interval])
           "rawQuery": false,
           "refId": "A",
           "resultFormat": "time_series",
@@ -447,10 +450,10 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
-      },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -545,10 +548,10 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
-      },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -651,10 +654,10 @@
       "type": "gauge"
     },
     {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
-      },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -747,10 +750,10 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
-      },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -953,10 +956,10 @@
     },
     {
       "collapsed": false,
-      "datasource": {
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
-      },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -969,10 +972,10 @@
       "type": "row"
     },
     {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
-      },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -1405,10 +1408,10 @@
     },
     {
       "collapsed": false,
-      "datasource": {
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
-      },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -1421,10 +1424,10 @@
       "type": "row"
     },
     {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
-      },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -1575,10 +1578,10 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
-      },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -1717,10 +1720,10 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
-      },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -1868,13 +1871,31 @@
     "list": [
       {
         "current": {
+          "selected": true,
+          "text": "Prometheus",
+          "value": ""
+        },
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "current": {
           "selected": false,
           "text": "All",
           "value": "$__all"
         },
         "datasource": {
-          "type": "influxdb",
-          "uid": "fs4rnsd4z"
+          "type": "prometheus",
+          "uid": "${datasource}"
         },
         "definition": "show tag values with key = cmd",
         "hide": 0,
@@ -1900,8 +1921,8 @@
           "value": "$__all"
         },
         "datasource": {
-          "type": "influxdb",
-          "uid": "fs4rnsd4z"
+          "type": "prometheus",
+          "uid": "${datasource}"
         },
         "definition": "show tag values with key = method where cmd =~ /$mycmd/",
         "hide": 0,
@@ -1927,8 +1948,8 @@
           "value": "$__all"
         },
         "datasource": {
-          "type": "influxdb",
-          "uid": "fs4rnsd4z"
+          "type": "prometheus",
+          "uid": "${datasource}"
         },
         "definition": "show tag values with key = cmd",
         "hide": 0,
@@ -1954,8 +1975,8 @@
           "value": "$__all"
         },
         "datasource": {
-          "type": "influxdb",
-          "uid": "fs4rnsd4z"
+          "type": "prometheus",
+          "uid": "${datasource}"
         },
         "definition": "show tag values with key = cmd",
         "hide": 0,
@@ -1974,11 +1995,15 @@
         "type": "query",
         "useTags": false
       },
-      {
+      { 
         "current": {
           "selected": false,
           "text": "plus-pco",
           "value": "plus-pco"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
         },
         "hide": 0,
         "includeAll": false,
@@ -2068,8 +2093,8 @@
     ]
   },
   "timezone": "",
-  "title": "OpenStack-Health-Monitor2",
-  "uid": "9ltTEmlnk",
+  "title": "SCS-Health-Monitor",
+  "uid": "grafID",
   "version": 12,
   "weekStart": "monday"
 }
