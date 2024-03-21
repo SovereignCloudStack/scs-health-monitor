@@ -3,14 +3,7 @@
     "list": [
       {
         "builtIn": 1,
-<<<<<<< HEAD
         "datasource": "-- Grafana --",
-=======
-        "datasource": {
-          "type": "datasource",
-          "uid": "grafana"
-        },
->>>>>>> preparing Grafana json
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -25,19 +18,11 @@
       }
     ]
   },
-<<<<<<< HEAD
   "description": "OpenStack scenario testing https://github.com/SovereignCloudStack/scs-health-monitor",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
   "id": 29,
-=======
-  "description": "OpenStack scenario testing https://github.com/SovereignCloudStack/openstack-health-monitor",
-  "editable": true,
-  "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
-  "id": 1,
->>>>>>> preparing Grafana json
   "links": [
     {
       "asDropdown": false,
@@ -46,23 +31,15 @@
       "keepTime": false,
       "tags": [],
       "targetBlank": false,
-<<<<<<< HEAD
       "title": "scs-health-monitor (github)",
       "tooltip": "",
       "type": "link",
       "url": "https://github.com/SovereignCloudStack/scs-health-monitor"
-=======
-      "title": "openstack-health-monitor (github)",
-      "tooltip": "",
-      "type": "link",
-      "url": "https://github.com/SovereignCloudStack/openstack-health-monitor"
->>>>>>> preparing Grafana json
     }
   ],
   "liveNow": true,
   "panels": [
     {
-<<<<<<< HEAD
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
@@ -70,11 +47,6 @@
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
-=======
-      "datasource": {
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
->>>>>>> preparing Grafana json
       },
       "description": "",
       "fieldConfig": {
@@ -114,7 +86,6 @@
           "fields": "",
           "values": false
         },
-<<<<<<< HEAD
         "showPercentChange": false,
         "text": {},
         "textMode": "auto",
@@ -130,14 +101,6 @@
           "editorMode": "code",
           "expr": "avg({__name__=~'openstack_http_requests_total',endpoint=~\".*gx.*\",cmd=~\".*\", method=~\".*\"})",
           "format": "table",
-=======
-        "text": {},
-        "textMode": "auto"
-      },
-      "pluginVersion": "9.5.8",
-      "targets": [
-        {
->>>>>>> preparing Grafana json
           "groupBy": [
             {
               "params": [
@@ -152,17 +115,11 @@
               "type": "fill"
             }
           ],
-<<<<<<< HEAD
           "legendFormat": "__auto",
           "measurement": "/^$mycloud$/",
           "orderByTime": "ASC",
           "policy": "default",
           "range": true,
-=======
-          "measurement": "/^$mycloud$/",
-          "orderByTime": "ASC",
-          "policy": "default",
->>>>>>> preparing Grafana json
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -199,13 +156,8 @@
     },
     {
       "datasource": {
-<<<<<<< HEAD
         "type": "prometheus",
         "uid": "${datasource}"
-=======
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
->>>>>>> preparing Grafana json
       },
       "description": "",
       "fieldConfig": {
@@ -253,7 +205,6 @@
           "fields": "",
           "values": false
         },
-<<<<<<< HEAD
         "showPercentChange": false,
         "text": {},
         "textMode": "auto",
@@ -270,14 +221,6 @@
           "editorMode": "code",
           "expr": "avg(openstack_http_requests_total{status_code!~\"2..\"})",
           "fullMetaSearch": false,
-=======
-        "text": {},
-        "textMode": "auto"
-      },
-      "pluginVersion": "9.5.8",
-      "targets": [
-        {
->>>>>>> preparing Grafana json
           "groupBy": [
             {
               "params": [
@@ -286,18 +229,12 @@
               "type": "time"
             }
           ],
-<<<<<<< HEAD
           "includeNullMetadata": true,
           "legendFormat": "__auto",
           "measurement": "/^$mycloud$/",
           "orderByTime": "ASC",
           "policy": "default",
           "range": true,
-=======
-          "measurement": "/^$mycloud$/",
-          "orderByTime": "ASC",
-          "policy": "default",
->>>>>>> preparing Grafana json
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -326,12 +263,8 @@
               "operator": "=~",
               "value": "/^$mymethod$/"
             }
-<<<<<<< HEAD
           ],
           "useBackend": false
-=======
-          ]
->>>>>>> preparing Grafana json
         }
       ],
       "title": "API errors",
@@ -339,13 +272,8 @@
     },
     {
       "datasource": {
-<<<<<<< HEAD
         "type": "prometheus",
         "uid": "${datasource}"
-=======
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
->>>>>>> preparing Grafana json
       },
       "description": "",
       "fieldConfig": {
@@ -373,11 +301,7 @@
               }
             ]
           },
-<<<<<<< HEAD
           "unit": "percent"
-=======
-          "unit": "percentunit"
->>>>>>> preparing Grafana json
         },
         "overrides": []
       },
@@ -389,26 +313,18 @@
       },
       "id": 25,
       "options": {
-<<<<<<< HEAD
         "minVizHeight": 75,
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-=======
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "sum"
->>>>>>> preparing Grafana json
           ],
           "fields": "",
           "values": false
         },
         "showThresholdLabels": false,
         "showThresholdMarkers": true,
-<<<<<<< HEAD
         "sizing": "auto",
         "text": {}
       },
@@ -425,14 +341,6 @@
           "expr": "count(openstack_http_requests_total{status_code=~\"2..\"})*100/count({__name__=~'openstack_http_requests_total',endpoint=~\".*gx.*\",cmd=~\".*\", method=~\".*\"})",
           "format": "table",
           "fullMetaSearch": false,
-=======
-        "text": {}
-      },
-      "pluginVersion": "9.5.8",
-      "targets": [
-        {
-          "alias": "API falis",
->>>>>>> preparing Grafana json
           "groupBy": [
             {
               "params": [
@@ -441,19 +349,13 @@
               "type": "time"
             }
           ],
-<<<<<<< HEAD
           "includeNullMetadata": true,
           "legendFormat": "__auto",
-=======
->>>>>>> preparing Grafana json
           "measurement": "/^$mycloud$/",
           "orderByTime": "ASC",
           "policy": "default",
           "query": "SELECT ((count(\"return_code\")-sum(\"return_code\"))/count(\"return_code\")) FROM \"$mycloud\" WHERE (\"cmd\" =~ /^$mycmd$/ AND \"method\" =~ /^$mymethod$/) AND $timeFilter",
-<<<<<<< HEAD
           "range": true,
-=======
->>>>>>> preparing Grafana json
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -483,12 +385,8 @@
               "operator": "=~",
               "value": "/^$mymethod$/"
             }
-<<<<<<< HEAD
           ],
           "useBackend": false
-=======
-          ]
->>>>>>> preparing Grafana json
         }
       ],
       "title": "API success rate",
@@ -496,13 +394,8 @@
     },
     {
       "datasource": {
-<<<<<<< HEAD
         "type": "prometheus",
         "uid": "${datasource}"
-=======
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
->>>>>>> preparing Grafana json
       },
       "description": "",
       "fieldConfig": {
@@ -537,16 +430,11 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-<<<<<<< HEAD
             "lastNotNull"
-=======
-            "sum"
->>>>>>> preparing Grafana json
           ],
           "fields": "",
           "values": false
         },
-<<<<<<< HEAD
         "showPercentChange": false,
         "text": {},
         "textMode": "auto",
@@ -563,14 +451,6 @@
           "editorMode": "code",
           "expr": "count_over_time(gx-scs{cmd=\"ssh\"}[$__interval])",
           "fullMetaSearch": false,
-=======
-        "text": {},
-        "textMode": "auto"
-      },
-      "pluginVersion": "9.5.8",
-      "targets": [
-        {
->>>>>>> preparing Grafana json
           "groupBy": [
             {
               "params": [
@@ -585,19 +465,13 @@
               "type": "fill"
             }
           ],
-<<<<<<< HEAD
           "includeNullMetadata": true,
           "legendFormat": "__auto",
-=======
->>>>>>> preparing Grafana json
           "measurement": "/^$mycloud$/",
           "orderByTime": "ASC",
           "policy": "default",
           "query": "SELECT count(\"return_code\") FROM \"$mycloud\" WHERE (\"cmd\" = 'ssh') AND $timeFilter GROUP BY time($__interval) fill(null)",
-<<<<<<< HEAD
           "range": true,
-=======
->>>>>>> preparing Grafana json
           "rawQuery": false,
           "refId": "A",
           "resultFormat": "time_series",
@@ -621,12 +495,8 @@
               "operator": "=",
               "value": "ssh"
             }
-<<<<<<< HEAD
           ],
           "useBackend": false
-=======
-          ]
->>>>>>> preparing Grafana json
         }
       ],
       "title": "ssh conns",
@@ -634,13 +504,8 @@
     },
     {
       "datasource": {
-<<<<<<< HEAD
         "type": "prometheus",
         "uid": "${datasource}"
-=======
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
->>>>>>> preparing Grafana json
       },
       "description": "",
       "fieldConfig": {
@@ -683,28 +548,17 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-<<<<<<< HEAD
             "lastNotNull"
-=======
-            "sum"
->>>>>>> preparing Grafana json
           ],
           "fields": "",
           "values": false
         },
-<<<<<<< HEAD
         "showPercentChange": false,
         "text": {},
         "textMode": "auto",
         "wideLayout": true
       },
       "pluginVersion": "10.4.0",
-=======
-        "text": {},
-        "textMode": "auto"
-      },
-      "pluginVersion": "9.5.8",
->>>>>>> preparing Grafana json
       "targets": [
         {
           "groupBy": [
@@ -750,13 +604,8 @@
     },
     {
       "datasource": {
-<<<<<<< HEAD
         "type": "prometheus",
         "uid": "${datasource}"
-=======
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
->>>>>>> preparing Grafana json
       },
       "description": "",
       "fieldConfig": {
@@ -796,26 +645,18 @@
       },
       "id": 22,
       "options": {
-<<<<<<< HEAD
         "minVizHeight": 75,
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
             "last"
-=======
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "sum"
->>>>>>> preparing Grafana json
           ],
           "fields": "",
           "values": false
         },
         "showThresholdLabels": false,
         "showThresholdMarkers": true,
-<<<<<<< HEAD
         "sizing": "auto",
         "text": {}
       },
@@ -829,14 +670,6 @@
           },
           "editorMode": "code",
           "expr": "",
-=======
-        "text": {}
-      },
-      "pluginVersion": "9.5.8",
-      "targets": [
-        {
-          "alias": "API falis",
->>>>>>> preparing Grafana json
           "groupBy": [
             {
               "params": [
@@ -845,18 +678,12 @@
               "type": "time"
             }
           ],
-<<<<<<< HEAD
           "legendFormat": "__auto",
-=======
->>>>>>> preparing Grafana json
           "measurement": "$mycloud",
           "orderByTime": "ASC",
           "policy": "default",
           "query": "SELECT ((count(\"return_code\")-sum(\"return_code\"))/count(\"return_code\")) FROM \"$mycloud\" WHERE (\"cmd\" = 'ssh') AND $timeFilter",
-<<<<<<< HEAD
           "range": true,
-=======
->>>>>>> preparing Grafana json
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -894,13 +721,8 @@
     },
     {
       "datasource": {
-<<<<<<< HEAD
         "type": "prometheus",
         "uid": "${datasource}"
-=======
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
->>>>>>> preparing Grafana json
       },
       "description": "",
       "fieldConfig": {
@@ -935,28 +757,17 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-<<<<<<< HEAD
             "last"
-=======
-            "sum"
->>>>>>> preparing Grafana json
           ],
           "fields": "",
           "values": false
         },
-<<<<<<< HEAD
         "showPercentChange": false,
         "text": {},
         "textMode": "auto",
         "wideLayout": true
       },
       "pluginVersion": "10.4.0",
-=======
-        "text": {},
-        "textMode": "auto"
-      },
-      "pluginVersion": "9.5.8",
->>>>>>> preparing Grafana json
       "targets": [
         {
           "groupBy": [
@@ -1008,13 +819,8 @@
     },
     {
       "datasource": {
-<<<<<<< HEAD
         "type": "prometheus",
         "uid": "${datasource}"
-=======
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
->>>>>>> preparing Grafana json
       },
       "description": "",
       "fieldConfig": {
@@ -1057,28 +863,17 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-<<<<<<< HEAD
             "last"
-=======
-            "sum"
->>>>>>> preparing Grafana json
           ],
           "fields": "",
           "values": false
         },
-<<<<<<< HEAD
         "showPercentChange": false,
         "text": {},
         "textMode": "auto",
         "wideLayout": true
       },
       "pluginVersion": "10.4.0",
-=======
-        "text": {},
-        "textMode": "auto"
-      },
-      "pluginVersion": "9.5.8",
->>>>>>> preparing Grafana json
       "targets": [
         {
           "groupBy": [
@@ -1162,35 +957,22 @@
       },
       "id": 30,
       "options": {
-<<<<<<< HEAD
         "minVizHeight": 75,
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
             "last"
-=======
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "sum"
->>>>>>> preparing Grafana json
           ],
           "fields": "",
           "values": false
         },
         "showThresholdLabels": false,
         "showThresholdMarkers": true,
-<<<<<<< HEAD
         "sizing": "auto",
         "text": {}
       },
       "pluginVersion": "10.4.0",
-=======
-        "text": {}
-      },
-      "pluginVersion": "9.5.8",
->>>>>>> preparing Grafana json
       "targets": [
         {
           "alias": "API falis",
@@ -1248,13 +1030,8 @@
     {
       "collapsed": false,
       "datasource": {
-<<<<<<< HEAD
         "type": "prometheus",
         "uid": "${datasource}"
-=======
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
->>>>>>> preparing Grafana json
       },
       "gridPos": {
         "h": 1,
@@ -1269,13 +1046,8 @@
     },
     {
       "datasource": {
-<<<<<<< HEAD
         "type": "prometheus",
         "uid": "${datasource}"
-=======
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
->>>>>>> preparing Grafana json
       },
       "description": "",
       "fieldConfig": {
@@ -1284,10 +1056,7 @@
             "mode": "palette-classic"
           },
           "custom": {
-<<<<<<< HEAD
             "axisBorderShow": false,
-=======
->>>>>>> preparing Grafana json
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "rc",
@@ -1301,10 +1070,7 @@
               "tooltip": false,
               "viz": false
             },
-<<<<<<< HEAD
             "insertNulls": false,
-=======
->>>>>>> preparing Grafana json
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -1340,7 +1106,6 @@
           },
           "unit": "short"
         },
-<<<<<<< HEAD
         "overrides": [
           {
             "__systemRef": "hideSeriesFrom",
@@ -1367,9 +1132,6 @@
             ]
           }
         ]
-=======
-        "overrides": []
->>>>>>> preparing Grafana json
       },
       "gridPos": {
         "h": 6,
@@ -1386,13 +1148,7 @@
           ],
           "displayMode": "table",
           "placement": "right",
-<<<<<<< HEAD
           "showLegend": true
-=======
-          "showLegend": true,
-          "sortBy": "Total",
-          "sortDesc": true
->>>>>>> preparing Grafana json
         },
         "tooltip": {
           "mode": "single",
@@ -1407,13 +1163,10 @@
             "type": "influxdb",
             "uid": "fs4rnsd4z"
           },
-<<<<<<< HEAD
           "disableTextWrap": false,
           "editorMode": "builder",
           "expr": "count by(endpoint) (openstack_http_requests_total{status!~\"2..\"})",
           "fullMetaSearch": false,
-=======
->>>>>>> preparing Grafana json
           "groupBy": [
             {
               "params": [
@@ -1434,18 +1187,12 @@
               "type": "tag"
             }
           ],
-<<<<<<< HEAD
           "includeNullMetadata": true,
           "legendFormat": "__auto",
           "measurement": "/^$mycloud$/",
           "orderByTime": "ASC",
           "policy": "default",
           "range": true,
-=======
-          "measurement": "/^$mycloud$/",
-          "orderByTime": "ASC",
-          "policy": "default",
->>>>>>> preparing Grafana json
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1474,26 +1221,18 @@
               "operator": "=~",
               "value": "/^$mymethod$/"
             }
-<<<<<<< HEAD
           ],
           "useBackend": false
-=======
-          ]
->>>>>>> preparing Grafana json
         }
       ],
       "title": "API errors",
       "type": "timeseries"
     },
     {
-<<<<<<< HEAD
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
       },
-=======
-      "datasource": {},
->>>>>>> preparing Grafana json
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -1501,10 +1240,7 @@
             "mode": "palette-classic"
           },
           "custom": {
-<<<<<<< HEAD
             "axisBorderShow": false,
-=======
->>>>>>> preparing Grafana json
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "# errors",
@@ -1518,10 +1254,7 @@
               "tooltip": false,
               "viz": false
             },
-<<<<<<< HEAD
             "insertNulls": false,
-=======
->>>>>>> preparing Grafana json
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -1590,11 +1323,8 @@
             "type": "influxdb",
             "uid": "HtMu18WVk"
           },
-<<<<<<< HEAD
           "editorMode": "builder",
           "expr": "count by(job) (push_failure_time_seconds)",
-=======
->>>>>>> preparing Grafana json
           "groupBy": [
             {
               "params": [
@@ -1615,17 +1345,11 @@
               "type": "fill"
             }
           ],
-<<<<<<< HEAD
           "legendFormat": "__auto",
           "measurement": "/^$mycloud$/",
           "orderByTime": "ASC",
           "policy": "default",
           "range": true,
-=======
-          "measurement": "/^$mycloud$/",
-          "orderByTime": "ASC",
-          "policy": "default",
->>>>>>> preparing Grafana json
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1663,10 +1387,7 @@
             "mode": "palette-classic"
           },
           "custom": {
-<<<<<<< HEAD
             "axisBorderShow": false,
-=======
->>>>>>> preparing Grafana json
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "Errs",
@@ -1680,10 +1401,7 @@
               "tooltip": false,
               "viz": false
             },
-<<<<<<< HEAD
             "insertNulls": false,
-=======
->>>>>>> preparing Grafana json
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -1808,13 +1526,8 @@
     {
       "collapsed": false,
       "datasource": {
-<<<<<<< HEAD
         "type": "prometheus",
         "uid": "${datasource}"
-=======
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
->>>>>>> preparing Grafana json
       },
       "gridPos": {
         "h": 1,
@@ -1829,13 +1542,8 @@
     },
     {
       "datasource": {
-<<<<<<< HEAD
         "type": "prometheus",
         "uid": "${datasource}"
-=======
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
->>>>>>> preparing Grafana json
       },
       "description": "",
       "fieldConfig": {
@@ -1844,10 +1552,7 @@
             "mode": "palette-classic"
           },
           "custom": {
-<<<<<<< HEAD
             "axisBorderShow": false,
-=======
->>>>>>> preparing Grafana json
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "s",
@@ -1861,10 +1566,7 @@
               "tooltip": false,
               "viz": false
             },
-<<<<<<< HEAD
             "insertNulls": false,
-=======
->>>>>>> preparing Grafana json
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -1928,7 +1630,6 @@
       "targets": [
         {
           "alias": "$tag_cmd $tag_method",
-<<<<<<< HEAD
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -1937,8 +1638,6 @@
           "editorMode": "builder",
           "expr": "sum by(endpoint) (openstack_http_response_time_count)",
           "fullMetaSearch": false,
-=======
->>>>>>> preparing Grafana json
           "groupBy": [
             {
               "params": [
@@ -1966,19 +1665,13 @@
             }
           ],
           "hide": false,
-<<<<<<< HEAD
           "includeNullMetadata": false,
           "legendFormat": "__auto",
-=======
->>>>>>> preparing Grafana json
           "measurement": "/^$mycloud$/",
           "orderByTime": "ASC",
           "policy": "default",
           "query": "SELECT \"duration\" FROM \"$mycloud\" WHERE $timeFilter GROUP BY time($__interval) fill(none)",
-<<<<<<< HEAD
           "range": true,
-=======
->>>>>>> preparing Grafana json
           "rawQuery": false,
           "refId": "All",
           "resultFormat": "time_series",
@@ -2008,12 +1701,8 @@
               "operator": "=~",
               "value": "/^$mymethod$/"
             }
-<<<<<<< HEAD
           ],
           "useBackend": false
-=======
-          ]
->>>>>>> preparing Grafana json
         }
       ],
       "title": "API response times",
@@ -2021,13 +1710,8 @@
     },
     {
       "datasource": {
-<<<<<<< HEAD
         "type": "prometheus",
         "uid": "${datasource}"
-=======
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
->>>>>>> preparing Grafana json
       },
       "description": "",
       "fieldConfig": {
@@ -2036,10 +1720,7 @@
             "mode": "palette-classic"
           },
           "custom": {
-<<<<<<< HEAD
             "axisBorderShow": false,
-=======
->>>>>>> preparing Grafana json
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "s",
@@ -2053,10 +1734,7 @@
               "tooltip": false,
               "viz": false
             },
-<<<<<<< HEAD
             "insertNulls": false,
-=======
->>>>>>> preparing Grafana json
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -2176,13 +1854,8 @@
     },
     {
       "datasource": {
-<<<<<<< HEAD
         "type": "prometheus",
         "uid": "${datasource}"
-=======
-        "type": "influxdb",
-        "uid": "fs4rnsd4z"
->>>>>>> preparing Grafana json
       },
       "description": "",
       "fieldConfig": {
@@ -2191,10 +1864,7 @@
             "mode": "palette-classic"
           },
           "custom": {
-<<<<<<< HEAD
             "axisBorderShow": false,
-=======
->>>>>>> preparing Grafana json
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "s, Gb/s, s, %maxt*10, s*10",
@@ -2208,10 +1878,7 @@
               "tooltip": false,
               "viz": false
             },
-<<<<<<< HEAD
             "insertNulls": false,
-=======
->>>>>>> preparing Grafana json
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -2331,21 +1998,14 @@
       "type": "timeseries"
     }
   ],
-<<<<<<< HEAD
   "refresh": "15m",
   "schemaVersion": 39,
-=======
-  "refresh": "5m",
-  "schemaVersion": 38,
-  "style": "dark",
->>>>>>> preparing Grafana json
   "tags": [],
   "templating": {
     "list": [
       {
         "current": {
           "selected": false,
-<<<<<<< HEAD
           "text": "Prometheus",
           "value": "prometheus"
         },
@@ -2371,14 +2031,6 @@
         "datasource": {
           "type": "prometheus",
           "uid": "${datasource}"
-=======
-          "text": "All",
-          "value": "$__all"
-        },
-        "datasource": {
-          "type": "influxdb",
-          "uid": "fs4rnsd4z"
->>>>>>> preparing Grafana json
         },
         "definition": "show tag values with key = cmd",
         "hide": 0,
@@ -2401,19 +2053,11 @@
         "current": {
           "selected": false,
           "text": "All",
-<<<<<<< HEAD
           "value": "All"
         },
         "datasource": {
           "type": "prometheus",
           "uid": "${datasource}"
-=======
-          "value": "$__all"
-        },
-        "datasource": {
-          "type": "influxdb",
-          "uid": "fs4rnsd4z"
->>>>>>> preparing Grafana json
         },
         "definition": "show tag values with key = method where cmd =~ /$mycmd/",
         "hide": 0,
@@ -2422,15 +2066,11 @@
         "multi": false,
         "name": "mymethod",
         "options": [],
-<<<<<<< HEAD
         "query": {
           "qryType": 4,
           "query": "show tag values with key = method where cmd =~ /$mycmd/",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
-=======
-        "query": "show tag values with key = method where cmd =~ /$mycmd/",
->>>>>>> preparing Grafana json
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -2444,19 +2084,11 @@
         "current": {
           "selected": false,
           "text": "All",
-<<<<<<< HEAD
           "value": "All"
         },
         "datasource": {
           "type": "prometheus",
           "uid": "${datasource}"
-=======
-          "value": "$__all"
-        },
-        "datasource": {
-          "type": "influxdb",
-          "uid": "fs4rnsd4z"
->>>>>>> preparing Grafana json
         },
         "definition": "show tag values with key = cmd",
         "hide": 0,
@@ -2479,19 +2111,11 @@
         "current": {
           "selected": false,
           "text": "All",
-<<<<<<< HEAD
           "value": "All"
         },
         "datasource": {
           "type": "prometheus",
           "uid": "${datasource}"
-=======
-          "value": "$__all"
-        },
-        "datasource": {
-          "type": "influxdb",
-          "uid": "fs4rnsd4z"
->>>>>>> preparing Grafana json
         },
         "definition": "show tag values with key = cmd",
         "hide": 0,
@@ -2513,17 +2137,12 @@
       {
         "current": {
           "selected": false,
-<<<<<<< HEAD
           "text": "'.*gx.*'",
           "value": "'.*gx.*'"
         },
         "datasource": {
           "type": "prometheus",
           "uid": "${datasource}"
-=======
-          "text": "plus-pco",
-          "value": "plus-pco"
->>>>>>> preparing Grafana json
         },
         "hide": 0,
         "includeAll": false,
@@ -2533,7 +2152,6 @@
         "options": [
           {
             "selected": true,
-<<<<<<< HEAD
             "text": "'.*gx.*'",
             "value": "'.*gx.*'"
           },
@@ -2544,8 +2162,6 @@
           },
           {
             "selected": false,
-=======
->>>>>>> preparing Grafana json
             "text": "plus-pco",
             "value": "plus-pco"
           },
@@ -2566,14 +2182,6 @@
           },
           {
             "selected": false,
-<<<<<<< HEAD
-=======
-            "text": "gx-scs",
-            "value": "gx-scs"
-          },
-          {
-            "selected": false,
->>>>>>> preparing Grafana json
             "text": "stackit",
             "value": "stackit"
           },
@@ -2603,11 +2211,7 @@
             "value": "ciab"
           }
         ],
-<<<<<<< HEAD
         "query": "'.*gx.*',gx-scs, plus-pco, plus-prod2, plus-prod3, plus-prod4, stackit, wavestack1, cnds, aov, datapoc, ciab",
-=======
-        "query": "plus-pco, plus-prod2, plus-prod3, plus-prod4, gx-scs, stackit, wavestack1, cnds, aov, datapoc, ciab",
->>>>>>> preparing Grafana json
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"
@@ -2615,11 +2219,7 @@
     ]
   },
   "time": {
-<<<<<<< HEAD
     "from": "now-6h",
-=======
-    "from": "now-24h",
->>>>>>> preparing Grafana json
     "to": "now"
   },
   "timepicker": {
@@ -2637,16 +2237,8 @@
     ]
   },
   "timezone": "",
-<<<<<<< HEAD
   "title": "SCS-Health-Monitor",
   "uid": "grafID",
   "version": 21,
   "weekStart": "monday"
 }
-=======
-  "title": "OpenStack-Health-Monitor2",
-  "uid": "9ltTEmlnk",
-  "version": 12,
-  "weekStart": "monday"
-}
->>>>>>> preparing Grafana json
