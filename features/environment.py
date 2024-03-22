@@ -27,6 +27,8 @@ def before_all(context):
     setup_class.setup()
     context.env = Tools.load_env_from_yaml()
 
+    context.logger = Logger();
+
     #TODO add logger to context
 
 def after_all(context):
@@ -38,7 +40,7 @@ def after_all(context):
     if prometheus_endpoint:
         push_to_gateway(prometheus_endpoint, job=prometheus_batch_name, registry=REGISTRY)
     else:
-        print("PROMETHEUS_ENDPOINT environment variables is not set. Metrics not pushed to prometheus push gateway.")
+        context.logger.logWarning("PROMETHEUS_ENDPOINT environment variables is not set. Metrics not pushed to prometheus push gateway.")
     
     
 

@@ -13,7 +13,9 @@ To get started with the SCS Health Monitor project, follow these steps:
 1. Clone this repository to your local machine.
 2. Install the required dependencies listed in the `requirements.txt` file.
 3. Review the existing Gherkin scenarios in the `features` directory to understand the testing coverage.
-4. Execute the tests using Behave library to validate the functionality and performance of your OpenStack environment.
+4. Create a *clouds.yaml* file int the root of the repository to be able to perform API calls to OpenStack.
+5. Create a *env.yaml* file containing configuration needed for performing the tests
+6. Execute the tests using Behave library to validate the functionality and performance of your OpenStack environment.
 
 ## Usage
 
@@ -54,12 +56,38 @@ behavex ./features/openstack_create_network.feature
 behavex --tags=cleanup
 ```
 
+## Setting up Prometheus and Prometheus Push Gateway locally
+For the purposes of gathering information from the test cases being performed against OpenStack, Prometheus metrics are being gathered during excecution of the test, then later these metrics are pushed to a Prometheus Push Gateway.
 
+[Here](./docs/ObservabilityStack/SetupObservabilityStack.md) you can find a useful quickstart quide on setting up Promethus Stack and Prometheus push gateway locally.
+
+## Exporting metrics to Prometheus Push Gateway
+To be able to push the metrics gathered during test executions, you must first configure the prometheus push gateway endpoint. You achieve this by adding these lines to a *env.yaml*:
+
+``` bash
+# Required 
+# If not present the metrics won't 
+# be pushed by the test scenarios
+PROMETHEUS_ENDPOINT: "localhost:30001"
+
+# Optional (default: "SCS-Health-Monitor") 
+# Specify the job label value that 
+# gets added to the metrics
+PROMETHEUS_BATCH_NAME: "SCS-Health-Monitor"
+
+# Required 
+# The name of the cloud from clouds.yaml
+# that the test scenarios will be ran on
+CLOUD_NAME: "gx"
+```
+
+This *env.yaml* file must be placed in the root of the repository. This is where you should be also issuing all the *behave <...>* commands to execute the test scenarios.
 
 ## Collaborators
 - Piotr Bigos [@piobig2871](https://github.com/piobig2871)
 - Erik Kostelanský [@Erik-Kostelansky-dNation](https://github.com/Erik-Kostelansky-dNation)
 - Katharina Trentau [@fraugabel](https://github.com/fraugabel)
+- Ľubomír Dobrovodský [@dobrovodskydnation](https://github.com/dobrovodskydnation)
 
 ## Useful links
 

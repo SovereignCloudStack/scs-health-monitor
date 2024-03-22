@@ -1,4 +1,4 @@
-# Setup observability stack
+# Observability stack quickstart
 
 ## Prerequisites
 Kubernetes is required to setup this observability stack consisting of Prometheus, Grafana and Prometheus push gateway.

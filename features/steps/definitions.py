@@ -5,7 +5,8 @@ class StepsDef:
 
     @given('I connect to OpenStack')
     def given_i_connect_to_openstack(context):
-        context.client = openstack.connect(cloud="gx")
+        cloudName = context.env.get("CLOUD_NAME", "gx")
+        context.client = openstack.connect(cloud=cloudName)
 
     @when('A router with name {router_name} exists')
     def when_a_router_with_name_exists(context, router_name: str):
