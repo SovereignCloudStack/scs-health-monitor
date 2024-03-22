@@ -1,15 +1,5 @@
-from environment_setup import before_all, after_all
-import yaml
 from behave import given, when, then
 import openstack
-
-
-def before_all(context):
-    before_all(context)
-
-def after_all(context):
-    after_all(context)
-
 
 class StepsDef:
 
