@@ -1,0 +1,24 @@
+alertmanager:
+  enabled: true
+
+grafana:
+  enabled: true
+
+kube-state-metrics:
+  prometheus:
+    monitor:
+      enabled: false
+
+node_exporter:
+  enabled: false
+
+prometheusOperator:
+  enabled: true
+
+prometheus:
+  prometheusSpec:
+    replicas: 1
+    serviceMonitorNamespaceSelector:
+      matchLabels: {}
+    serviceMonitorSelector: {}
+    serviceMonitorSelectorNilUsesHelmValues: false

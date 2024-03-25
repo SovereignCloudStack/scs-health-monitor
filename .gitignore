@@ -174,3 +174,5 @@ cython_debug/
 #.idea/
 /sandbox.py
 sandbox/
+
+*.prom

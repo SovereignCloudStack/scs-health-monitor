@@ -19,3 +19,26 @@ class Logger:
             file_handler.setLevel(level)
             file_handler.setFormatter(self.formatter)
             self.instance.addHandler(file_handler)
+
+    def log(self, level: int, msg: object):
+        self.instance.log(level, msg)
+
+    def logCritical(self, msg: object):
+        self.log(logging.CRITICAL, msg)
+
+    def logError(self, msg: object):
+        self.log(logging.ERROR, msg)
+
+    def logWarning(self, msg: object):
+        self.log(logging.WARNING, msg)
+
+    def logInfo(self, msg: object):
+        self.log(logging.INFO, msg)
+
+    def logDebug(self, msg: object):
+        self.log(logging.DEBUG, msg)
+
+    def logNotset(self, msg: object):
+        self.log(logging.NOTSET, msg)
+
+    logFatal = logCritical
