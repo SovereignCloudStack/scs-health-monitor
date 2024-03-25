@@ -1,21 +1,12 @@
-from environment_setup import before_all, after_all
-import yaml
 from behave import given, when, then
 import openstack
-
-
-def before_all(context):
-    before_all(context)
-
-def after_all(context):
-    after_all(context)
-
 
 class StepsDef:
 
     @given('I connect to OpenStack')
     def given_i_connect_to_openstack(context):
-        context.client = openstack.connect(cloud="gx")
+        cloudName = context.env.get("CLOUD_NAME", "gx")
+        context.client = openstack.connect(cloud=cloudName)
 
     @when('A router with name {router_name} exists')
     def when_a_router_with_name_exists(context, router_name: str):
