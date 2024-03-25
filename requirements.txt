@@ -72,7 +72,7 @@ charset-normalizer==3.3.2
 click==8.1.7
 cliff==4.6.0
 cmd2==2.4.3
-configobj==5.0.8
+configobj
 cryptography==42.0.5
 csscompressor==0.9.5
 debtcollector==3.0.0
