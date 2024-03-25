@@ -22,7 +22,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1,
+  "id": 29,
   "links": [
     {
       "asDropdown": false,
@@ -59,8 +59,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -86,12 +85,21 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "9.5.8",
+      "pluginVersion": "10.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "count_over_time({__name__=~'openstack_http_requests_total',endpoint=~\".*gx.*\",cmd=~\".*\", method=~\".*\"}[$__interval])",
+          "format": "table",
           "groupBy": [
             {
               "params": [
@@ -109,6 +117,7 @@
           "measurement": "/^$mycloud$/",
           "orderByTime": "ASC",
           "policy": "default",
+          "range": true,
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -159,8 +168,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "#EAB839",
@@ -194,12 +202,22 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "9.5.8",
+      "pluginVersion": "10.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "disableTextWrap": false,
+          "editorMode": "code",
+          "expr": "count(openstack_http_requests_total{status!~\"2..\"})",
+          "fullMetaSearch": false,
           "groupBy": [
             {
               "params": [
@@ -208,9 +226,12 @@
               "type": "time"
             }
           ],
+          "includeNullMetadata": true,
+          "legendFormat": "__auto",
           "measurement": "/^$mycloud$/",
           "orderByTime": "ASC",
           "policy": "default",
+          "range": true,
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -239,17 +260,18 @@
               "operator": "=~",
               "value": "/^$mymethod$/"
             }
-          ]
+          ],
+          "useBackend": false
         }
       ],
       "title": "API errors",
       "type": "stat"
     },
     {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${datasource}"
-        },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -263,8 +285,7 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "red",
-                "value": null
+                "color": "red"
               },
               {
                 "color": "#EAB839",
@@ -288,6 +309,8 @@
       },
       "id": 25,
       "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -298,12 +321,19 @@
         },
         "showThresholdLabels": false,
         "showThresholdMarkers": true,
+        "sizing": "auto",
         "text": {}
       },
-      "pluginVersion": "9.5.8",
+      "pluginVersion": "10.4.0",
       "targets": [
         {
           "alias": "API falis",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "\"SELECT ((count(\\\"return_code\\\")-sum(\\\"return_code\\\"))/count(\\\"return_code\\\")) FROM \\\"$mycloud\\\" WHERE (\\\"cmd\\\" =~ /^$mycmd$/ AND \\\"method\\\" =~ /^$mymethod$/) AND $timeFilter\"",
           "groupBy": [
             {
               "params": [
@@ -312,10 +342,12 @@
               "type": "time"
             }
           ],
+          "legendFormat": "__auto",
           "measurement": "/^$mycloud$/",
           "orderByTime": "ASC",
           "policy": "default",
           "query": "SELECT ((count(\"return_code\")-sum(\"return_code\"))/count(\"return_code\")) FROM \"$mycloud\" WHERE (\"cmd\" =~ /^$mycmd$/ AND \"method\" =~ /^$mymethod$/) AND $timeFilter",
+          "range": true,
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -352,10 +384,10 @@
       "type": "gauge"
     },
     {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${datasource}"
-        },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -367,8 +399,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -394,12 +425,22 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "9.5.8",
+      "pluginVersion": "10.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "disableTextWrap": false,
+          "editorMode": "code",
+          "expr": "count_over_time(gx-scs{cmd=\"ssh\"}[$__interval])",
+          "fullMetaSearch": false,
           "groupBy": [
             {
               "params": [
@@ -414,10 +455,13 @@
               "type": "fill"
             }
           ],
+          "includeNullMetadata": true,
+          "legendFormat": "__auto",
           "measurement": "/^$mycloud$/",
           "orderByTime": "ASC",
           "policy": "default",
           "query": "SELECT count(\"return_code\") FROM \"$mycloud\" WHERE (\"cmd\" = 'ssh') AND $timeFilter GROUP BY time($__interval) fill(null)",
+          "range": true,
           "rawQuery": false,
           "refId": "A",
           "resultFormat": "time_series",
@@ -441,17 +485,18 @@
               "operator": "=",
               "value": "ssh"
             }
-          ]
+          ],
+          "useBackend": false
         }
       ],
       "title": "ssh conns",
       "type": "stat"
     },
     {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${datasource}"
-        },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -463,8 +508,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "#EAB839",
@@ -498,10 +542,12 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "9.5.8",
+      "pluginVersion": "10.4.0",
       "targets": [
         {
           "groupBy": [
@@ -546,10 +592,10 @@
       "type": "stat"
     },
     {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${datasource}"
-        },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -563,8 +609,7 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "red",
-                "value": null
+                "color": "red"
               },
               {
                 "color": "#EAB839",
@@ -588,6 +633,8 @@
       },
       "id": 22,
       "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -598,9 +645,10 @@
         },
         "showThresholdLabels": false,
         "showThresholdMarkers": true,
+        "sizing": "auto",
         "text": {}
       },
-      "pluginVersion": "9.5.8",
+      "pluginVersion": "10.4.0",
       "targets": [
         {
           "alias": "API falis",
@@ -652,10 +700,10 @@
       "type": "gauge"
     },
     {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${datasource}"
-        },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -667,8 +715,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -694,10 +741,12 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "9.5.8",
+      "pluginVersion": "10.4.0",
       "targets": [
         {
           "groupBy": [
@@ -748,10 +797,10 @@
       "type": "stat"
     },
     {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${datasource}"
-        },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -763,8 +812,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "#EAB839",
@@ -798,10 +846,12 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "9.5.8",
+      "pluginVersion": "10.4.0",
       "targets": [
         {
           "groupBy": [
@@ -860,8 +910,7 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "red",
-                "value": null
+                "color": "red"
               },
               {
                 "color": "#EAB839",
@@ -885,6 +934,8 @@
       },
       "id": 30,
       "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -895,9 +946,10 @@
         },
         "showThresholdLabels": false,
         "showThresholdMarkers": true,
+        "sizing": "auto",
         "text": {}
       },
-      "pluginVersion": "9.5.8",
+      "pluginVersion": "10.4.0",
       "targets": [
         {
           "alias": "API falis",
@@ -954,10 +1006,10 @@
     },
     {
       "collapsed": false,
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${datasource}"
-        },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -970,10 +1022,10 @@
       "type": "row"
     },
     {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${datasource}"
-        },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -981,6 +1033,7 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "rc",
@@ -994,6 +1047,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -1018,8 +1072,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1029,7 +1082,32 @@
           },
           "unit": "short"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "Value"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 6,
@@ -1046,9 +1124,7 @@
           ],
           "displayMode": "table",
           "placement": "right",
-          "showLegend": true,
-          "sortBy": "Total",
-          "sortDesc": true
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single",
@@ -1063,6 +1139,10 @@
             "type": "influxdb",
             "uid": "fs4rnsd4z"
           },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "count by(endpoint) (openstack_http_requests_total{status!~\"2..\"})",
+          "fullMetaSearch": false,
           "groupBy": [
             {
               "params": [
@@ -1083,9 +1163,12 @@
               "type": "tag"
             }
           ],
+          "includeNullMetadata": true,
+          "legendFormat": "__auto",
           "measurement": "/^$mycloud$/",
           "orderByTime": "ASC",
           "policy": "default",
+          "range": true,
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1114,14 +1197,18 @@
               "operator": "=~",
               "value": "/^$mymethod$/"
             }
-          ]
+          ],
+          "useBackend": false
         }
       ],
       "title": "API errors",
       "type": "timeseries"
     },
     {
-      "datasource": {},
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -1129,6 +1216,7 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "# errors",
@@ -1142,6 +1230,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -1165,8 +1254,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1210,6 +1298,8 @@
             "type": "influxdb",
             "uid": "HtMu18WVk"
           },
+          "editorMode": "builder",
+          "expr": "count by(job) (push_failure_time_seconds)",
           "groupBy": [
             {
               "params": [
@@ -1230,9 +1320,11 @@
               "type": "fill"
             }
           ],
+          "legendFormat": "__auto",
           "measurement": "/^$mycloud$/",
           "orderByTime": "ASC",
           "policy": "default",
+          "range": true,
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1270,6 +1362,7 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "Errs",
@@ -1283,6 +1376,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -1306,8 +1400,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1406,10 +1499,10 @@
     },
     {
       "collapsed": false,
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${datasource}"
-        },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -1422,10 +1515,10 @@
       "type": "row"
     },
     {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${datasource}"
-        },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -1433,6 +1526,7 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "s",
@@ -1446,6 +1540,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -1509,6 +1604,14 @@
       "targets": [
         {
           "alias": "$tag_cmd $tag_method",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "sum by(endpoint) (openstack_http_response_time_count)",
+          "fullMetaSearch": false,
           "groupBy": [
             {
               "params": [
@@ -1536,10 +1639,13 @@
             }
           ],
           "hide": false,
+          "includeNullMetadata": false,
+          "legendFormat": "__auto",
           "measurement": "/^$mycloud$/",
           "orderByTime": "ASC",
           "policy": "default",
           "query": "SELECT \"duration\" FROM \"$mycloud\" WHERE $timeFilter GROUP BY time($__interval) fill(none)",
+          "range": true,
           "rawQuery": false,
           "refId": "All",
           "resultFormat": "time_series",
@@ -1569,17 +1675,18 @@
               "operator": "=~",
               "value": "/^$mymethod$/"
             }
-          ]
+          ],
+          "useBackend": false
         }
       ],
       "title": "API response times",
       "type": "timeseries"
     },
     {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${datasource}"
-        },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -1587,6 +1694,7 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "s",
@@ -1600,6 +1708,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -1718,10 +1827,10 @@
       "type": "timeseries"
     },
     {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${datasource}"
-        },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -1729,6 +1838,7 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "s, Gb/s, s, %maxt*10, s*10",
@@ -1742,6 +1852,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -1861,17 +1972,15 @@
       "type": "timeseries"
     }
   ],
-  "refresh": "5m",
-  "schemaVersion": 38,
-  "style": "dark",
+  "schemaVersion": 39,
   "tags": [],
   "templating": {
     "list": [
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "Prometheus",
-          "value": ""
+          "value": "prometheus"
         },
         "hide": 0,
         "includeAll": false,
@@ -1886,10 +1995,11 @@
         "type": "datasource"
       },
       {
+        "allValue": "\".*\"",
         "current": {
           "selected": false,
-          "text": "All",
-          "value": "$__all"
+          "text": "'.*'",
+          "value": "'.*'"
         },
         "datasource": {
           "type": "prometheus",
@@ -1916,7 +2026,7 @@
         "current": {
           "selected": false,
           "text": "All",
-          "value": "$__all"
+          "value": "All"
         },
         "datasource": {
           "type": "prometheus",
@@ -1943,7 +2053,7 @@
         "current": {
           "selected": false,
           "text": "All",
-          "value": "$__all"
+          "value": "All"
         },
         "datasource": {
           "type": "prometheus",
@@ -1970,7 +2080,7 @@
         "current": {
           "selected": false,
           "text": "All",
-          "value": "$__all"
+          "value": "All"
         },
         "datasource": {
           "type": "prometheus",
@@ -1993,11 +2103,11 @@
         "type": "query",
         "useTags": false
       },
-      { 
+      {
         "current": {
           "selected": false,
-          "text": "plus-pco",
-          "value": "plus-pco"
+          "text": "'.*gx.*'",
+          "value": "'.*gx.*'"
         },
         "datasource": {
           "type": "prometheus",
@@ -2011,6 +2121,16 @@
         "options": [
           {
             "selected": true,
+            "text": "'.*gx.*'",
+            "value": "'.*gx.*'"
+          },
+          {
+            "selected": false,
+            "text": "gx-scs",
+            "value": "gx-scs"
+          },
+          {
+            "selected": false,
             "text": "plus-pco",
             "value": "plus-pco"
           },
@@ -2028,11 +2148,6 @@
             "selected": false,
             "text": "plus-prod4",
             "value": "plus-prod4"
-          },
-          {
-            "selected": false,
-            "text": "gx-scs",
-            "value": "gx-scs"
           },
           {
             "selected": false,
@@ -2065,7 +2180,7 @@
             "value": "ciab"
           }
         ],
-        "query": "plus-pco, plus-prod2, plus-prod3, plus-prod4, gx-scs, stackit, wavestack1, cnds, aov, datapoc, ciab",
+        "query": "'.*gx.*',gx-scs, plus-pco, plus-prod2, plus-prod3, plus-prod4, stackit, wavestack1, cnds, aov, datapoc, ciab",
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"
@@ -2073,8 +2188,8 @@
     ]
   },
   "time": {
-    "from": "now-24h",
-    "to": "now"
+    "from": "2024-03-22T04:26:29.660Z",
+    "to": "2024-03-25T17:46:29.660Z"
   },
   "timepicker": {
     "refresh_intervals": [
@@ -2093,6 +2208,6 @@
   "timezone": "",
   "title": "SCS-Health-Monitor",
   "uid": "grafID",
-  "version": 12,
+  "version": 15,
   "weekStart": "monday"
 }
