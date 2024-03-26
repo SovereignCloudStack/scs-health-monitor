@@ -81,7 +81,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "last"
+            "sum"
           ],
           "fields": "",
           "values": false
@@ -99,7 +99,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "count({__name__=~'openstack_http_requests_total',endpoint=~\".*gx.*\",cmd=~\".*\", method=~\".*\"})",
+          "expr": "avg({__name__=~'openstack_http_requests_total',endpoint=~\".*gx.*\",cmd=~\".*\", method=~\".*\"})",
           "format": "table",
           "groupBy": [
             {
@@ -200,7 +200,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "last"
+            "sum"
           ],
           "fields": "",
           "values": false
@@ -219,7 +219,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "count(openstack_http_requests_total{status_code!~\"2..\"})",
+          "expr": "avg(openstack_http_requests_total{status_code!~\"2..\"})",
           "fullMetaSearch": false,
           "groupBy": [
             {
@@ -301,7 +301,7 @@
               }
             ]
           },
-          "unit": "percentunit"
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -338,7 +338,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "count(openstack_http_requests_total{status_code!~\"2..\"})/count({__name__=~'openstack_http_requests_total',endpoint=~\".*gx.*\",cmd=~\".*\", method=~\".*\"})",
+          "expr": "count(openstack_http_requests_total{status_code=~\"2..\"})*100/count({__name__=~'openstack_http_requests_total',endpoint=~\".*gx.*\",cmd=~\".*\", method=~\".*\"})",
           "format": "table",
           "fullMetaSearch": false,
           "groupBy": [
@@ -1590,8 +1590,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1760,8 +1759,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1905,8 +1903,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2001,14 +1998,14 @@
       "type": "timeseries"
     }
   ],
-  "refresh": "5m",
+  "refresh": "15m",
   "schemaVersion": 39,
   "tags": [],
   "templating": {
     "list": [
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "Prometheus",
           "value": "prometheus"
         },
@@ -2139,7 +2136,7 @@
       },
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "'.*gx.*'",
           "value": "'.*gx.*'"
         },
@@ -2222,7 +2219,7 @@
     ]
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {
@@ -2242,6 +2239,6 @@
   "timezone": "",
   "title": "SCS-Health-Monitor",
   "uid": "grafID",
-  "version": 19,
+  "version": 21,
   "weekStart": "monday"
 }
