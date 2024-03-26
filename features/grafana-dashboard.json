@@ -81,7 +81,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "last"
+            "sum"
           ],
           "fields": "",
           "values": false
@@ -200,7 +200,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "last"
+            "sum"
           ],
           "fields": "",
           "values": false
@@ -1590,8 +1590,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1760,8 +1759,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1905,8 +1903,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2008,7 +2005,7 @@
     "list": [
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "Prometheus",
           "value": "prometheus"
         },
@@ -2139,7 +2136,7 @@
       },
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "'.*gx.*'",
           "value": "'.*gx.*'"
         },
