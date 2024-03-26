@@ -59,7 +59,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           }
@@ -80,7 +81,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "sum"
+            "last"
           ],
           "fields": "",
           "values": false
@@ -98,7 +99,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "count_over_time({__name__=~'openstack_http_requests_total',endpoint=~\".*gx.*\",cmd=~\".*\", method=~\".*\"}[$__interval])",
+          "expr": "count({__name__=~'openstack_http_requests_total',endpoint=~\".*gx.*\",cmd=~\".*\", method=~\".*\"})",
           "format": "table",
           "groupBy": [
             {
@@ -114,6 +115,7 @@
               "type": "fill"
             }
           ],
+          "legendFormat": "__auto",
           "measurement": "/^$mycloud$/",
           "orderByTime": "ASC",
           "policy": "default",
@@ -168,7 +170,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "#EAB839",
@@ -197,7 +200,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "sum"
+            "last"
           ],
           "fields": "",
           "values": false
@@ -216,7 +219,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "count(openstack_http_requests_total{status!~\"2..\"})",
+          "expr": "count(openstack_http_requests_total{status_code!~\"2..\"})",
           "fullMetaSearch": false,
           "groupBy": [
             {
@@ -285,7 +288,8 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "red"
+                "color": "red",
+                "value": null
               },
               {
                 "color": "#EAB839",
@@ -314,7 +318,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "sum"
+            "lastNotNull"
           ],
           "fields": "",
           "values": false
@@ -332,8 +336,11 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
+          "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "\"SELECT ((count(\\\"return_code\\\")-sum(\\\"return_code\\\"))/count(\\\"return_code\\\")) FROM \\\"$mycloud\\\" WHERE (\\\"cmd\\\" =~ /^$mycmd$/ AND \\\"method\\\" =~ /^$mymethod$/) AND $timeFilter\"",
+          "expr": "count(openstack_http_requests_total{status_code!~\"2..\"})/count({__name__=~'openstack_http_requests_total',endpoint=~\".*gx.*\",cmd=~\".*\", method=~\".*\"})",
+          "format": "table",
+          "fullMetaSearch": false,
           "groupBy": [
             {
               "params": [
@@ -342,6 +349,7 @@
               "type": "time"
             }
           ],
+          "includeNullMetadata": true,
           "legendFormat": "__auto",
           "measurement": "/^$mycloud$/",
           "orderByTime": "ASC",
@@ -377,7 +385,8 @@
               "operator": "=~",
               "value": "/^$mymethod$/"
             }
-          ]
+          ],
+          "useBackend": false
         }
       ],
       "title": "API success rate",
@@ -399,7 +408,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           }
@@ -420,7 +430,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "sum"
+            "lastNotNull"
           ],
           "fields": "",
           "values": false
@@ -508,7 +518,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "#EAB839",
@@ -537,7 +548,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "sum"
+            "lastNotNull"
           ],
           "fields": "",
           "values": false
@@ -609,7 +620,8 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "red"
+                "color": "red",
+                "value": null
               },
               {
                 "color": "#EAB839",
@@ -638,7 +650,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "sum"
+            "last"
           ],
           "fields": "",
           "values": false
@@ -652,6 +664,12 @@
       "targets": [
         {
           "alias": "API falis",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "",
           "groupBy": [
             {
               "params": [
@@ -660,10 +678,12 @@
               "type": "time"
             }
           ],
+          "legendFormat": "__auto",
           "measurement": "$mycloud",
           "orderByTime": "ASC",
           "policy": "default",
           "query": "SELECT ((count(\"return_code\")-sum(\"return_code\"))/count(\"return_code\")) FROM \"$mycloud\" WHERE (\"cmd\" = 'ssh') AND $timeFilter",
+          "range": true,
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -715,7 +735,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           }
@@ -736,7 +757,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "sum"
+            "last"
           ],
           "fields": "",
           "values": false
@@ -812,7 +833,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "#EAB839",
@@ -841,7 +863,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "sum"
+            "last"
           ],
           "fields": "",
           "values": false
@@ -910,7 +932,8 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "red"
+                "color": "red",
+                "value": null
               },
               {
                 "color": "#EAB839",
@@ -939,7 +962,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "sum"
+            "last"
           ],
           "fields": "",
           "values": false
@@ -1072,7 +1095,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1254,7 +1278,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1400,7 +1425,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1564,7 +1590,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1733,7 +1760,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1877,7 +1905,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1972,13 +2001,14 @@
       "type": "timeseries"
     }
   ],
+  "refresh": "5m",
   "schemaVersion": 39,
   "tags": [],
   "templating": {
     "list": [
       {
         "current": {
-          "selected": false,
+          "selected": true,
           "text": "Prometheus",
           "value": "prometheus"
         },
@@ -2039,7 +2069,11 @@
         "multi": false,
         "name": "mymethod",
         "options": [],
-        "query": "show tag values with key = method where cmd =~ /$mycmd/",
+        "query": {
+          "qryType": 4,
+          "query": "show tag values with key = method where cmd =~ /$mycmd/",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -2105,7 +2139,7 @@
       },
       {
         "current": {
-          "selected": false,
+          "selected": true,
           "text": "'.*gx.*'",
           "value": "'.*gx.*'"
         },
@@ -2188,8 +2222,8 @@
     ]
   },
   "time": {
-    "from": "2024-03-22T04:26:29.660Z",
-    "to": "2024-03-25T17:46:29.660Z"
+    "from": "now-5m",
+    "to": "now"
   },
   "timepicker": {
     "refresh_intervals": [
@@ -2208,6 +2242,6 @@
   "timezone": "",
   "title": "SCS-Health-Monitor",
   "uid": "grafID",
-  "version": 15,
+  "version": 19,
   "weekStart": "monday"
 }
