@@ -45,6 +45,8 @@ Adding fixes to the project:
 
 # Python
 
+*compatible with version: 3.10.8*
+
 ## Command cheatsheet
 ``` bash
 # create python virtual environment
