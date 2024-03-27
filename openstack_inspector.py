@@ -30,11 +30,26 @@ class Inspector:
             self.logger_instance.error(f"Error while checking network existence: {e}")
 
 
-# Example usage:
-if __name__ == "__main__":
+class Recover:
 
-    inspector = Inspector()
-    if inspector.check_network_existence("ext01"):
-        print("Network exists!")
-    else:
-        print("Network does not exist.")
+    NETWORKS = list()
+    SUBNETWORKS = list()
+    SECURITY_GROUPS = list()
+    SECURITY_GROUP_RULES = list()
+    JUMPHOSTS = list()
+    ROUTERS = list()
+
+
+
+
+
+
+
+# # Example usage:
+# if __name__ == "__main__":
+#
+#     inspector = Inspector()
+#     if inspector.check_network_existence("ext01"):
+#         print("Network exists!")
+#     else:
+#         print("Network does not exist.")

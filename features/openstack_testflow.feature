@@ -59,7 +59,7 @@ Feature:
 
     Examples: Test security groups rule
       | security_group_name | direction | protocol | port_range_min | port_range_max |
-      | sg01                | ingress   | tcp      | 80             | 80             |
+      | sg01                | ingress   | tcp      | 80             | 120             |
 
   Scenario Outline: Connect to OpenStack and delete a security group rule
     Given I connect to OpenStack
@@ -68,7 +68,7 @@ Feature:
 
     Examples: Test security groups rule
       | security_group_name | direction | protocol | port_range_min | port_range_max |
-      | sg01                | ingress   | tcp      | 80             | 80             |
+      | sg01                | ingress   | tcp      | 81             | 119             |
 
   Scenario Outline: Connect to OpenStack and delete a security group
 
