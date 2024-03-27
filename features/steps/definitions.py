@@ -146,11 +146,10 @@ class StepsDef:
             security_group is not None
         ), f"Security group with name {security_group.name} was not found"
 
-    @then("I should be able to create security group rule <rule>")
-    def then_I_should_be_able_to_create_security_rule(context, security_group, direction: str ='ingress',
-                                                      ethertype:str ='IPv4', protocol: str='tcp',
-                                                      port_range_min: int=80, port_range_max: int=80,
-                                                      remote_ip_prefix='0.0.0.0/0'):
+    @then("I should be able to create security group rule {rule}")
+    def then_I_should_be_able_to_create_security_rule(context, security_group, port_range_min: int, port_range_max: int,
+                                                      direction: str ='ingress', remote_ip_prefix='0.0.0.0/0',
+                                                      ethertype:str ='IPv4', protocol: str='tcp',):
         context.network.create_security_group_rule(security_group_id=security_group.id,direction=direction,
             ethertype=ethertype,
             protocol=protocol,
