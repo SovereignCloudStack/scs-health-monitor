@@ -160,7 +160,7 @@ class StepsDef:
         )
 
     @then("I should be able to delete a security group with name {security_group_name}")
-    def then_i_should_be_able_to_delete_a_security_group( context, security_group_name: str):
+    def then_i_should_be_able_to_delete_a_security_group(context, security_group_name: str):
         security_group = context.client.network.find_security_group(name_or_id=security_group_name)
         assert security_group, f"Security group with name {security_group_name} does not exist"
         sec_group_list = list()
@@ -168,7 +168,7 @@ class StepsDef:
             if sec_group.name == security_group_name:
                 sec_group_list.append(sec_group.id)
         for sec_group in sec_group_list:
-            context.client.network.delete_security_group(name_or_id=sec_group.id)
+            context.client.network.delete_security_group(name_or_id=sec_group)
         assert not context.client.network.find_security_group(
             name_or_id=security_group_name
         ), f"Security group with name {security_group_name} was not deleted"
