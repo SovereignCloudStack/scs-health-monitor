@@ -31,23 +31,74 @@ class Inspector:
 
 
 class Recover:
+    def __init__(self, cloud='default'):
+        self.conn = self._connect(cloud)
 
-    NETWORKS = list()
-    SUBNETWORKS = list()
-    SECURITY_GROUPS = list()
-    SECURITY_GROUP_RULES = list()
-    JUMPHOSTS = list()
-    ROUTERS = list()
+    def _connect(self, cloud):
+        return openstack.connection.from_config(cloud_name="gx")
+
+    def delete_networks(self):
+        try:
+            for network in self.conn.network.networks():
+                self.conn.network.delete_network(network.id)
+                print(f"Network with ID {network.id} has been deleted.")
+        except Exception as e:
+            print(f"network {network.name} can't be deleted because exception {e} is raised.")
+
+    def delete_subnets(self):
+        try:
+            for subnet in self.conn.network.subnets():
+                self.conn.network.delete_subnet(subnet.id)
+                print(f"Subnet with ID {subnet.id} has been deleted.")
+        except Exception as e:
+            print(f"subnet {subnet.name} can't be deleted because exception {e} is raised.")
+
+    def delete_security_groups(self):
+        try:
+            for group in self.conn.network.security_groups():
+                self.conn.network.delete_security_group(group.id)
+                print(f"Security group with ID {group.id} has been deleted.")
+        except Exception as e:
+            print(f"security group {group.name} can't be deleted because exception {e} is raised.")
 
 
+    def delete_security_group_rules(self):
+        try:
+            for rule in self.conn.network.security_group_rules():
+                self.conn.network.delete_security_group_rule(rule.id)
+                print(f"Security group rule with ID {rule.id} has been deleted.")
+        except Exception as e:
+            print(f"security group rule {rule.name} can't be deleted because exception {e} is raised.")
+
+    def delete_routers(self):
+        try:
+            for router in self.conn.network.routers():
+                self.conn.network.delete_router(router.id)
+                print(f"Router with ID {router.id} has been deleted.")
+        except Exception as e:
+            print(f"router {router.name} can't be deleted because exception {e} is raised.")
+
+    def get_jumphosts(self):
+        jumphosts = []
+        for server in self.conn.compute.servers():
+            if 'jumphost' in server.name.lower():
+                jumphosts.append(server)
+        return jumphosts
+
+    def delete_jumphosts(self):
+        for jumphost in self.get_jumphosts():
+            self.conn.compute.delete_server(jumphost.id)
 
 
+if __name__ == "__main__":
+    recover = Recover()
+    recover.delete_security_group_rules()
+    recover.delete_security_groups()
+    recover.delete_routers()
+    recover.delete_subnets()
+    recover.delete_networks()
 
-
-
-# # Example usage:
-# if __name__ == "__main__":
-#
+# if __name__ == "__main
 #     inspector = Inspector()
 #     if inspector.check_network_existence("ext01"):
 #         print("Network exists!")
