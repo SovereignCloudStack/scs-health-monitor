@@ -44,6 +44,42 @@ Feature:
     Given I connect to OpenStack
     Then I should be able to list routers
 
+  Scenario Outline: Connect to OpenStack and create a security group
+    Given I connect to OpenStack
+    Then I should be able to create a security group with name <security_group_name> with <description>
+
+    Examples: Test security groups
+      | security_group_name | description       |
+      | sg01                | "First group"     |
+      | sg02                | "Second group"    |
+
+  Scenario Outline: Connect to OpenStack and create a security group rule
+    Given I connect to OpenStack
+    Then I should be able to create a security group rule for <security_group_name> with direction <direction> protocol <protocol> and port range <port_range_min> to <port_range_max>
+
+    Examples: Test security groups rule
+      | security_group_name | direction | protocol | port_range_min | port_range_max |
+      | sg01                | ingress   | tcp      | 80             | 120             |
+
+  Scenario Outline: Connect to OpenStack and delete a security group rule
+    Given I connect to OpenStack
+    When A security group rule for <security_group_name> with direction <direction> protocol <protocol> and port range <port_range_min> to <port_range_max> exists
+    Then I should be able to delete the security group rule for <security_group_name> with direction <direction> protocol <protocol> and port range <port_range_min> to <port_range_max>
+
+    Examples: Test security groups rule
+      | security_group_name | direction | protocol | port_range_min | port_range_max |
+      | sg01                | ingress   | tcp      | 81             | 119             |
+
+  Scenario Outline: Connect to OpenStack and delete a security group
+
+    Given I connect to OpenStack
+    When A security group with name <security_group_name> exists
+    Then I should be able to delete a security group with name <security_group_name>
+
+    Examples: Test security groups
+      | security_group_name |
+      | sg01                |
+      | sg02                |
 
   Scenario Outline: Connect to OpenStack and delete a subnet
     Given I connect to OpenStack
