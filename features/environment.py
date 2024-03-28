@@ -24,6 +24,8 @@ class TeardownClass:
         pass
 
 def before_all(context):
+    context.start_time = DateTimeProvider.get_current_utc_time()
+
     setup_class = SetupClass()
     setup_class.setup()
     context.env = Tools.load_env_from_yaml()
@@ -34,10 +36,18 @@ def before_all(context):
     context.prometheusExporter.add_default_label(LabelNames.CLOUD_LABEL, cloudName)
 
 def after_all(context):
+    context.stop_time = DateTimeProvider.get_current_utc_time()
+
+    formattedDuration = f"from_{Formatter.format_date_time(context.start_time)}_to_{Formatter.format_date_time(context.stop_time)}"
     teardown_class = TeardownClass()
     teardown_class.teardown()
     prometheus_endpoint = context.env.get("PROMETHEUS_ENDPOINT", "")
     prometheus_batch_name = context.env.get("PROMETHEUS_BATCH_NAME", DEFAULT_PROMETHEUS_BATCH_NAME)
+    
+    append_timestamp_to_batch_name = Tools.env_is_true(context.env.get("APPEND_TIMESTAMP_TO_BATCH_NAME", True))
+
+    if append_timestamp_to_batch_name and prometheus_batch_name:
+        prometheus_batch_name = f"{prometheus_batch_name}_{formattedDuration}"
     
     if prometheus_endpoint:
         context.prometheusExporter.push_metrics(prometheus_endpoint, prometheus_batch_name)
