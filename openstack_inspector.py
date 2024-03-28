@@ -31,11 +31,11 @@ class Inspector:
 
 
 class Recover:
-    def __init__(self, cloud='default'):
+    def __init__(self, cloud='gx'):
         self.conn = self._connect(cloud)
 
     def _connect(self, cloud):
-        return openstack.connection.from_config(cloud_name="gx")
+        return openstack.connection.from_config(cloud_name=cloud)
 
     def delete_networks(self):
         try:
