@@ -1,6 +1,9 @@
 from prometheus_client import push_to_gateway, REGISTRY
 from steps.tools import Tools
 from libs.loggerClass import Logger
+from libs.PrometheusExporter import PrometheusExporter, LabelNames
+from libs.DateTimeProvider import DateTimeProvider
+from libs.Formatter import Formatter
 
 DEFAULT_PROMETHEUS_BATCH_NAME = "SCS-Health-Monitor"
 
@@ -21,26 +24,35 @@ class TeardownClass:
         pass
 
 def before_all(context):
-    print("Running before all")
-    
+    context.start_time = DateTimeProvider.get_current_utc_time()
+
     setup_class = SetupClass()
     setup_class.setup()
     context.env = Tools.load_env_from_yaml()
+    cloudName = context.env.get("CLOUD_NAME", "gx")
 
-    context.logger = Logger();
-
-    #TODO add logger to context
+    context.logger = Logger()
+    context.prometheusExporter = PrometheusExporter()
+    context.prometheusExporter.add_default_label(LabelNames.CLOUD_LABEL, cloudName)
 
 def after_all(context):
+    context.stop_time = DateTimeProvider.get_current_utc_time()
+
+    formattedDuration = f"from_{Formatter.format_date_time(context.start_time)}_to_{Formatter.format_date_time(context.stop_time)}"
     teardown_class = TeardownClass()
     teardown_class.teardown()
     prometheus_endpoint = context.env.get("PROMETHEUS_ENDPOINT", "")
     prometheus_batch_name = context.env.get("PROMETHEUS_BATCH_NAME", DEFAULT_PROMETHEUS_BATCH_NAME)
     
+    append_timestamp_to_batch_name = Tools.env_is_true(context.env.get("APPEND_TIMESTAMP_TO_BATCH_NAME", True))
+
+    if append_timestamp_to_batch_name and prometheus_batch_name:
+        prometheus_batch_name = f"{prometheus_batch_name}_{formattedDuration}"
+    
     if prometheus_endpoint:
-        push_to_gateway(prometheus_endpoint, job=prometheus_batch_name, registry=REGISTRY)
+        context.prometheusExporter.push_metrics(prometheus_endpoint, prometheus_batch_name)
     else:
-        context.logger.logWarning("PROMETHEUS_ENDPOINT environment variables is not set. Metrics not pushed to prometheus push gateway.")
+        context.logger.log_warning("PROMETHEUS_ENDPOINT environment variables is not set. Metrics not pushed to prometheus push gateway.")
     
     
 

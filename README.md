@@ -79,6 +79,10 @@ PROMETHEUS_BATCH_NAME: "SCS-Health-Monitor"
 # The name of the cloud from clouds.yaml
 # that the test scenarios will be ran on
 CLOUD_NAME: "gx"
+
+# Optional (default: true)
+# Apply start time and stop time to prometheus batch name
+APPEND_TIMESTAMP_TO_BATCH_NAME: true
 ```
 
 This *env.yaml* file must be placed in the root of the repository. This is where you should be also issuing all the *behave <...>* commands to execute the test scenarios.
