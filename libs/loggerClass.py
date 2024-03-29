@@ -23,22 +23,22 @@ class Logger:
     def log(self, level: int, msg: object):
         self.instance.log(level, msg)
 
-    def logCritical(self, msg: object):
+    def log_critical(self, msg: object):
         self.log(logging.CRITICAL, msg)
 
-    def logError(self, msg: object):
+    def log_error(self, msg: object):
         self.log(logging.ERROR, msg)
 
-    def logWarning(self, msg: object):
+    def log_warning(self, msg: object):
         self.log(logging.WARNING, msg)
 
-    def logInfo(self, msg: object):
+    def log_info(self, msg: object):
         self.log(logging.INFO, msg)
 
-    def logDebug(self, msg: object):
+    def log_debug(self, msg: object):
         self.log(logging.DEBUG, msg)
 
-    def logNotset(self, msg: object):
+    def log_not_set(self, msg: object):
         self.log(logging.NOTSET, msg)
 
-    logFatal = logCritical
+    logFatal = log_critical
