@@ -215,3 +215,5 @@ terraform.rc
 *.lock.hcl
 
 *.pem
+
+provider.tf
