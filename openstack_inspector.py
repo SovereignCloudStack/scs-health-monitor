@@ -107,6 +107,13 @@ class Recover:
                     self.conn.network.delete_port(port.id)
                     print(f"Port {port.id} deleted.")
 
+    def delete_availability_zone(self, zone):
+        self.conn.compute.delete_availability_zone(name=zone.name)
+    def delete_availability_zones(self):
+        for zone in self.conn.compute.availability_zones():
+            self.conn.compute.delete_availability_zone(name=zone.name)
+
+
 
 if __name__ == "__main__":
     recover = Recover()
