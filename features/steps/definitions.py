@@ -186,7 +186,7 @@ class StepsDef:
         for sec_group in sec_group_rule_list:
             context.client.network.delete_security_group_rule(name_or_id=sec_group.id)
 
-    @then("I should be able to create availability zone {availability zone}")
+    @then("I should be able to create availability zone named {availability zone}")
     def create_availability_zone(context, availability_zone_name):
         availability_zones = context.compute.availability_zones()
         for zone in availability_zones:
@@ -194,12 +194,20 @@ class StepsDef:
                 return f"Availability zone {availability_zone_name} already exist"
         context.compute.create_availability_zone(name=availability_zone_name)
 
-    @then("I should be able to delete an {availability_zone}")
+    @then("I should be able to delete an availability zone named {availability_zone}")
     def delete_availability_zone(context, name):
         availability_zones = context.compute.availability_zones()
         for zone in availability_zones:
             if zone.name == name:
                 context.compute.delete_availability_zone(name=zone.name)
+
+    @then("I should be able to create a floating ip on {network_id}")
+    def create_floating_ip(context, network_id):
+        floating_ip = context.network.create_ip(floating_network_id=network_id)
+        for ip in context.network.floating_ips(network_id=network_id):
+            if ip == floating_ip.floating_ip_address:
+
+
 
 
 

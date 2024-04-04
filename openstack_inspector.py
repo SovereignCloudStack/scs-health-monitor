@@ -71,14 +71,14 @@ class Recover:
         except Exception as e:
             self.logger_instance.info(f"security group {group.name} can't be deleted because exception {e} is raised.")
 
-
     def delete_security_group_rules(self):
         try:
             for rule in self.conn.network.security_group_rules():
                 self.conn.network.delete_security_group_rule(rule.id)
                 self.logger_instance.info(f"Security group rule with ID {rule.id} has been deleted.")
         except Exception as e:
-            self.logger_instance.info(f"security group rule {rule.name} can't be deleted because exception {e} is raised.")
+            self.logger_instance.info(
+                f"security group rule {rule.name} can't be deleted because exception {e} is raised.")
 
     def delete_routers(self):
         try:
@@ -119,7 +119,6 @@ class Recover:
     def delete_availability_zones(self):
         for zone in self.conn.compute.availability_zones():
             self.delete_availability_zone(name=zone.name)
-
 
 
 if __name__ == "__main__":
