@@ -193,7 +193,7 @@ class StepsDef:
         for sec_group in sec_group_rule_list:
             context.client.network.delete_security_group_rule(name_or_id=sec_group.id)
 
-    @then("I should be able to create availability zone {availability zone}")
+    @then("I should be able to create availability zone named {availability_zone}")
     def create_availability_zone(context, availability_zone_name):
         availability_zones = context.compute.availability_zones()
         for zone in availability_zones:
@@ -201,7 +201,7 @@ class StepsDef:
                 return f"Availability zone {availability_zone_name} already exist"
         context.compute.create_availability_zone(name=availability_zone_name)
 
-    @then("I should be able to delete an {availability_zone}")
+    @then("I should be able to delete an availability zone named {availability_zone}")
     def delete_availability_zone(context, name):
         availability_zones = context.compute.availability_zones()
         for zone in availability_zones:
@@ -233,21 +233,13 @@ class StepsDef:
             context.client.compute.wait_for_delete(context.server)
             deleted_server = context.client.compute.find_server(name_or_id=vm.name)
             assert not deleted_server, f"VM with name {vm_name} was not deleted successfully"
+    @then("I should be able to create a floating ip on {network_id}")
+    def create_floating_ip(context, network_id):
+        floating_ip = context.network.create_ip(floating_network_id=network_id)
+        for ip in context.network.floating_ips(network_id=network_id):
+            if ip == floating_ip.floating_ip_address:
 
-    @then("I should be able to create a floating ip on {subnet}, on {server}, with {fixed_address}, for {nat_destination}"
-          "on {port}")
-    def create_floating_ip(context, subnet=None, server=None, fixed_address=None, nat_destination=None, port=None,
-                           wait=False, timeout=60,):
-        ip = FloatingIPCloudMixin.create_floating_ip(network=subnet, server=server, fixed_address=fixed_address,
-                                                nat_destination=nat_destination, port=port, wait=wait, timeout=timeout)
-        floating_ip = FloatingIPCloudMixin.get_floating_ip(ip.id)
-        assert floating_ip is None, f"floating ip was not created"
 
-    @then("I should be able to delete floating ip with id: {floating_ip_id}")
-    def delete_floating_ips(context):
-        """Remove all floating ips for current tenant"""
-        for floating_ip in FloatingIPCloudMixin.list_floating_ips():
-            FloatingIPCloudMixin.delete_floating_ip(floating_ip_id=floating_ip.id)
-            floating_ip = FloatingIPCloudMixin.get_floating_ip(floating_ip.id)
-            assert floating_ip is not None, f"floating ip with id {floating_ip.id} was not created"
+
+
 
