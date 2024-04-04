@@ -32,13 +32,20 @@ class SshClient:
     def close_conn(self):
         self.client.close()
 
-    def test_internet_connectivity(self):
-        command = "ping -c 10 google.com"
+    def test_internet_connectivity(self, domain='google.com'):
+        command = f"ping -c 5 {domain}"
         try:
             output = self.execute_command(command)
+
+            # Check for packet loss in the output
+            packet_loss_percentage = self.parse_packet_loss(output)
+            if packet_loss_percentage == 100:
+                raise Exception(f"100% packet loss detected to {domain}")
+        
             print(f"Internet connectivity test passed for server {self.host}, Output: {output}")
         except Exception as e:
-            print(f"Failed to test internet connectivity for server {self.host}\nError-->{e}")
+            print(f"Failed to test internet connectivity for server {self.host}\nError --> {e}")
+            raise
 
     def install_ping(self):
         command = "sudo apt-get update -y && sudo apt-get install -y iputils-ping"
@@ -48,5 +55,15 @@ class SshClient:
         command = "pwd"
         directory = self.execute_command(command)
         print(f"Current working directory on server {self.host}: {directory}")
+    
+    def parse_packet_loss(self, output):
+    # Parse the output to find the packet loss percentage
+        lines = output.split('\n')
+        for line in lines:
+            if "packet loss" in line:
+                packet_loss_str = line.split(',')[2].strip().split()[0]
+                packet_loss_percentage = int(packet_loss_str[:-1])  # Extracting the percentage value
+                return packet_loss_percentage
+        return None  # If packet loss percentage not found
 
     

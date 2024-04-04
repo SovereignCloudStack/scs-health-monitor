@@ -6,6 +6,8 @@ from libs.DateTimeProvider import DateTimeProvider
 from libs.Formatter import Formatter
 
 DEFAULT_PROMETHEUS_BATCH_NAME = "SCS-Health-Monitor"
+DEFAULT_CLOUD_NAME = "gx"
+DEFAULT_LOG_LEVEL = "DEBUG"
 
 class SetupClass:
     def __init__(self):
@@ -29,9 +31,9 @@ def before_all(context):
     setup_class = SetupClass()
     setup_class.setup()
     context.env = Tools.load_env_from_yaml()
-    cloudName = context.env.get("CLOUD_NAME", "gx")
+    cloudName = context.env.get("CLOUD_NAME", DEFAULT_CLOUD_NAME)
 
-    context.logger = Logger()
+    context.logger = Logger(level=DEFAULT_LOG_LEVEL)
     context.prometheusExporter = PrometheusExporter()
     context.prometheusExporter.add_default_label(LabelNames.CLOUD_LABEL, cloudName)
 
