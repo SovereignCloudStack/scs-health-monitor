@@ -193,6 +193,8 @@ class StepsDef:
             if zone.name == availability_zone_name:
                 return f"Availability zone {availability_zone_name} already exist"
         context.compute.create_availability_zone(name=availability_zone_name)
+        context.compute.availability_zones()
+
 
     @then("I should be able to delete an {availability_zone}")
     def delete_availability_zone(context, name):

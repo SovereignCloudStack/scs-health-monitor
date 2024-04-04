@@ -121,7 +121,6 @@ class Recover:
             self.delete_availability_zone(name=zone.name)
 
 
-
 if __name__ == "__main__":
     recover = Recover()
     recover.delete_security_group_rules()

@@ -5,6 +5,6 @@ Feature: OpenStack Availability zones creation
 		Then I should be able to create an <availability_zone>
 
 		Examples: Test availability zone
-			| availability_zone     |
+			| availability_zone         |
 			| availabilityzone01	    |
 			| availabilityzone02	    |
