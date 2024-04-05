@@ -193,7 +193,7 @@ class StepsDef:
         for sec_group in sec_group_rule_list:
             context.client.network.delete_security_group_rule(name_or_id=sec_group.id)
 
-    @then("I should be able to create availability zone named {availability_zone}")
+    @then("I should be able to create availability zone named {availability zone}")
     def create_availability_zone(context, availability_zone_name):
         availability_zones = context.compute.availability_zones()
         for zone in availability_zones:
@@ -207,6 +207,21 @@ class StepsDef:
         for zone in availability_zones:
             if zone.name == name:
                 context.compute.delete_availability_zone(name=zone.name)
+
+    @then("I should be able to create a floating ip on {network_id}, on {server}, with {fixed_address}, for {nat_destination}"
+          "on {port}")
+    def create_floating_ip(context, network=None, server=None, fixed_address=None, nat_destination=None, port=None,
+                           wait=False, timeout=60,):
+        ip = FloatingIPCloudMixin.create_floating_ip(network=network, server=server, fixed_address=fixed_address,
+                                                nat_destination=nat_destination, port=port, wait=wait, timeout=timeout)
+        floating_ip = FloatingIPCloudMixin.get_floating_ip(ip.id)
+        assert floating_ip is None, f"floating ip was not created"
+
+    @then("I should be able to delete floating ip with id: {floating_ip_id}")
+    def delete_floating_ip(self, floating_ip_id):
+        FloatingIPCloudMixin.delete_floating_ip(floating_ip_id=floating_ip_id)
+        floating_ip = FloatingIPCloudMixin.get_floating_ip(floating_ip_id)
+        assert floating_ip is not None, f"floating ip with id {floating_ip_id} was not created"
 
     @then("I should be able to create a VM with name {vm_name} using image {image_name} and flavor {flavor_name} on network {network_name}")
     def create_vm(context, vm_name: str, image_name: str, flavor_name: str, network_name: str):
