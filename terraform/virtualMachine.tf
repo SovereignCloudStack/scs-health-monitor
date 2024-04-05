@@ -4,7 +4,7 @@ resource "openstack_compute_keypair_v2" "jump_host_keypair" {
 
 resource "openstack_blockstorage_volume_v3" "jump_host_volume" {
   availability_zone = var.availability_zone
-  name              = "${var.global_prefix}RootVol_JH"
+  name              = "${var.global_prefix}RootVolume_JH"
   image_id          = var.image_id
   size              = var.vm_size
 }
