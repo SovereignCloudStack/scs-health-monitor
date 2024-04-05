@@ -69,6 +69,12 @@ class StepsDef:
             f" and port range {port_range_min} to {port_range_max}"
         )
 
+    @when('A VM with name {vm_name} exists')
+    def vm_exists(context, vm_name: str):
+        server = context.client.compute.find_server(name_or_id=vm_name)
+        assert server, f"VM with name {vm_name} does not exist"
+        context.server = server
+
     @then("I should be able to delete a router with name {router_name}")
     def delete_a_router(context, router_name: str):
         router = context.client.network.find_router(name_or_id=router_name)
@@ -201,5 +207,28 @@ class StepsDef:
             if zone.name == name:
                 context.compute.delete_availability_zone(name=zone.name)
 
+    @then(
+        "I should be able to create a VM with name {vm_name} using image {image_name} and flavor {flavor_name} on network {network_name}")
+    def create_vm(context, vm_name: str, image_name: str, flavor_name: str, network_name: str):
+        image = context.client.compute.find_image(name_or_id=image_name)
+        assert image, f"Image with name {image_name} doesn't exist"
+        flavor = context.client.compute.find_flavor(name_or_id=flavor_name)
+        assert flavor, f"Flavor with name {flavor_name} doesn't exist"
+        network = context.client.network.find_network(name_or_id=network_name)
+        assert network, f"Network with name {network_name} doesn't exist"
+        server = context.client.compute.create_server(
+            name=vm_name,
+            image_id=image.id,
+            flavor_id=flavor.id,
+            networks=[{"uuid": network.id}],
+        )
+        context.client.compute.wait_for_server(server)
+        created_server = context.client.compute.find_server(name_or_id=vm_name)
+        assert created_server, f"VM with name {vm_name} was not created successfully"
 
-
+    @then('I should be able to delete the VM with name {vm_name}')
+    def delete_vm(context, vm_name: str):
+        context.client.compute.delete_server(context.server.id)
+        context.client.compute.wait_for_delete(context.server)
+        deleted_server = context.client.compute.find_server(name_or_id=vm_name)
+        assert not deleted_server, f"VM with name {vm_name} was not deleted successfully"
