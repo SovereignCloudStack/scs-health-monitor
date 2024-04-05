@@ -130,3 +130,4 @@ wcwidth==0.2.13
 wrapt==1.16.0
 zipp==3.17.0
 prometheus-client==0.20.0
+paramiko==3.4.0

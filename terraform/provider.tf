@@ -11,9 +11,9 @@ terraform {
 
 # Configure the OpenStack Provider
 provider "openstack" {
-  region                        = "{region}"
-  auth_url                      = "{auth_url}"
+  region                        = var.region
+  auth_url                      = var.auth_url
   endpoint_type                 = "public"
-  application_credential_id     = "{application_credential_id}"
-  application_credential_secret = "{application_credential_secret}"
+  application_credential_id     = var.application_credential_id
+  application_credential_secret = var.application_credential_secret
 }

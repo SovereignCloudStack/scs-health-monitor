@@ -37,3 +37,24 @@ variable "jh_fixed_ip" {
   type        = string
   description = "IP for JH"
 }
+
+variable "region" {
+  type        = string
+  description = "Region in openstack"
+  default     = "RegionOne"
+}
+
+variable "auth_url" {
+  type        = string
+  description = "Openstack auth URL"
+}
+
+variable "application_credential_id" {
+  type        = string
+  description = "Openstack application credential ID"
+}
+
+variable "application_credential_secret" {
+  type        = string
+  description = "Openstack application credential secret"
+}
