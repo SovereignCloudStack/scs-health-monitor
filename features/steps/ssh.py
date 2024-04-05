@@ -7,7 +7,6 @@ class SshStepsDef:
     @given("I have deployed a VM with IP {vm_ip_address}")
     def initialize(context, vm_ip_address: str):
         context.vm_ip_address = vm_ip_address
-        assert True
     
     @given("I have a private key at {vm_private_ssh_key_path}")
     def check_private_key_exists(context, vm_private_ssh_key_path: str):

@@ -33,9 +33,8 @@ class SshClient:
         self.client.close()
 
     def test_internet_connectivity(self, domain='google.com'):
-        command = f"ping -c 5 {domain}"
         try:
-            output = self.execute_command(command)
+            output = self.execute_command(f"ping -c 5 {domain}")
 
             # Check for packet loss in the output
             packet_loss_percentage = self.parse_packet_loss(output)
@@ -52,18 +51,31 @@ class SshClient:
         self.execute_command(command, True)
 
     def print_working_directory(self):
-        command = "pwd"
-        directory = self.execute_command(command)
+        directory = self.execute_command("pwd")
         print(f"Current working directory on server {self.host}: {directory}")
     
     def parse_packet_loss(self, output):
-    # Parse the output to find the packet loss percentage
+        """
+        Parses the output to find the packet loss percentage.
+
+        Args:
+            output (str): The output string to parse.
+
+        Returns:
+            int or None: The packet loss percentage if found in the output,
+            otherwise returns None.
+
+        Example:
+            >>> output = "64 bytes from 8.8.8.8: icmp_seq=1 ttl=116 time=12.5 ms, packet loss 0%"
+            >>> parse_packet_loss(output)
+            0
+        """
         lines = output.split('\n')
         for line in lines:
             if "packet loss" in line:
                 packet_loss_str = line.split(',')[2].strip().split()[0]
-                packet_loss_percentage = int(packet_loss_str[:-1])  # Extracting the percentage value
+                packet_loss_percentage = int(packet_loss_str[:-1]) 
                 return packet_loss_percentage
-        return None  # If packet loss percentage not found
+        return None
 
     
