@@ -1,13 +1,14 @@
 from behave import given, when, then
 import openstack
+from openstack.cloud._floating_ip import FloatingIPCloudMixin
 
 
 class StepsDef:
 
     @given("I connect to OpenStack")
     def given_i_connect_to_openstack(context):
-        cloudName = context.env.get("CLOUD_NAME", "gx")
-        context.client = openstack.connect(cloud=cloudName)
+        cloud_name = context.env.get("CLOUD_NAME", "gx")
+        context.client = openstack.connect(cloud=cloud_name)
 
     @when("A router with name {router_name} exists")
     def when_a_router_with_name_exists(context, router_name: str):
@@ -18,6 +19,12 @@ class StepsDef:
     def when_i_connect_to_openstack(context, network_name: str):
         network = context.client.network.find_network(name_or_id=network_name)
         assert network is not None, f"Network with {network_name} doesn't exists"
+
+    @when('A VM with name {vm_name} exists')
+    def vm_exists(context, vm_name: str):
+        server = context.client.compute.find_server(name_or_id=vm_name)
+        assert server, f"VM with name {vm_name} does not exist"
+        context.server = server
 
     @when("A subnet with name {subnet_name} exists in network {network_name}")
     def when_a_subnet_with_name_exists_in_network(
@@ -201,5 +208,46 @@ class StepsDef:
             if zone.name == name:
                 context.compute.delete_availability_zone(name=zone.name)
 
+    @then("I should be able to create a VM with name {vm_name} using image {image_name} and flavor {flavor_name} on network {network_name}")
+    def create_vm(context, vm_name: str, image_name: str, flavor_name: str, network_name: str):
+        image = context.client.compute.find_image(name_or_id=image_name)
+        assert image, f"Image with name {image_name} doesn't exist"
+        flavor = context.client.compute.find_flavor(name_or_id=flavor_name)
+        assert flavor, f"Flavor with name {flavor_name} doesn't exist"
+        network = context.client.network.find_network(name_or_id=network_name)
+        assert network, f"Network with name {network_name} doesn't exist"
+        server = context.client.compute.create_server(
+            name=vm_name,
+            image_id=image.id,
+            flavor_id=flavor.id,
+            networks=[{"uuid": network.id}],
+        )
+        context.client.compute.wait_for_server(server)
+        created_server = context.client.compute.find_server(name_or_id=vm_name)
+        assert created_server, f"VM with name {vm_name} was not created successfully"
 
+    @then('I should be able to delete the VM with name {vm_name}')
+    def delete_vm(context, vm_name: str):
+        for vm in context.client.compute.find_server(name_or_id=vm_name):
+            context.client.compute.delete_server(context.server.id)
+            context.client.compute.wait_for_delete(context.server)
+            deleted_server = context.client.compute.find_server(name_or_id=vm.name)
+            assert not deleted_server, f"VM with name {vm_name} was not deleted successfully"
+
+    @then("I should be able to create a floating ip on {subnet}, on {server}, with {fixed_address}, for {nat_destination}"
+          "on {port}")
+    def create_floating_ip(context, subnet=None, server=None, fixed_address=None, nat_destination=None, port=None,
+                           wait=False, timeout=60,):
+        ip = FloatingIPCloudMixin.create_floating_ip(network=subnet, server=server, fixed_address=fixed_address,
+                                                nat_destination=nat_destination, port=port, wait=wait, timeout=timeout)
+        floating_ip = FloatingIPCloudMixin.get_floating_ip(ip.id)
+        assert floating_ip is None, f"floating ip was not created"
+
+    @then("I should be able to delete floating ip with id: {floating_ip_id}")
+    def delete_floating_ips(context):
+        """Remove all floating ips for current tenant"""
+        for floating_ip in FloatingIPCloudMixin.list_floating_ips():
+            FloatingIPCloudMixin.delete_floating_ip(floating_ip_id=floating_ip.id)
+            floating_ip = FloatingIPCloudMixin.get_floating_ip(floating_ip_id)
+            assert floating_ip is not None, f"floating ip with id {floating_ip_id} was not created"
 

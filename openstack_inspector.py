@@ -120,12 +120,13 @@ class Recover:
         for zone in self.conn.compute.availability_zones():
             self.delete_availability_zone(name=zone.name)
 
-
     def delete_availability_zone(self, zone):
         self.conn.compute.delete_availability_zone(name=zone.name)
+        self.logger_instance.info(f"Availability zone {zone.name} is deleted")
+
     def delete_availability_zones(self):
         for zone in self.conn.compute.availability_zones():
-            self.conn.compute.delete_availability_zone(name=zone.name)
+            self.delete_availability_zone(name=zone.name)
 
 
 
