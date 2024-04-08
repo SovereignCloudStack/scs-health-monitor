@@ -208,11 +208,11 @@ class StepsDef:
             if zone.name == name:
                 context.compute.delete_availability_zone(name=zone.name)
 
-    @then("I should be able to create a floating ip on {network_id}, on {server}, with {fixed_address}, for {nat_destination}"
+    @then("I should be able to create a floating ip on {subnet}, on {server}, with {fixed_address}, for {nat_destination}"
           "on {port}")
-    def create_floating_ip(context, network=None, server=None, fixed_address=None, nat_destination=None, port=None,
+    def create_floating_ip(context, subnet=None, server=None, fixed_address=None, nat_destination=None, port=None,
                            wait=False, timeout=60,):
-        ip = FloatingIPCloudMixin.create_floating_ip(network=network, server=server, fixed_address=fixed_address,
+        ip = FloatingIPCloudMixin.create_floating_ip(network=subnet, server=server, fixed_address=fixed_address,
                                                 nat_destination=nat_destination, port=port, wait=wait, timeout=timeout)
         floating_ip = FloatingIPCloudMixin.get_floating_ip(ip.id)
         assert floating_ip is None, f"floating ip was not created"
@@ -253,7 +253,6 @@ class StepsDef:
         floating_ip = context.network.create_ip(floating_network_id=network_id)
         for ip in context.network.floating_ips(network_id=network_id):
             if ip == floating_ip.floating_ip_address:
-
 
 
 
