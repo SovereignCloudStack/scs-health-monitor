@@ -125,16 +125,6 @@ class Recover:
             self.logger_instance.error(
                 f"availability zone {zone.name} can't be deleted because exception {e} is raised.")
 
-    def delete_availability_zones(self):
-        for zone in self.conn.compute.availability_zones():
-            self.delete_availability_zone(name=zone.name)
-                    try:
-                        self.conn.network.delete_port(port.id)
-                        self.logger_instance.info(f"Port {port.id} deleted.")
-                    except Exception as e:
-                        self.logger_instance.error(
-                            f"subnet {subnet.name} can't be deleted because exception {e} is raised.")
-
     def delete_availability_zone(self, zone):
         try:
             self.conn.compute.delete_availability_zone(name=zone.name)
