@@ -246,11 +246,7 @@ class StepsDef:
             context.client.compute.wait_for_delete(context.server)
             deleted_server = context.client.compute.find_server(name_or_id=vm.name)
             assert not deleted_server, f"VM with name {vm_name} was not deleted successfully"
-    @then("I should be able to create a floating ip on {network_id}")
-    def create_floating_ip(context, network_id):
-        floating_ip = context.network.create_ip(floating_network_id=network_id)
-        for ip in context.network.floating_ips(network_id=network_id):
-            if ip == floating_ip.floating_ip_address:
+
 
 
 
