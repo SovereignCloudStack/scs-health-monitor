@@ -69,6 +69,7 @@ class Recover:
                 self.logger_instance.info(f"security group {group.name} can't be deleted because exception {e} is raised.")
 
     def delete_security_group_rules(self):
+        try:
             for rule in self.conn.network.security_group_rules():
                 try:
                     self.conn.network.delete_security_group_rule(rule.id)
@@ -109,6 +110,24 @@ class Recover:
         for port in self.conn.network.ports(network_id=subnet.id):
             for fixed_ip in port.fixed_ips:
                 if fixed_ip['subnet_id'] == subnet.id:
+                    try:
+                        self.conn.network.delete_port(port.id)
+                        self.logger_instance.info(f"Port {port.id} deleted.")
+                    except Exception as e:
+                        self.logger_instance.error(
+                            f"subnet {subnet.name} can't be deleted because exception {e} is raised.")
+
+    def delete_availability_zone(self, zone):
+        try:
+            self.conn.compute.delete_availability_zone(name=zone.name)
+            self.logger_instance.info(f"Availability zone {zone.name} is deleted")
+        except Exception as e:
+            self.logger_instance.error(
+                f"availability zone {zone.name} can't be deleted because exception {e} is raised.")
+
+    def delete_availability_zones(self):
+        for zone in self.conn.compute.availability_zones():
+            self.delete_availability_zone(name=zone.name)
                     try:
                         self.conn.network.delete_port(port.id)
                         self.logger_instance.info(f"Port {port.id} deleted.")
