@@ -9,7 +9,6 @@ __pycache__/
 clouds.yaml
 env.yaml
 venv
-venv_old
 .venv
 .idea
 output/
