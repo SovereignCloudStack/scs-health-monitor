@@ -25,6 +25,11 @@ class SshClient:
         self.client.set_missing_host_key_policy(policy)
         self.private_key = paramiko.RSAKey.from_private_key_file(key_path)
 
+    def log(self, level, message):
+        if self.logger and level >= self.min_log_level:
+            self.logger.log(level, message)
+
+
     def execute_command(self, command, ignore_error_output=False):
         try:
             _stdin, stdout, stderr = self.client.exec_command(command)
@@ -39,6 +44,7 @@ class SshClient:
             raise RuntimeError(f"Failed to execute command '{command}' on server {self.host}: {e}")
     
     def connect(self):
+
         def on_success(duration):
             self.connection_count.labels(SshClientResultStatusCodes.SUCCESS, self.host, CommandTypes.SSH).inc()
             self.connect_duration.labels(SshClientResultStatusCodes.SUCCESS, self.host, CommandTypes.SSH).observe(duration)
@@ -58,6 +64,7 @@ class SshClient:
 
     def test_internet_connectivity(self, domain='google.com'):
         def test_connectivity():
+
             output = self.execute_command(f"ping -c 5 {domain}")
 
             # Check for packet loss in the output
@@ -78,6 +85,7 @@ class SshClient:
             on_success=on_success,
             on_fail=on_fail
     )
+
 
     def install_ping(self):
         command = "sudo apt-get update -y && sudo apt-get install -y iputils-ping"

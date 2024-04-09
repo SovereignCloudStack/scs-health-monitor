@@ -10,6 +10,7 @@ Feature: SSH into VM and test internet connectivity
 		And close the connection
 
 		Examples: Test security groups
-			| vm_ip_address      | vm_private_ssh_key_path     		| username 	|
-			| localhost		     | ./sshKey.pem						| erik		|
+			| vm_ip_address    | vm_private_ssh_key_path     	| username 	|
+			| localhost		     | ./sshKey.pem						        | erik		|
 			| 213.131.230.207	 | ./terraform/private_key.pem 		| ubuntu	|
+			| 213.131.230.199	 | ./terraform/private_key.pem 		| ubuntu	|

@@ -14,3 +14,4 @@ Feature: SSH into VM and test network connectivity
 			| localhost		     | ./sshKey.pem						| erik		| 1.2.3.4	|
 			| localhost		     | ./sshKey.pem						| erik		| 8.8.8.8	|
 			| 213.131.230.207	 | ./terraform/private_key.pem 		| ubuntu	| 8.8.8.8	|
+			| 213.131.230.199	 | ./terraform/private_key.pem 		| ubuntu	| 8.8.8.8	|
