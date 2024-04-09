@@ -248,6 +248,6 @@ class StepsDef:
         """Remove all floating ips for current tenant"""
         for floating_ip in FloatingIPCloudMixin.list_floating_ips():
             FloatingIPCloudMixin.delete_floating_ip(floating_ip_id=floating_ip.id)
-            floating_ip = FloatingIPCloudMixin.get_floating_ip(floating_ip_id)
-            assert floating_ip is not None, f"floating ip with id {floating_ip_id} was not created"
+            floating_ip = FloatingIPCloudMixin.get_floating_ip(floating_ip.id)
+            assert floating_ip is not None, f"floating ip with id {floating_ip.id} was not created"
 
