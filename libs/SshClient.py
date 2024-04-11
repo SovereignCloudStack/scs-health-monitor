@@ -4,7 +4,7 @@ from libs.TimeRecorder import TimeRecorder
 from libs.PrometheusExporter import CommandTypes, LabelNames
 
 class SshClientMetricLabels:
-    STATUS_CODE='STATUS_CODE'
+    STATUS_CODE='status_code'
     HOST='host'
     ENDPOINT='endpoint'
 
