@@ -4,9 +4,8 @@ Feature: OpenStack Network Creation
 	
 	Scenario Outline: Connect to OpenStack and create a network
 		Given I connect to OpenStack
-		Then I should be able to create a network with name <network_name>
+		Then I should be able to create <network_quantity> networks
 
 		Examples: Test networks
-			| network_name |
-			| network01	   |
-			| network02	   |
+			| network_quantity |
+			| 2	    					 |

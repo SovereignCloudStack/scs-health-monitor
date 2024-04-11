@@ -16,10 +16,8 @@ Feature:
     Then I should be able to create a network with name <network_name>
 
     Examples: Test networks
-      | network_name |
-      | network01    |
-      | network02    |
-      | network03    |
+      | network_quantity |
+      |         3        |
 
   Scenario Outline: Connect to OpenStack and create a subnet
     Given I connect to OpenStack

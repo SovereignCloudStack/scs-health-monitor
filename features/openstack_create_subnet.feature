@@ -4,9 +4,8 @@ Feature: OpenStack Subnet Creation
 
   Scenario Outline: Connect to OpenStack and create a subnet
     Given I connect to OpenStack
-    Then I should be able to create a subnet with name <subnet_name> in network <network_name>
+    Then I should be able to create <subnet_quantity> subnets
 
     Examples: Test subnets
-      | subnet_name | network_name |
-      | subnet01    | network01    |
-      | subnet02    | network02    |
+      |subnet_quantity|
+      |       2       |
