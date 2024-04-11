@@ -19,11 +19,7 @@ resource "openstack_compute_instance_v2" "jump_host_vms" {
     port = openstack_networking_port_v2.jump_host_port.id
   }
 
-  user_data = <<-EOF
-  #! /bin/bash
-  sudo apt-get update -y
-  sudo apt-get install iputils-ping -y
-EOF
+  user_data = file("./jh_init.sh")
 
   block_device {
     uuid             = openstack_blockstorage_volume_v3.jump_host_volume.id

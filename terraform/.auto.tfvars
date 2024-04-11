@@ -1,0 +1,17 @@
+global_prefix       = "erik1-"
+external_network_id = "ebfe5546-f09f-4f42-ab54-094e457d42ec"
+availability_zone   = "nova"
+# image_id                      = "36ba766d-3252-4a65-80df-b33c18b19015"
+# vm_size                       = 8
+# jh_flavor                     = "SCS-2V:4"
+image_id                      = "6b6f2045-bebe-4e1f-b7d0-798874b9a62e"
+vm_size                       = 8
+jh_flavor                     = "SCS-1V-2"
+subnet_cidr                   = "10.0.1.0/24"
+jh_fixed_ip                   = "10.0.1.11"
+region                        = "RegionOne"
+auth_url                      = "https://api.gx-scs.sovereignit.cloud:5000"
+application_credential_id     = "1d7d46e603f943b3afebc9231fc832aa"
+application_credential_secret = "0ABo6CZpk9VRn-48EMpQWfg5YyUdx02Br7UgfYYcw2w8fKnaHy_ExVgC_WUt3htWLx01YuDDiKoMmcSz5VaRc"
+VM_networks_count             = 2
+VM_subnet_base_prefix         = "10.0.0.0/16"
