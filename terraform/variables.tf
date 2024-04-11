@@ -58,3 +58,14 @@ variable "application_credential_secret" {
   type        = string
   description = "Openstack application credential secret"
 }
+
+variable "VM_networks_count" {
+  type        = number
+  description = "Number of networks to create for VMs"
+}
+
+variable "VM_subnet_base_prefix" {
+  type        = string
+  description = "Base address space for VM subnet"
+  default     = "10.0.0.0/16"
+}
