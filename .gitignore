@@ -215,3 +215,4 @@ terraform.rc
 *.lock.hcl
 
 *.pem
+features/SSH/ssh_check_connectivity_katha
