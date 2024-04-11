@@ -69,14 +69,13 @@ class Recover:
                 self.logger_instance.info(f"security group {group.name} can't be deleted because exception {e} is raised.")
 
     def delete_security_group_rules(self):
-        try:
-            for rule in self.conn.network.security_group_rules():
-                try:
-                    self.conn.network.delete_security_group_rule(rule.id)
-                    self.logger_instance.info(f"Security group rule with ID {rule.id} has been deleted.")
-                except Exception as e:
-                    self.logger_instance.info(
-                        f"security group rule {rule.name} can't be deleted because exception {e} is raised.")
+        for rule in self.conn.network.security_group_rules():
+            try:
+                self.conn.network.delete_security_group_rule(rule.id)
+                self.logger_instance.info(f"Security group rule with ID {rule.id} has been deleted.")
+            except Exception as e:
+                self.logger_instance.info(
+                    f"security group rule {rule.name} can't be deleted because exception {e} is raised.")
 
     def delete_routers(self):
         for router in self.conn.network.routers():

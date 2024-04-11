@@ -3,17 +3,15 @@ Feature:
 
   Scenario Outline: Create a router
     Given I connect to OpenStack
-    Then I should be able to create a router with name <router_name>
+    Then I should be able to create <router_quantity> routers
 
     Examples: Test routers
-      | router_name |
-      | router01    |
-      | router02    |
-      | router03    |
+      |router_quantity|
+      |       3       |
 
   Scenario Outline: Connect to OpenStack and create a network
     Given I connect to OpenStack
-    Then I should be able to create a network with name <network_name>
+    Then I should be able to create <network_quantity> networks
 
     Examples: Test networks
       | network_quantity |
@@ -24,11 +22,8 @@ Feature:
     Then I should be able to create a subnet with name <subnet_name> in network <network_name> with <cidr>
 
     Examples: Test subnets
-      | subnet_name | network_name | cidr        |
-      | subnet01    | network01    | 10.0.1.0/24 |
-      | subnet02    | network01    | 10.0.2.0/24 |
-      | subnet03    | network02    | 10.0.3.0/24 |
-      | subnet04    | network02    | 10.0.4.0/24 |
+      |subnet_quantity|
+      |      2        |
 
   Scenario: Connect to OpenStack and list networks
     Given I connect to OpenStack
