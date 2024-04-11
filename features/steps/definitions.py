@@ -108,7 +108,7 @@ class StepsDef:
             assert not context.client.network.find_network(
                 name_or_id=network), f"Network called {network} created"
 
-    @then("I should be able to create a security group with name {security_group_name} with {description}")
+    @then("I should be able to create {security_group_quantity} security group")
     def create_a_security_group(context, security_group_name: str, description: str):
         security_groups = context.client.network.security_groups()
         assert security_group_name not in security_groups, f"security group named: {security_group_name} already exists"
@@ -190,7 +190,7 @@ class StepsDef:
             remote_ip_prefix=remote_ip_prefix,
             )
 
-    @then("I should be able to delete a security group with name {security_group_name}")
+    @then("I should be able to delete a security groups")
     def delete_a_security_group(context):
         for sec_group in context.client.network.security_groups():
             security_group = context.client.network.find_security_group(name_or_id=sec_group.name)
