@@ -144,14 +144,19 @@ class Recover:
         for zone in self.conn.compute.availability_zones():
             self.delete_availability_zone(name=zone.name)
 
+    def delete_servers(self):
+        for server in self.conn.compute.servers(all_projects=False):
+            self.conn.compute.delete_server(server.id)
+
 
 if __name__ == "__main__":
     recover = Recover()
-    recover.delete_security_group_rules()
-    recover.delete_security_groups()
-    recover.delete_routers()
-    recover.delete_subnets()
-    recover.delete_networks()
+    # recover.delete_security_group_rules()
+    # recover.delete_security_groups()
+    # recover.delete_routers()
+    # recover.delete_subnets()
+    # recover.delete_networks()
+    recover.delete_servers()
 
 # if __name__ == "__main
 #     inspector = Inspector()

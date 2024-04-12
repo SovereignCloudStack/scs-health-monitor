@@ -1,21 +1,23 @@
-import ipaddress
-
 from behave import given, when, then
 import openstack
 from openstack.cloud._floating_ip import FloatingIPCloudMixin
 import time
+import random
+import string
+
+from openstack.exceptions import DuplicateResource
+
 import tools
 
 
 class StepsDef:
 
-    def __init__(self):
-        self.tools = tools.Tools()
-
     @given("I connect to OpenStack")
     def given_i_connect_to_openstack(context):
         cloud_name = context.env.get("CLOUD_NAME", "gx")
-        context.test_name = context.env.get("TESTS_NAME_IDENTIFICATION", "scs-hm")
+        context.test_name = context.env.get("TESTS_NAME_IDENTIFICATION")
+        context.vm_image = context.env.get("VM_IMAGE")
+        context.flavor_name = context.env.get("FLAVOR_NAME")
         context.client = openstack.connect(cloud=cloud_name)
 
     @when("A router with name {router_name} exists")
@@ -108,15 +110,6 @@ class StepsDef:
             assert not context.client.network.find_network(
                 name_or_id=network), f"Network called {network} created"
 
-    @then("I should be able to create {security_group_quantity} security group")
-    def create_a_security_group(context, security_group_name: str, description: str):
-        security_groups = context.client.network.security_groups()
-        assert security_group_name not in security_groups, f"security group named: {security_group_name} already exists"
-        security_group = context.client.network.create_security_group(
-            name=security_group_name, description=description
-        )
-        assert security_group is not None, f"Security group with name {security_group.name} was not found"
-
     @then("I should be able to delete a networks")
     def delete_a_network(context,):
         for network in context.client.network.networks:
@@ -162,14 +155,14 @@ class StepsDef:
         assert not context.client.network.find_subnet(
             name_or_id=subnet_name), f"Subnet with name {subnet_name} was not deleted"
 
-    @then("I should be able to create {security_group_quantity} security group ")
+    @then("I should be able to create {security_group_quantity} security groups")
     def create_security_group(context, security_group_quantity: str):
         security_groups = context.client.network.security_groups()
         for num in range(1, int(security_group_quantity) + 1):
             security_group_name = f"{context.test_name}-sg-{num}"
             assert security_group_name not in security_groups, \
                 f"security group named: {security_group_name} already exists"
-            security_group = context.network.create_security_group(
+            security_group = context.client.network.create_security_group(
                 name=security_group_name,
                 description=f"this is the description for security group: {security_group_name}"
             )
@@ -234,9 +227,10 @@ class StepsDef:
         "on {port}")
     def create_floating_ip(context, subnet=None, server=None, fixed_address=None, nat_destination=None, port=None,
                            wait=False, timeout=60, ):
-        ip = FloatingIPCloudMixin.create_floating_ip(network=subnet, server=server, fixed_address=fixed_address,
-                                                     nat_destination=nat_destination, port=port, wait=wait,
-                                                     timeout=timeout)
+        ip = FloatingIPCloudMixin.create_floating_ip(
+            network=subnet, server=server, fixed_address=fixed_address,
+            nat_destination=nat_destination, port=port, wait=wait,
+            timeout=timeout)
         floating_ip = FloatingIPCloudMixin.get_floating_ip(ip.id)
         assert floating_ip is None, f"floating ip was not created"
 
@@ -247,28 +241,35 @@ class StepsDef:
         assert floating_ip is not None, f"floating ip with id {floating_ip_id} was not created"
 
     @then(
-        "I should be able to create a VM with name {vm_name} using image {image_name} and flavor {flavor_name} on network {network_name}")
-    def create_vm(context, vm_name: str, image_name: str, flavor_name: str, network_name: str):
-        image = context.client.compute.find_image(name_or_id=image_name)
-        assert image, f"Image with name {image_name} doesn't exist"
-        flavor = context.client.compute.find_flavor(name_or_id=flavor_name)
-        assert flavor, f"Flavor with name {flavor_name} doesn't exist"
-        network = context.client.network.find_network(name_or_id=network_name)
-        assert network, f"Network with name {network_name} doesn't exist"
-        server = context.client.compute.create_server(
-            name=vm_name,
-            image_id=image.id,
-            flavor_id=flavor.id,
-            networks=[{"uuid": network.id}],
-        )
-        context.client.compute.wait_for_server(server)
-        created_server = context.client.compute.find_server(name_or_id=vm_name)
-        assert created_server, f"VM with name {vm_name} was not created successfully"
+        "I should be able to create {vms_quantity} VMs")
+    def create_vm(context, vms_quantity: str):
+        for network in context.client.network.networks():
+            if context.test_name in network.name:
+                for num in range(1, int(vms_quantity) + 1):
+                    vm_name = f"{context.test_name}-vm-{''.join(random.choices(string.ascii_letters + string.digits, k=10))}"
+                    image = context.client.compute.find_image(name_or_id=context.vm_image)
+                    assert image, f"Image with name {context.vm_image} doesn't exist"
+                    flavor = context.client.compute.find_flavor(name_or_id=context.flavor_name)
+                    assert flavor, f"Flavor with name {context.flavor_name} doesn't exist"
+                    assert network, f"Network with name {network.name} doesn't exist"
+                    try:
+                        server = context.client.compute.create_server(
+                            name=vm_name,
+                            image_id=image.id,
+                            flavor_id=flavor.id,
+                            networks=[{"uuid": network.id}],
+                        )
+                        context.client.compute.wait_for_server(server)
+                    except DuplicateResource as e:
+                        assert e, "Server already created!"
+                    created_server = context.client.compute.find_server(name_or_id=vm_name)
+                    assert created_server, f"VM with name {vm_name} was not created successfully"
 
-    @then('I should be able to delete the VM with name {vm_name}')
-    def delete_vm(context, vm_name: str):
-        for vm in context.client.compute.find_server(name_or_id=vm_name):
-            context.client.compute.delete_server(context.server.id)
-            context.client.compute.wait_for_delete(context.server)
-            deleted_server = context.client.compute.find_server(name_or_id=vm.name)
-            assert not deleted_server, f"VM with name {vm_name} was not deleted successfully"
+    @then('I should be able to delete the VMs')
+    def delete_vm(context):
+        for vm in context.client.compute.servers():
+            if context.test_name in vm.name:
+                context.client.compute.delete_server(vm.id)
+                context.client.compute.wait_for_delete(vm)
+                deleted_server = context.client.compute.find_server(name_or_id=vm.name)
+                assert deleted_server is None, f"VM with name {vm.name} was not deleted successfully"
