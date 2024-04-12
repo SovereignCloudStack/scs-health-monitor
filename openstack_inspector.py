@@ -69,14 +69,13 @@ class Recover:
                 self.logger_instance.info(f"security group {group.name} can't be deleted because exception {e} is raised.")
 
     def delete_security_group_rules(self):
-        try:
-            for rule in self.conn.network.security_group_rules():
-                try:
-                    self.conn.network.delete_security_group_rule(rule.id)
-                    self.logger_instance.info(f"Security group rule with ID {rule.id} has been deleted.")
-                except Exception as e:
-                    self.logger_instance.info(
-                        f"security group rule {rule.name} can't be deleted because exception {e} is raised.")
+        for rule in self.conn.network.security_group_rules():
+            try:
+                self.conn.network.delete_security_group_rule(rule.id)
+                self.logger_instance.info(f"Security group rule with ID {rule.id} has been deleted.")
+            except Exception as e:
+                self.logger_instance.info(
+                    f"security group rule {rule.name} can't be deleted because exception {e} is raised.")
 
     def delete_routers(self):
         for router in self.conn.network.routers():
@@ -145,14 +144,19 @@ class Recover:
         for zone in self.conn.compute.availability_zones():
             self.delete_availability_zone(name=zone.name)
 
+    def delete_servers(self):
+        for server in self.conn.compute.servers(all_projects=False):
+            self.conn.compute.delete_server(server.id)
+
 
 if __name__ == "__main__":
     recover = Recover()
-    recover.delete_security_group_rules()
-    recover.delete_security_groups()
-    recover.delete_routers()
+    # recover.delete_security_group_rules()
+    # recover.delete_security_groups()
+    # recover.delete_routers()
     recover.delete_subnets()
-    recover.delete_networks()
+    # recover.delete_networks()
+    recover.delete_servers()
 
 # if __name__ == "__main
 #     inspector = Inspector()
