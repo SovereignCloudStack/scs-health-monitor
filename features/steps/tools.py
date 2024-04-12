@@ -30,22 +30,22 @@ class Tools:
 def create_subnets(num):
     subnet_list = []
     ip_addresses = [
-        '10.30.40.0',
-        '192.168.200.0',
-        '172.20.0.0',
-        '10.40.50.0',
-        '192.168.150.0',
-        '10.50.60.0',
-        '192.168.75.0',
-        '172.30.0.0',
-        '10.60.70.0',
-        '192.168.250.0'
+        '10.30.40.0/24',
+        '192.168.200.0/24',
+        '172.20.0.0/24',
+        '10.40.50.0/24',
+        '192.168.150.0/24',
+        '10.50.60.0/24',
+        '192.168.75.0/24',
+        '172.30.0.0/24',
+        '10.60.70.0/24',
+        '192.168.250.0/24'
     ]
     quantity = 0
     for ip_address in ip_addresses:
         if quantity <= num:
-            default_subnet_mask = '24'
-            network = ipaddress.IPv4Network(f'{ip_address}/{default_subnet_mask}', strict=False)
+            ip, default_subnet_mask = ip_address.split('/')[0], ip_address.split('/')[1]
+            network = ipaddress.IPv4Network(f'{ip}/{default_subnet_mask}', strict=False)
             subnet_prefix_length = network.prefixlen + 1
             subnets = list(network.subnets(prefixlen_diff=subnet_prefix_length - network.prefixlen))
             subnets_cidr = [str(subnet.network_address) + '/' + str(subnet.prefixlen) for subnet in subnets[:3]]
