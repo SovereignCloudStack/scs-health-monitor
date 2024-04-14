@@ -3,7 +3,7 @@ data "openstack_networking_network_v2" "external_network" {
 }
 
 resource "openstack_networking_network_v2" "network_1" {
-  name           = "${var.global_prefix}network"
+  name           = "${var.global_prefix}JH-network"
   admin_state_up = "true"
 }
 
@@ -14,27 +14,20 @@ resource "openstack_networking_router_v2" "router_1" {
 }
 
 resource "openstack_networking_subnet_v2" "subnet_1" {
-  name       = "${var.global_prefix}subnet"
+  name       = "${var.global_prefix}JH-subnet"
   network_id = openstack_networking_network_v2.network_1.id
   cidr       = var.subnet_cidr
   ip_version = 4
 }
 
 resource "openstack_networking_port_v2" "jump_host_port" {
-  name               = "${var.global_prefix}Port_JH"
+  name               = "${var.global_prefix}JH-Port"
   security_group_ids = [openstack_networking_secgroup_v2.jump_host_sg.id]
   network_id         = openstack_networking_network_v2.network_1.id
   fixed_ip {
     ip_address = var.jh_fixed_ip
     subnet_id  = openstack_networking_subnet_v2.subnet_1.id
   }
-  # # Specify allowed address pairs
-  # allowed_address_pairs {
-  #   ip_address = "0.0.0.0/1"
-  # }
-  # allowed_address_pairs {
-  #   ip_address = "128.0.0.0/1"
-  # }
 }
 
 # Plug multiple subnets into router
@@ -75,4 +68,14 @@ resource "openstack_networking_router_interface_v2" "VM_subnets" {
   count     = var.VM_networks_count
   router_id = openstack_networking_router_v2.router_1.id
   subnet_id = openstack_networking_subnet_v2.VM_subnets[count.index].id
+}
+
+resource "openstack_networking_port_v2" "vm_host_port" {
+  count              = var.VM_count
+  name               = "${var.global_prefix}Port_VM-${count.index + 1}"
+  security_group_ids = [openstack_networking_secgroup_v2.vm_sg.id]
+  network_id         = openstack_networking_network_v2.VM_networks[count.index % length(openstack_networking_network_v2.VM_networks)].id
+  fixed_ip {
+    subnet_id = openstack_networking_subnet_v2.VM_subnets[count.index % length(openstack_networking_subnet_v2.VM_subnets)].id
+  }
 }

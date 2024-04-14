@@ -13,17 +13,17 @@ variable "availability_zone" {
   description = "Availability zone"
 }
 
-variable "image_id" {
+variable "JH_image_id" {
   type        = string
   description = "Image for virtual machines"
 }
 
-variable "vm_size" {
+variable "JH_size" {
   type        = number
   description = "Virtual machine size GB"
 }
 
-variable "jh_flavor" {
+variable "JH_flavor" {
   type        = string
   description = "Instance flavor for JH VM"
 }
@@ -68,4 +68,25 @@ variable "VM_subnet_base_prefix" {
   type        = string
   description = "Base address space for VM subnet"
   default     = "10.0.0.0/16"
+}
+
+variable "VM_count" {
+  type        = number
+  description = "Number of normal VMs to create. These vms will be distributed evenly between the subnets"
+  default     = 2
+}
+
+variable "VM_image_id" {
+  type        = string
+  description = "Image for virtual machines"
+}
+
+variable "VM_size" {
+  type        = number
+  description = "Virtual machine size GB"
+}
+
+variable "VM_flavor" {
+  type        = string
+  description = "Instance flavor for JH VM"
 }
