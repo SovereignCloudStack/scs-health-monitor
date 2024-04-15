@@ -1,11 +1,10 @@
 @router
 @create
 Feature: OpenStack Router Creation
-  Scenario Outline: Connect to OpenStack and create a router
+  Scenario Outline: Connect to OpenStack and create a routers
     Given I connect to OpenStack
-    Then I should be able to create a router with name <router_name>
+    Then I should be able to create <router_quantity> routers
 
-    Examples: Test routers
-      | router_name |
-      | router01    |
-      | router02    |
+    Examples:
+    |router_quantity|
+    |       3       |
