@@ -449,7 +449,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "count_over_time({__name__=~'ssh_connections_total', command=\"ssh\"}[$__interval])",
+          "expr": "count({__name__=~'ssh_connections_total',cloud=\"$mycloud\",command=\"ssh\"})",
           "format": "table",
           "fullMetaSearch": false,
           "groupBy": [
@@ -567,7 +567,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "count_over_time({__name__=~'ssh_connections_total',cloud=~\"$mycloud\",command=~\"ssh\",STATUS_CODE!~\"2..\"}[$__interval])",
+          "expr": "count({__name__=~'ssh_connections_total',cloud=~\"$mycloud\",command=~\"ssh\",status_code!~\"2..\"})",
           "format": "table",
           "groupBy": [
             {
@@ -679,7 +679,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "count(ssh_connections_total{STATUS_CODE=~\"2..\",cloud=\"$mycloud\",command=~\"ssh\"})*100/sum({__name__=~'ssh_connections_total',cloud=\"$mycloud\",command=~\"ssh\"})",
+          "expr": "count({__name__=~'ssh_connections_total',status_code=~\"2..\",cloud=\"$mycloud\",command=~\"ssh\"})*100/count({__name__=~'ssh_connections_total',cloud=\"$mycloud\",command=~\"ssh\"})",
           "format": "table",
           "groupBy": [
             {
@@ -1601,8 +1601,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1771,8 +1770,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1916,8 +1914,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2012,7 +2009,7 @@
       "type": "timeseries"
     }
   ],
-  "refresh": "auto",
+  "refresh": "10s",
   "schemaVersion": 39,
   "tags": [],
   "templating": {
@@ -2038,7 +2035,7 @@
       {
         "allValue": "",
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "All",
           "value": "$__all"
         },
@@ -2100,7 +2097,7 @@
       },
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "All",
           "value": "$__all"
         },
@@ -2131,7 +2128,7 @@
       },
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "All",
           "value": "$__all"
         },
@@ -2162,7 +2159,7 @@
       },
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "gx",
           "value": "gx"
         },
@@ -2239,7 +2236,7 @@
       },
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "Search",
           "value": "Search"
         },
@@ -2269,7 +2266,7 @@
     ]
   },
   "time": {
-    "from": "now-24h",
+    "from": "now-2d",
     "to": "now"
   },
   "timepicker": {
@@ -2289,6 +2286,6 @@
   "timezone": "",
   "title": "SCS-Health-Monitor",
   "uid": "bdguj02c3mt4wf",
-  "version": 36,
+  "version": 37,
   "weekStart": "monday"
 }
