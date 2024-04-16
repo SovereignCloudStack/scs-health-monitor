@@ -151,12 +151,12 @@ class Recover:
 
 if __name__ == "__main__":
     recover = Recover()
-    # recover.delete_security_group_rules()
-    # recover.delete_security_groups()
+    recover.delete_security_group_rules()
+    recover.delete_security_groups()
     # recover.delete_routers()
-    recover.delete_subnets()
+    # recover.delete_subnets()
     # recover.delete_networks()
-    recover.delete_servers()
+    # recover.delete_servers()
 
 # if __name__ == "__main
 #     inspector = Inspector()
