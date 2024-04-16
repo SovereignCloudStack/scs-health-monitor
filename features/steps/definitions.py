@@ -170,17 +170,24 @@ class StepsDef:
                     security_group is not None
             ), f"Security group with name {security_group.name} was not found"
 
-    @then("I should be able to delete a security group")
-    def delete_a_security_group(context):
-        for sec_group in context.client.network.security_groups():
-            security_group = context.client.network.find_security_group(name_or_id=sec_group.name)
-            assert security_group, f"Security group with name {sec_group.name} does not exist"
-            if f"{context.test_name}-sg" in sec_group.name:
-                context.client.network.delete_security_group(name_or_id=sec_group.name)
-                time.sleep(2)
-                assert not context.client.network.find_security_group(
-                    name_or_id=sec_group.name
-                ), f"Security group with name {sec_group.name} was not deleted"
+    @then("I should be able to delete the security groups {security_group_name}")
+    def delete_a_security_group(context,security_group_name):
+        security_groups = context.client.network.find_security_group(name=security_group_name)
+        
+        for security_group in security_groups:
+            context.client.network.delete_security_group(security_group)
+
+        assert len(context.client.network.find_security_group(name=security_group_name)) == 0, f"All security groups with name '{security_group_name}' should be deleted"
+
+        # for sec_group in context.client.network.security_groups():
+        #     security_group = context.client.network.find_security_group(name_or_id=sec_group.name)
+        #     assert security_group, f"Security group with name {sec_group.name} does not exist"
+        #     if f"{context.test_name}-sg" in sec_group.name:
+        #         context.client.network.delete_security_group(name_or_id=sec_group.name)
+        #         time.sleep(2)
+        #         assert not context.client.network.find_security_group(
+        #             name_or_id=sec_group.name
+        #         ), f"Security group with name {sec_group.name} was not deleted"
 
     @then("I should be able to create a security group rule for {security_group_name} with direction {direction} "
           "protocol {protocol} and port range {port_range_min} to {port_range_max}")
