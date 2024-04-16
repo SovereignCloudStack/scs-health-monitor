@@ -7,5 +7,5 @@ Feature: OpenStack Security Group Rule Creation
     Then I should be able to create a security group rule for <security_group_name> with direction <direction> protocol <protocol> and port range <port_range_min> to <port_range_max>
 
     Examples: Test security groups rule
-      | security_group_name | direction | protocol | port_range_min | port_range_max |
-      | sg01                | ingress   | tcp      | 80             | 80             |
+      | security_group_name | direction | protocol | port_range_min | port_range_max | 
+      | sg02               | ingress   | tcp      | 80             | 80             |
