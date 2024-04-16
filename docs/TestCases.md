@@ -6,8 +6,9 @@ The script currently exists as a [Bash script (api_monitor.sh)](https://github.c
 
 The script follows these general steps:
 1) Creates routers (VPC)
-2) Creates networks and subnets
+2) Creates networks and subnets (Networks is normally the quantity of AZs)
 3) Sets up security groups
+4) Create 
 4) Configures virtual IPs and SSH keys
 5) Creates jump host VMs and associates floating IPs with them
 6) Configures jump hosts for SNAT for outbound traffic and port
