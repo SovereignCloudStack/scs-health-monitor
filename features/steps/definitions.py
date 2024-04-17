@@ -69,26 +69,24 @@ class StepsDef:
         "range {port_range_min} to {port_range_max} exists")
     def create_security_group_rule(context, security_group_name: str, direction: str, protocol: str,
                                    port_range_min: int, port_range_max: int):
-        for sg in context.client.network.security_groups():
-            if context.test_name in sg.name:
-                security_group = context.client.network.find_security_group(name_or_id=security_group_name)
-                assert security_group, f"Security group with name {security_group_name} does not exist"
-                security_group_rules = list(
-                    context.client.network.security_group_rules(
-                        security_group_id=security_group.id,
-                        direction=direction,
-                        ethertype="IPv4",
-                        protocol=protocol,
-                        port_range_min=port_range_min,
-                        port_range_max=port_range_max,
-                        remote_ip_prefix="0.0.0.0/0",
-                    )
-                )
-                assert len(security_group_rules) > 0, (
-                    f"No matching security group rule found for {security_group_name}"
-                    f" with direction {direction}, protocol {protocol},"
-                    f" and port range {port_range_min} to {port_range_max}"
-                )
+        security_group = context.client.network.find_security_group(name_or_id=security_group_name)
+        assert security_group, f"Security group with name {security_group_name} does not exist"
+        security_group_rules = list(
+            context.client.network.security_group_rules(
+                security_group_id=security_group.id,
+                direction=direction,
+                ethertype="IPv4",
+                protocol=protocol,
+                port_range_min=port_range_min,
+                port_range_max=port_range_max,
+                remote_ip_prefix="0.0.0.0/0",
+            )
+        )
+        assert len(security_group_rules) > 0, (
+            f"No matching security group rule found for {security_group_name}"
+            f" with direction {direction}, protocol {protocol},"
+            f" and port range {port_range_min} to {port_range_max}"
+        )
 
     @then("I should be able to delete routers")
     def delete_a_router(context):
