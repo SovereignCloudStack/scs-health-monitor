@@ -220,57 +220,31 @@ class StepsDef:
     #                                                           port_range_max=80,
     #                                                           remote_ip_prefix='0.0.0.0/0')
             
-    @then("I should be able to create a security group rule for {security_group_name} with direction {direction} "
+    @then("I should be able to create a security group rule with direction {direction} "
           "protocol {protocol} and port range {port_range_min} to {port_range_max}")
-    def create_security_group_rule(context, security_group_name: str, direction: str, 
+    def create_security_group_rule(context, direction: str, 
         protocol: str, port_range_min: int, port_range_max: int):
-        security_groups = list(context.client.network.security_groups())
-        for security_group in security_groups:
-            if context.test_name in security_group.name:
-                sel_security_group = context.client.network.find_security_group(name_or_id=security_group.name)
-                print(sel_security_group)
-                rule=context.client.network.create_security_group_rule(security_group_id=sel_security_group.id,
+        sec_groups = list(context.client.network.security_groups())
+        for sec_group in sec_groups:
+            if context.test_name in sec_group.name:
+                sel_sec_group = context.client.network.find_security_group(name_or_id=sec_group.name)            
+                sel_sec_group_rules = [
+                    rule for rule in context.client.network.security_group_rules(direction=direction,protocol=protocol, port_range_min=port_range_min,port_range_max=port_range_max)
+                    if rule.security_group_id == sel_sec_group.id
+                ]
+                assert len(sel_sec_group_rules) == 0, "There are already security group rules for the selected groups"
+
+                context.client.network.create_security_group_rule(security_group_id=sel_sec_group.id,
                 direction=direction,
                 ethertype="IPv4",
                 protocol=protocol,
                 port_range_min=port_range_min,
                 port_range_max=port_range_max,
                 remote_ip_prefix="0.0.0.0/0")
-                print(rule)
-        assert len(security_groups) > 0, "There are no security groups"
-        # 
-        # selected_security_group = security_groups[-1]
-        # print(selected_security_group)
 
-        security_group_rules = list(
-            context.client.network.security_group_rules(
-                security_group_id=security_group.id,
-                direction=direction,
-                ethertype="IPv4",
-                protocol=protocol,
-                port_range_min=port_range_min,
-                port_range_max=port_range_max,
-                remote_ip_prefix="0.0.0.0/0",
-            )
-        )
+        assert len(sec_groups) > 0, "There are no security groups"
 
-    # @then(I should be able to create a security group rule {security_group_rule_name} for {security_group_name} with direction {direction} "
-    #       "protocol {protocol} and port range {port_range_min} to {port_range_max}")
-    #      def create_security_group_rule(context, security_group_rule_name: str, security_group_name: str, direction: str, protocol: str, port_range_min: int, port_range_max: int):
-    #     security_group = context.client.network.find_security_group(name_or_id=security_group_rule_name)
-    #     assert security_group, f"Security group with name {security_group_rule_name} doesn't exist"
-    #     sec_group_rule_list = list()
-    #     for sec_group in context.client.network.security_group_rules():
-    #         if sec_group.name == security_group_rule_name:
-    #             sec_group_rule_list.append(sec_group.id)
-    #     for sec_group in sec_group_rule_list:
-    #         context.client.network.create_security_group_rule(name_or_id=sec_group.id,
-    #                                                         direction="ingress",
-    #                                                         ethertype='IPv4',
-    #                                                         protocol='tcp',
-    #                                                         port_range_min=80,
-    #                                                         port_range_max=80,
-    #                                                         remote_ip_prefix='0.0.0.0/0')
+
     #         #context.client.network.delete_security_group_rule(name_or_id=sec_group.id)
 
     
