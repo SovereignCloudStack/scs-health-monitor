@@ -177,18 +177,6 @@ class StepsDef:
                     security_group is not None
             ), f"Security group with name {security_group.name} was not found"
 
-    # @then("I should be able to create security group rule {rule}")
-    # def create_security_rule(context, security_group, port_range_min: int, port_range_max: int,
-    #                          direction: str = 'ingress', remote_ip_prefix='0.0.0.0/0', ethertype: str = 'IPv4',
-    #                          protocol: str = 'tcp', ):
-    #     context.network.create_security_group_rule(
-    #         security_group_id=security_group.id, direction=direction,
-    #         ethertype=ethertype,
-    #         protocol=protocol,
-    #         port_range_min=port_range_min,
-    #         port_range_max=port_range_max,
-    #         remote_ip_prefix=remote_ip_prefix,
-    #         )
 
     @then("I should be able to delete a security groups")
     def delete_a_security_group(context):
@@ -202,23 +190,7 @@ class StepsDef:
                     name_or_id=sec_group.id
                 ), f"Security group with name {sec_group.name} was not deleted"
 
-    # @then("I should be able to create a security group rule for {security_group_name} with direction {direction} "
-    #       "protocol {protocol} and port range {port_range_min} to {port_range_max}")
-    # def create_security_group_rule(context, security_group_rule_name: str, ):
-    #     security_group = context.client.network.find_security_group(name_or_id=security_group_rule_name)
-    #     assert security_group, f"Security group with name {security_group_rule_name} doesn't exist"
-    #     sec_group_rule_list = list()
-    #     for sec_group in context.client.network.security_group_rules():
-    #         if sec_group.name == security_group_rule_name:
-    #             sec_group_rule_list.append(sec_group.id)
-    #     for sec_group in sec_group_rule_list:
-    #         context.client.network.create_security_group_rule(name_or_id=sec_group.id,
-    #                                                           direction="ingress",
-    #                                                           ethertype='IPv4',
-    #                                                           protocol='tcp',
-    #                                                           port_range_min=80,
-    #                                                           port_range_max=80,
-    #                                                           remote_ip_prefix='0.0.0.0/0')
+
             
     @then("I should be able to create a security group rule with direction {direction} "
           "protocol {protocol} and port range {port_range_min} to {port_range_max}")
@@ -244,8 +216,23 @@ class StepsDef:
 
         assert len(sec_groups) > 0, "There are no security groups"
 
+    @then("I should be able to delete a security group rule with direction {direction} protocol {protocol} and port range {port_range_min} to {port_range_max}")
+    def delete_security_group_rules(context, direction: str, 
+        protocol: str, port_range_min: int, port_range_max: int):
+        sec_groups = list(context.client.network.security_groups())
+        for sec_group in sec_groups:
+            if context.test_name in sec_group.name:
+                sel_sec_group = context.client.network.find_security_group(name_or_id=sec_group.name)
+                sel_sec_group_rules = []
 
-    #         #context.client.network.delete_security_group_rule(name_or_id=sec_group.id)
+                for rule in context.client.network.security_group_rules(direction=direction,protocol=protocol, port_range_min=port_range_min,port_range_max=port_range_max):
+                    if rule.security_group_id == sel_sec_group.id:
+                        sel_sec_group_rules=sel_sec_group_rules.append(rule)
+                        print(rule.id)
+                        context.client.network.delete_security_group_rule(rule.id)
+                assert len(sel_sec_group_rules) > 0, "There are no security group rules for the selected groups"
+        assert len(sec_groups) > 0, "There are no security groups"
+
 
     
 
