@@ -4,6 +4,7 @@ from openstack.cloud._floating_ip import FloatingIPCloudMixin
 import time
 import random
 import string
+from pprint import pprint
 
 from openstack.exceptions import DuplicateResource
 
@@ -199,18 +200,20 @@ class StepsDef:
           "protocol {protocol} and port range {port_range_min} to {port_range_max}")
     def create_security_group_rule(context, security_group_name: str, direction: str, 
         protocol: str, port_range_min: int, port_range_max: int):
-        print("i am on it")
-        #security_group = context.client.network.find_security_group(name_or_id=security_group_name)
+        security_group = context.client.network.find_security_group(name_or_id=security_group_name)
         
         #def retrieve_security_groups(context):
         security_groups = list(context.client.network.security_groups())
-        for security_group in security_groups:
-            print(security_group, flush=True)
+        # for security_group in security_groups:
+        #     print(security_group, flush=True)
         assert f"There is no security group"
-        #              context.selected_security_group = context.security_groups[-1]
+        
+        selected_security_group = security_groups[-1]
+        pprint(selected_security_group)
 
         
         assert security_group, f"Security group with name {security_group_name} does not exist"
+
         security_group_rules = list(
             context.client.network.security_group_rules(
                 security_group_id=security_group.id,
