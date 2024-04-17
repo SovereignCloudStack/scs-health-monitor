@@ -9,3 +9,4 @@ Feature: Delete OpenStack Security Group Rule
     Examples: Test security groups rule
       | direction | protocol | port_range_min | port_range_max |
       | ingress   | tcp      | 80             | 80             |
+      | egress    | tcp      | 430            | 430            |

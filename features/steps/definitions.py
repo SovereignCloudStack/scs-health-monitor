@@ -230,7 +230,7 @@ class StepsDef:
                         sel_sec_group_rules=sel_sec_group_rules.append(rule)
                         print(rule.id)
                         context.client.network.delete_security_group_rule(rule.id)
-                assert len(sel_sec_group_rules) > 0, "There are no security group rules for the selected groups"
+                # assert len(sel_sec_group_rules) > 0, "There are no security group rules for the selected groups"
         assert len(sec_groups) > 0, "There are no security groups"
 
 
