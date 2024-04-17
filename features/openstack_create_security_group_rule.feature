@@ -8,4 +8,4 @@ Feature: OpenStack Security Group Rule Creation
 
     Examples: Test security groups rule
       | security_group_name | direction | protocol | port_range_min | port_range_max | 
-      | scs-hm-sg-1         | ingress   | tcp      | 80             | 80             |
+      | default         | ingress   | tcp      | 80             | 80             |
