@@ -9,13 +9,13 @@ The script follows these general steps:
 2) Creates networks, subnets and ports (Networks is normally the quantity of AZs)
 3) Sets up security groups
 4) Create disks from images 
-4) Configures virtual IPs and SSH keys
-5) Creates jump host VMs and associates floating IPs with them
-6) Configures jump hosts for SNAT for outbound traffic and port
-7) forwarding for inbound
-8) Creates internal VMs distributed across networks and AZs
-9) Tests connectivity of VMs to the outside world
-10) Cleans up all resources created in reverse order
+5) Configures virtual IPs and SSH keys
+6) Creates jump host VMs and associates floating IPs with them
+7) Configures jump hosts for SNAT for outbound traffic and port
+8) forwarding for inbound
+9) Creates internal VMs distributed across networks and AZs
+10) Tests connectivity of VMs to the outside world
+11) Cleans up all resources created in reverse order
 
 ### Inputs
 1) **--debug**         
