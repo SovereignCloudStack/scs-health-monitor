@@ -5,6 +5,7 @@ import time
 import random
 import string
 
+
 from openstack.exceptions import DuplicateResource
 
 import tools
@@ -68,24 +69,26 @@ class StepsDef:
         "range {port_range_min} to {port_range_max} exists")
     def create_security_group_rule(context, security_group_name: str, direction: str, protocol: str,
                                    port_range_min: int, port_range_max: int):
-        security_group = context.client.network.find_security_group(name_or_id=security_group_name)
-        assert security_group, f"Security group with name {security_group_name} does not exist"
-        security_group_rules = list(
-            context.client.network.security_group_rules(
-                security_group_id=security_group.id,
-                direction=direction,
-                ethertype="IPv4",
-                protocol=protocol,
-                port_range_min=port_range_min,
-                port_range_max=port_range_max,
-                remote_ip_prefix="0.0.0.0/0",
-            )
-        )
-        assert len(security_group_rules) > 0, (
-            f"No matching security group rule found for {security_group_name}"
-            f" with direction {direction}, protocol {protocol},"
-            f" and port range {port_range_min} to {port_range_max}"
-        )
+        for sg in context.client.network.security_groups():
+            if context.test_name in sg.name:
+                security_group = context.client.network.find_security_group(name_or_id=security_group_name)
+                assert security_group, f"Security group with name {security_group_name} does not exist"
+                security_group_rules = list(
+                    context.client.network.security_group_rules(
+                        security_group_id=security_group.id,
+                        direction=direction,
+                        ethertype="IPv4",
+                        protocol=protocol,
+                        port_range_min=port_range_min,
+                        port_range_max=port_range_max,
+                        remote_ip_prefix="0.0.0.0/0",
+                    )
+                )
+                assert len(security_group_rules) > 0, (
+                    f"No matching security group rule found for {security_group_name}"
+                    f" with direction {direction}, protocol {protocol},"
+                    f" and port range {port_range_min} to {port_range_max}"
+                )
 
     @then("I should be able to delete routers")
     def delete_a_router(context):
@@ -134,7 +137,6 @@ class StepsDef:
 
     @then('I should be able to create {subnet_quantity} subnets')
     def create_a_subnet(context, subnet_quantity: str):
-
         for network in context.client.network.networks():
             if f"{context.test_name}-network" in network.name:
                 cidr = tools.create_subnets(num=int(subnet_quantity))
@@ -142,18 +144,24 @@ class StepsDef:
                     subnet = context.client.network.create_subnet(
                         name=f"{context.test_name}-subnet-{num}",
                         network_id=network.id, ip_version=4, cidr=cidr[num - 1])
+                    time.sleep(5)
                     assert not context.client.network.find_network(name_or_id=subnet), \
                         f"Failed to create subnet with name {subnet}"
             else:
                 continue
 
-    @then("I should be able to delete a subnet with name {subnet_name}")
-    def delete_a_subnet(context, subnet_name: str):
-        subnet = context.client.network.find_subnet(name_or_id=subnet_name)
-        assert subnet is not None, f"Subnet with name {subnet_name} does not exist"
-        context.client.network.delete_subnet(subnet.id)
-        assert not context.client.network.find_subnet(
-            name_or_id=subnet_name), f"Subnet with name {subnet_name} was not deleted"
+    @then("I should be able to delete subnets")
+    def delete_a_subnet(context):
+        for network in context.client.network.networks(): #list of networks
+            for subnet_id in network.subnet_ids:
+                for subnet in context.client.network.subnets():
+                    if f"{context.test_name}-subnet" in subnet.name:
+                        tools.delete_subent_ports(context.client, subnet_id=subnet_id)
+                        subnet = context.client.network.find_subnet(name_or_id=subnet_id)
+                        assert subnet, f"Subnet with id {subnet} does not exist"
+                        context.client.network.delete_subnet(subnet_id)
+                        assert context.client.network.find_subnet(
+                            name_or_id=subnet), f"Subnet with id {subnet} was not deleted"
 
     @then("I should be able to create {security_group_quantity} security groups")
     def create_security_group(context, security_group_quantity: str):

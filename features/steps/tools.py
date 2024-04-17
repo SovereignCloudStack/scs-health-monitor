@@ -53,3 +53,12 @@ def create_subnets(num):
         else:
             break
     return subnet_list
+
+def delete_subent_ports(client, subnet_id=None):
+    for port in client.network.ports(network_id=subnet_id):
+        for fixed_ip in port.fixed_ips:
+            if fixed_ip['subnet_id'] == subnet_id:
+                try:
+                    client.network.delete_port(port.id)
+                except Exception as e:
+                    return f"ports on subnet with id: {subnet_id} can't be deleted because exception {e} is raised."
