@@ -227,8 +227,6 @@ class StepsDef:
                 for rule in context.client.network.security_group_rules(direction=direction):
                     if rule.security_group_id == sel_sec_group.id:
                         sel_sec_group_rules.append(rule)
-                        print(sel_sec_group.name)
-                        print(rule.id)
                         context.client.network.delete_security_group_rule(rule.id)
                 assert len(sel_sec_group_rules) > 0, "There are no security group rules for the selected groups"
         assert len(sec_groups) > 0, "There are no security groups"
