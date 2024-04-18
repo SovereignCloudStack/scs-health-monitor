@@ -201,18 +201,24 @@ class StepsDef:
             if context.test_name in sec_group.name:
                 sel_sec_group = context.client.network.find_security_group(name_or_id=sec_group.name)            
                 sel_sec_group_rules = [
-                    rule for rule in context.client.network.security_group_rules(direction=direction,protocol=protocol, port_range_min=port_range_min,port_range_max=port_range_max)
+                    rule for rule in context.client.network.security_group_rules(
+                        direction=direction,
+                        protocol=protocol,
+                        port_range_min=port_range_min,
+                        port_range_max=port_range_max)
                     if rule.security_group_id == sel_sec_group.id
                 ]
                 assert len(sel_sec_group_rules) == 0, "There are already security group rules for the selected groups"
 
-                context.client.network.create_security_group_rule(security_group_id=sel_sec_group.id,
-                direction=direction,
-                ethertype="IPv4",
-                protocol=protocol,
-                port_range_min=port_range_min,
-                port_range_max=port_range_max,
-                remote_ip_prefix="0.0.0.0/0")
+                context.client.network.create_security_group_rule(
+                    security_group_id=sel_sec_group.id,
+                    direction=direction,
+                    ethertype="IPv4",
+                    protocol=protocol,
+                    port_range_min=port_range_min,
+                    port_range_max=port_range_max,
+                    remote_ip_prefix="0.0.0.0/0"
+                )
 
         assert len(sec_groups) > 0, "There are no security groups"
 
