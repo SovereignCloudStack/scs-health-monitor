@@ -285,3 +285,22 @@ class StepsDef:
                 context.client.compute.wait_for_delete(vm)
                 deleted_server = context.client.compute.find_server(name_or_id=vm.name)
                 assert deleted_server is None, f"VM with name {vm.name} was not deleted successfully"
+
+    @when('I create a volume from image "{image_name}" with size {size:d} GB and name "{volume_name}"')
+    def create_volume_from_image(context, image_name, size, volume_name):
+        image = context.client.compute.find_image(image_name)
+        context.volume = context.client.block_store.create_volume(
+            size=size,
+            image_id=image.id,
+            name=volume_name
+        )
+
+    @then('the volume should be successfully created')
+    def check_volume_creation(context):
+        context.volume = context.client.block_store.wait_for_status(
+            context.volume, 'available', interval=2, wait=120
+        )
+        assert context.volume.status == 'available'
+
+
+
