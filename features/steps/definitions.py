@@ -301,21 +301,38 @@ class StepsDef:
                 deleted_server = context.client.compute.find_server(name_or_id=vm.name)
                 assert deleted_server is None, f"VM with name {vm.name} was not deleted successfully"
 
-    @when('I create a volume from image "{image_name}" with size {size:d} GB and name "{volume_name}"')
-    def create_volume_from_image(context, image_name, size, volume_name):
-        image = context.client.compute.find_image(image_name)
-        context.volume = context.client.block_store.create_volume(
-            size=size,
-            image_id=image.id,
-            name=volume_name
-        )
+    # @when('volumes named "{volume_name}" exist')
+    # def ensure_volumes_exist(context, volume_name):
+    #     # This step ensures that a specified number of volumes exist
+    #     volumes = list(context.conn.block_store.volumes(name=volume_name))
+    #     if not volumes:
+    #         for _ in range(3):  # Example of creating three volumes
+    #             volume = context.conn.block_store.create_volume(size=10, name=volume_name)
+    #             context.conn.block_store.wait_for_status(volume, 'available', interval=2, wait=120)
 
-    @then('the volume should be successfully created')
-    def check_volume_creation(context):
-        context.volume = context.client.block_store.wait_for_status(
-            context.volume, 'available', interval=2, wait=120
-        )
-        assert context.volume.status == 'available'
+    @when('I create {number:d} volumes')
+    def create_multiple_volumes(context, quantity):
+        context.volumes = []
+        for num in range(1, int(quantity) + 1):
+            volume_name = f"{context.test_name}-volume-{num}"
+            volume = context.conn.block_store.create_volume(size=10, name=volume_name)
+            context.volumes.append(volume)
+            tools.ensure_volume_exist(volume_name=volume_name, quantity=quantity)
+
+    @then('all volumes should be successfully created')
+    def check_volumes_created(context):
+        for volume in context.volumes:
+            volume = context.client.block_store.wait_for_status(volume, 'available', interval=2, wait=120)
+            assert volume.status == 'available'
+
+    @then('I delete all volumes')
+    def delete_all_volumes(context):
+        volumes = list(context.client.block_store.volumes())
+        for volume in volumes:
+            if f"{context.test_name}-volume" in volume.name:
+                context.client.block_store.delete_volume(volume, ignore_missing=False)
+
+
 
 
 
