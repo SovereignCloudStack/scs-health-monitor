@@ -6,7 +6,6 @@ import random
 import string
 import re
 
-
 from openstack.exceptions import DuplicateResource
 
 import tools
@@ -113,7 +112,7 @@ class StepsDef:
                 name_or_id=network), f"Network called {network} created"
 
     @then("I should be able to delete a networks")
-    def delete_a_network(context,):
+    def delete_a_network(context, ):
         for network in context.client.network.networks:
             if f"{context.test_name}-network" in network.name:
                 context.client.network.delete_network(network)
@@ -151,7 +150,7 @@ class StepsDef:
 
     @then("I should be able to delete subnets")
     def delete_a_subnet(context):
-        for network in context.client.network.networks(): #list of networks
+        for network in context.client.network.networks():  # list of networks
             for subnet_id in network.subnet_ids:
                 for subnet in context.client.network.subnets():
                     if f"{context.test_name}-subnet" in subnet.name:
@@ -177,7 +176,6 @@ class StepsDef:
                     security_group is not None
             ), f"Security group with name {security_group.name} was not found"
 
-
     @then("I should be able to delete a security groups")
     def delete_a_security_group(context):
         for sec_group in context.client.network.security_groups():
@@ -190,22 +188,21 @@ class StepsDef:
                     name_or_id=sec_group.id
                 ), f"Security group with name {sec_group.name} was not deleted"
 
-
-            
     @then("I should be able to create a security group rule with direction {direction} "
           "protocol {protocol} and port range {port_range_min} to {port_range_max}")
-    def create_security_group_rule(context, direction: str, 
-        protocol: str, port_range_min: int, port_range_max: int):
+    def create_security_group_rule(context, direction: str,
+                                   protocol: str, port_range_min: int, port_range_max: int):
         sec_groups = list(context.client.network.security_groups())
         for sec_group in sec_groups:
             if context.test_name in sec_group.name:
-                sel_sec_group = context.client.network.find_security_group(name_or_id=sec_group.name)            
+                sel_sec_group = context.client.network.find_security_group(name_or_id=sec_group.name)
                 sel_sec_group_rules = [
                     rule for rule in context.client.network.security_group_rules(
                         direction=direction,
                         protocol=protocol,
                         port_range_min=port_range_min,
-                        port_range_max=port_range_max)
+                        port_range_max=port_range_max
+                    )
                     if rule.security_group_id == sel_sec_group.id
                 ]
                 assert len(sel_sec_group_rules) == 0, "There are already security group rules for the selected groups"
@@ -222,22 +219,20 @@ class StepsDef:
 
         assert len(sec_groups) > 0, "There are no security groups"
 
-    @then("I should be able to delete a security group rule with direction {direction}")
-    def delete_security_group_rules(context, direction: str):
+    @then("I should be able to delete a security group rules")
+    def delete_security_group_rules(context,):
         sec_groups = list(context.client.network.security_groups())
         for sec_group in sec_groups:
             if context.test_name in sec_group.name:
                 sel_sec_group = context.client.network.find_security_group(name_or_id=sec_group.name)
                 sel_sec_group_rules = []
 
-                for rule in context.client.network.security_group_rules(direction=direction):
+                for rule in context.client.network.security_group_rules():
                     if rule.security_group_id == sel_sec_group.id:
                         sel_sec_group_rules.append(rule)
                         context.client.network.delete_security_group_rule(rule.id)
                 assert len(sel_sec_group_rules) > 0, "There are no security group rules for the selected groups"
         assert len(sec_groups) > 0, "There are no security groups"
-
-    
 
     @then("I should be able to create availability zone named {availability zone}")
     def create_availability_zone(context, availability_zone_name):
