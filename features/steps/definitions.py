@@ -224,7 +224,7 @@ class StepsDef:
                 sel_sec_group = context.client.network.find_security_group(name_or_id=sec_group.name)
                 sel_sec_group_rules = []
 
-                for rule in context.client.network.security_group_rules():
+                for rule in context.client.network.security_group_rules(direction=direction):
                     if rule.security_group_id == sel_sec_group.id:
                         sel_sec_group_rules.append(rule)
                         print(sel_sec_group.name)
