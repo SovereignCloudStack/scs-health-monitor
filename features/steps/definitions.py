@@ -301,15 +301,6 @@ class StepsDef:
                 deleted_server = context.client.compute.find_server(name_or_id=vm.name)
                 assert deleted_server is None, f"VM with name {vm.name} was not deleted successfully"
 
-    # @when('volumes named "{volume_name}" exist')
-    # def ensure_volumes_exist(context, volume_name):
-    #     # This step ensures that a specified number of volumes exist
-    #     volumes = list(context.conn.block_store.volumes(name=volume_name))
-    #     if not volumes:
-    #         for _ in range(3):  # Example of creating three volumes
-    #             volume = context.conn.block_store.create_volume(size=10, name=volume_name)
-    #             context.conn.block_store.wait_for_status(volume, 'available', interval=2, wait=120)
-
     @when('I create {number:d} volumes')
     def create_multiple_volumes(context, quantity):
         context.volumes = []
@@ -330,7 +321,8 @@ class StepsDef:
         volumes = list(context.client.block_store.volumes())
         for volume in volumes:
             if f"{context.test_name}-volume" in volume.name:
-                context.client.block_store.delete_volume(volume, ignore_missing=False)
+                context.client.block_store.delete_volume(volume, ignore_missing=True)
+        tools.verify_volumes_deleted(context.client, context.test_name)
 
 
 
