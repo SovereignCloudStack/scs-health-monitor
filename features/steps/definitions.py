@@ -112,7 +112,9 @@ class StepsDef:
                 name_or_id=network), f"Network called {network} created"
 
     @then("I should be able to delete a networks")
+
     def delete_a_network(context):
+
         for network in context.client.network.networks:
             if f"{context.test_name}-network" in network.name:
                 context.client.network.delete_network(network)
