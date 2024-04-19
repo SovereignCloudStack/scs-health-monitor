@@ -112,7 +112,7 @@ class StepsDef:
                 name_or_id=network), f"Network called {network} created"
 
     @then("I should be able to delete a networks")
-    def delete_a_network(context, ):
+    def delete_a_network(context):
         for network in context.client.network.networks:
             if f"{context.test_name}-network" in network.name:
                 context.client.network.delete_network(network)
@@ -249,6 +249,7 @@ class StepsDef:
             if zone.name == name:
                 context.compute.delete_availability_zone(name=zone.name)
 
+
     @then(
         "I should be able to create a floating ip on {subnet}, on {server}, with {fixed_address}, for {nat_destination}"
         "on {port}")
@@ -301,14 +302,14 @@ class StepsDef:
                 deleted_server = context.client.compute.find_server(name_or_id=vm.name)
                 assert deleted_server is None, f"VM with name {vm.name} was not deleted successfully"
 
-    @when('I create {number:d} volumes')
+    @when("I create {quantity} volumes")
     def create_multiple_volumes(context, quantity):
         context.volumes = []
         for num in range(1, int(quantity) + 1):
             volume_name = f"{context.test_name}-volume-{num}"
-            volume = context.conn.block_store.create_volume(size=10, name=volume_name)
+            volume = context.client.block_store.create_volume(size=10, name=volume_name)
             context.volumes.append(volume)
-            tools.ensure_volume_exist(volume_name=volume_name, quantity=quantity)
+            tools.ensure_volume_exist(client=context.client, volume_name=volume_name, quantity=quantity)
 
     @then('all volumes should be successfully created')
     def check_volumes_created(context):
