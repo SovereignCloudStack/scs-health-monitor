@@ -54,6 +54,7 @@ def create_subnets(num):
             break
     return subnet_list
 
+
 def delete_subent_ports(client, subnet_id=None):
     for port in client.network.ports(network_id=subnet_id):
         for fixed_ip in port.fixed_ips:
@@ -62,3 +63,16 @@ def delete_subent_ports(client, subnet_id=None):
                     client.network.delete_port(port.id)
                 except Exception as e:
                     return f"ports on subnet with id: {subnet_id} can't be deleted because exception {e} is raised."
+
+
+def ensure_volume_exist(client, volume_name: str, quantity: int, size: int = 10, interval: int = 2, wait: int = 120):
+    volumes = list(client.block_store.volumes(name=volume_name))
+    if not volumes:
+        volume = client.block_store.create_volume(size=size, name=volume_name)
+        client.block_store.wait_for_status(volume, 'available', interval=interval, wait=wait)
+
+
+def verify_volumes_deleted(client, test_name):
+    volumes_test = [volume for volume in client.block_store.volumes() if f"{test_name}-volume" in volume.name]
+    assert len(volumes_test) == 0, "Some volumes still exist"
+
