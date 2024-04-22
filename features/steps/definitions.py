@@ -55,8 +55,9 @@ class StepsDef:
 
     @then("I should be able to create {router_quantity} routers")
     def create_a_router(context, router_quantity: str):
+        name_prefix = context.test_name if context.test_name else "default"
         for num in range(1, int(router_quantity) + 1):
-            router = context.client.network.create_router(name=f"{context.test_name}-{num}")
+            router = context.client.network.create_router(name=f"{name_prefix}-{num}")
             assert router is not None, f"Failed to create router with name {context.test_name}-{num}"
 
     @when("A security group with name {security_group_name} exists")
@@ -90,8 +91,9 @@ class StepsDef:
 
     @then("I should be able to delete routers")
     def delete_a_router(context):
+        name_prefix = context.test_name if context.test_name else "default"
         for router in context.client.network.routers():
-            if context.test_name in router.name:
+            if name_prefix in router.name:
                 assert router is not None, f"Router with name {router.name} doesn't exist"
                 context.client.network.delete_router(router)
                 time.sleep(2)
@@ -106,17 +108,17 @@ class StepsDef:
 
     @then("I should be able to create {network_quantity} networks")
     def create_a_network(context, network_quantity: str):
+        name_prefix = context.test_name if context.test_name else "default"
         for num in range(1, int(network_quantity) + 1):
-            network = context.client.network.create_network(name=f"{context.test_name}-network-{num}")
+            network = context.client.network.create_network(name=f"{name_prefix}-network-{num}")
             assert not context.client.network.find_network(
                 name_or_id=network), f"Network called {network} created"
 
     @then("I should be able to delete a networks")
-
     def delete_a_network(context):
-
-        for network in context.client.network.networks:
-            if f"{context.test_name}-network" in network.name:
+        name_prefix = context.test_name if context.test_name else "default"
+        for network in context.client.network.networks():
+            if f"{name_prefix}-network" in network.name:
                 context.client.network.delete_network(network)
                 assert not context.client.network.find_network(
                     name_or_id=network
@@ -137,12 +139,13 @@ class StepsDef:
 
     @then('I should be able to create {subnet_quantity} subnets')
     def create_a_subnet(context, subnet_quantity: str):
+        name_prefix = context.test_name if context.test_name else "default"
         for network in context.client.network.networks():
-            if f"{context.test_name}-network" in network.name:
+            if f"{name_prefix}-network" in network.name:
                 cidr = tools.create_subnets(num=int(subnet_quantity))
                 for num in range(1, int(subnet_quantity) + 1):
                     subnet = context.client.network.create_subnet(
-                        name=f"{context.test_name}-subnet-{num}",
+                        name=f"{name_prefix}-subnet-{num}",
                         network_id=network.id, ip_version=4, cidr=cidr[num - 1])
                     time.sleep(5)
                     assert not context.client.network.find_network(name_or_id=subnet), \
@@ -152,10 +155,11 @@ class StepsDef:
 
     @then("I should be able to delete subnets")
     def delete_a_subnet(context):
+        name_prefix = context.test_name if context.test_name else "default"
         for network in context.client.network.networks():  # list of networks
             for subnet_id in network.subnet_ids:
                 for subnet in context.client.network.subnets():
-                    if f"{context.test_name}-subnet" in subnet.name:
+                    if f"{name_prefix}-subnet" in subnet.name:
                         tools.delete_subent_ports(context.client, subnet_id=subnet_id)
                         subnet = context.client.network.find_subnet(name_or_id=subnet_id)
                         assert subnet, f"Subnet with id {subnet} does not exist"
