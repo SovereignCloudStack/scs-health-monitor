@@ -112,7 +112,6 @@ class StepsDef:
                 name_or_id=network), f"Network called {network} created"
 
     @then("I should be able to delete a networks")
-
     def delete_a_network(context):
 
         for network in context.client.network.networks:
@@ -325,6 +324,7 @@ class StepsDef:
         for volume in volumes:
             if f"{context.test_name}-volume" in volume.name:
                 context.client.block_store.delete_volume(volume, ignore_missing=True)
+        assert filter(lambda alist: f"{context.test_name}" not in alist, list(context.client.block_store.volumes()))
         tools.verify_volumes_deleted(context.client, context.test_name)
 
 
