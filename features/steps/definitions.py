@@ -303,14 +303,14 @@ class StepsDef:
                 deleted_server = context.client.compute.find_server(name_or_id=vm.name)
                 assert deleted_server is None, f"VM with name {vm.name} was not deleted successfully"
 
-    @when("I create {quantity} volumes")
-    def create_multiple_volumes(context, quantity):
+    @then("I create {quantity_volumes} volumes")
+    def create_multiple_volumes(context, quantity_volumes):
         context.volumes = []
-        for num in range(1, int(quantity) + 1):
+        for num in range(1, int(quantity_volumes) + 1):
             volume_name = f"{context.test_name}-volume-{num}"
             volume = context.client.block_store.create_volume(size=10, name=volume_name)
             context.volumes.append(volume)
-            tools.ensure_volume_exist(client=context.client, volume_name=volume_name, quantity=quantity)
+            tools.ensure_volume_exist(client=context.client, volume_name=volume_name, quantity=quantity_volumes)
 
     @then('all volumes should be successfully created')
     def check_volumes_created(context):
@@ -318,7 +318,7 @@ class StepsDef:
             volume = context.client.block_store.wait_for_status(volume, 'available', interval=2, wait=120)
             assert volume.status == 'available'
 
-    @then('I delete all volumes')
+    @then('I delete all volumes from test')
     def delete_all_volumes(context):
         volumes = list(context.client.block_store.volumes())
         for volume in volumes:
@@ -326,6 +326,8 @@ class StepsDef:
                 context.client.block_store.delete_volume(volume, ignore_missing=True)
         assert filter(lambda alist: f"{context.test_name}" not in alist, list(context.client.block_store.volumes()))
         tools.verify_volumes_deleted(context.client, context.test_name)
+
+
 
 
 
