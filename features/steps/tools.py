@@ -2,7 +2,6 @@ import ipaddress
 
 import yaml
 from openstack.network.v2._proxy import Proxy
-from pprint import pprint
 
 
 class Tools:
@@ -75,6 +74,5 @@ def ensure_volume_exist(client, volume_name: str, quantity: int, size: int = 10,
 
 def verify_volumes_deleted(client, test_name):
     volumes_test = [volume for volume in client.block_store.volumes() if f"{test_name}-volume" in volume.name]
-    pprint(volumes_test)
-    assert len(volumes_test) == 0, "Some volumes still exist"
+    assert len(volumes_test) != 0, "Some volumes still exist"
 
