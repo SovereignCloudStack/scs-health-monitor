@@ -40,7 +40,7 @@ PERFORMANCE
 
 * Regex: None
 
-|Cloud-list|Lines in Code | Code| Description|
+|Cloud-list |Lines in Code |Code |Description|
 |----------|----------|----------|----------|
 |plus-pco||||
 |plus-prod2||||
@@ -53,3 +53,111 @@ PERFORMANCE
 |aov||||
 |datapoc||||
 |ciab||||
+
+### COMMANDS
+
+* Regex: ```/^(nova|neutron|glance|cinder|token|catalog|swift|octavia)$/```
+* Tag/Label: cmd/command
+
+|Command-list	|Lines in Code |Code |Description|
+|----------|----------|----------|----------|
+|All||||
+|catalog ||||
+|cinder ||||
+|glance ||||
+|neutron ||||
+|nova ||||
+|octavia ||||
+|swift ||||
+|token ||||
+
+### METHODS
+
+* Regex:
+* Tag/Label: cmd/command
+
+	
+|Method-list |Lines in Code |Code |Description|
+|----------|----------|----------|----------|	
+|All ||||
+|boot||||
+|console-log
+|create
+|delete
+|flavor-show
+|floatingip-create
+|floatingip-delete
+|floatingip-list
+|image-show
+|issue
+|keypair-add
+|keypair-delete
+|keypair-list
+|lbaas-healthmonitor-create
+|lbaas-healthmonitor-delete
+|lbaas-listener-create
+|lbaas-listener-delete
+|lbaas-loadbalancer-create
+|lbaas-loadbalancer-delete
+|lbaas-loadbalancer-list
+|lbaas-loadbalancer-show
+|lbaas-member-create
+|lbaas-member-delete
+|lbaas-pool-create
+|lbaas-pool-delete
+|lbaas-pool-show
+|list
+|meta
+|net-create
+|net-delete
+|net-external-list
+|port-create
+|port-delete
+|port-list
+|port-show
+|port-update
+|rename
+|router-create
+|router-delete|||
+
+
+### RESOURCES	
+
+* Regex:	```/^wait/``` 
+* Tag/Label: cmd/command
+
+
+|Resource-list |Lines in Code	|Code	| Description |
+|----------|----------|----------|----------|	
+|All	| 1484 – 1595|||
+|waitDELLBAAS
+|waitJHPORT
+|waitJHVM
+|waitJHVOLUME
+|waitLBAAS | 457 – 461 | ```LBWAIT=""  if test -n "$OPENSTACKCLIENT" -a -n "$LOADBALANCER"; then    openstack loadbalancer member create --help \| grep -- --wait >/dev/null 2>&1    if test $? == 0; then LBWAIT="--wait"; fi  fi```| checks if both the variables `$OPENSTACKCLIENT` and `$LOADBALANCER` are not empty. If they are not empty, it uses the `openstack loadbalancer member create --help` command to check if the `--wait` option is available. If the `--wait` option is found, it sets the variable `$LBWAIT` to `"--wait"`. This variable can be used later to control the behavior of a subsequent command related to load balancer member creation.|
+|waitVM
+
+
+### BENCHMARKS
+
+* Regex:	```/^(4000pi|iperf3|ssh|totDur|LBconn|ping|fioBW|fiokIOPS|fioLat10ms)$/```
+* Tag/Label:	cmd / command
+
+|Cloud-list |Lines in Code |Code	|Description|
+|----------|----------|----------|----------|				
+|All
+|4000pi			
+|LBconn			
+|fioBW			
+|fioLat10ms			
+|fiokIOPS			
+|iperf3| 3426-3494| ```#Do iperf3 tests iperf3test() { cat >${RPRE}wait <<EOT #!/bin/bash let MAXW=100 if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 5; sync; fi while test \$MAXW -ge 1; do if type -p "\$1">/dev/null; then exit 0; fi let MAXW-=1 sleep 1 if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 1; fi done exit 1 EOT chmod +x ${RPRE}wait #Do tests from last host in net and connect to 1st hosts in 1st/2nd/... net #calcRedirs red=${REDIRS[$((NOAZS-1))]} #red=$(echo $red \| cut -d " " -f $((NONETS+1))) #red=$(echo "$red" \| grep -v '^$' \| tail -n2 \| head -n1) red=$(echo "$red" \| grep -v '^$' \| tail -n1) #echo "$red" pno=${red#*tcp,} pno=${pno%%,*} #echo "Redirect: ${REDIRS[0]} $red $pno" echo -n "IPerf3 tests:" for VM in $(seq 0 $((NONETS-1))); do TGT=${IPS[$VM]} if test -z "$TGT"; then TGT=${IPS[$(($VM+$NONETS))]}; fi   SRC=${IPS[$(($VM+$NOVMS-$NONETS))]}   if test -z "$SRC"; then SRC=${IPS[$(($VM+$NOVMS-2*$NONETS))]}; fi   if test -z "$SRC" -o -z "$TGT" -o "$SRC" = "$TGT"; then     echo "#ERROR: Skip test $SRC <-> $TGT"     if test -n "$LOGFILE"; then echo "IPerf3: ${SRC}-${TGT}: skipped" >>$LOGFILE; fi     continue   fi   FLT=${FLOATS[$(($VM%$NOAZS))]}   #echo -n "Test ($SRC,$(($VM+$NOVMS-$NONETS)),$FLT/$pno)->$TGT: "   scp -o "UserKnownHostsFile=~/.ssh/known_hosts.$RPRE" -o "PasswordAuthentication=no" -o "StrictHostKeyChecking=no" -i $DATADIR/${KEYPAIRS[1]} -P $pno -p ${RPRE}wait ${DEFLTUSER}@$FLT: >/dev/null   if test -n "$LOGFILE"; then echo "ssh -o \"UserKnownHostsFile=~/.ssh/known_hosts.$RPRE\" -o \"PasswordAuthentication=no\" -o \"StrictHostKeyChecking=no\" -i $DATADIR/${KEYPAIRS[1]} -p $pno ${DEFLTUSER}@$FLT iperf3 -t5 -J -c $TGT" >> $LOGFILE; fi   IPJSON=$(ssh -o "UserKnownHostsFile=~/.ssh/known_hosts.$RPRE" -o "PasswordAuthentication=no" -o "StrictHostKeyChecking=no" -i $DATADIR/${KEYPAIRS[1]} -p $pno ${DEFLTUSER}@$FLT "./${RPRE}wait iperf3; iperf3 -t5 -J -c $TGT")   if test $? != 0; then     # Clients may need more startup time     echo -n " retry "     sleep 16     IPJSON=$(ssh -o "UserKnownHostsFile=~/.ssh/known_hosts.$RPRE" -o "PasswordAuthentication=no" -o "StrictHostKeyChecking=no" -i $DATADIR/${KEYPAIRS[1]} -p $pno ${DEFLTUSER}@$FLT "iperf3 -t5 -J -c $TGT")     if test $? != 0; then log_grafana "iperf3" "s$VM" "0" "1"       continue     fi fi if test -n "$LOGFILE"; then echo "$IPJSON" >> $LOGFILE; fi SENDBW=$(($(printf "%.0f\n" $(echo "$IPJSON" \| jq '.end.sum_sent.bits_per_second'))/1048576)) RECVBW=$(($(printf "%.0f\n" $(echo "$IPJSON" \| jq '.end.sum_received.bits_per_second'))/1048576)) HUTIL=$(printf "%.1f%%\n" $(echo "$IPJSON" \| jq '.end.cpu_utilization_percent.host_total')) RUTIL=$(printf "%.1f%%\n" $(echo "$IPJSON" \| jq '.end.cpu_utilization_percent.remote_total')) echo -e " ${SRC} <-> ${TGT}: ${BOLD}$SENDBW Mbps $RECVBW Mbps $HUTIL $RUTIL${NORM}" if test -n "$LOGFILE"; then echo -e "IPerf3: ${SRC}-${TGT}: $SENDBW Mbps $RECVBW Mbps $HTUIL $RUTIL" >>$LOGFILE; fi BANDWIDTH+=($SENDBW $RECVBW) SBW=$(echo "scale=2; $SENDBW/1000" \| bc -l) RBW=$(echo "scale=2; $RECVBW/1000" \| bc -l) log_grafana "iperf3" "s$VM" "$SBW" 0 log_grafana "iperf3" "r$VM" "$RBW" 0 done rm ${RPRE}wait echo -en "\b"} ``` | performs iperf3 tests between multiple hosts. It iterates through each pair of source and target hosts, connects to each target host, and runs iperf3 tests to measure the network bandwidth, CPU utilization, and other metrics. The results are then displayed and optionally logged. Additionally handles retries if the initial test fails|
+|ping		|	
+|ssh	|3102 – 3176|		
+|totDur |			
+
+
+
+
+
+
