@@ -1,0 +1,55 @@
+# METRIC OVERVIEW
+
+## Variables
+
+|Metric/Label|	Description |	Variable |	Exemples|
+|----------|----------|----------|----------|
+|Clouds	|cloud to be picked	|$mycloud	|see Table CLOUDS |
+|Commands	|command to seperate f.e. ssh from api-call	|$mycmd	|see Table COMMANDS |
+|Methods	|from command: certain command domains (boot, create, delete)	|$mymethod	|see Table METHODS|
+|Resources |from command: certain commands with the Prefix `wait`|$mywait	|see Table RESOURCES|
+|Benchmarks |from command: certain commands that are part of benchmark functions |$mybench |see Table BENCHMARKS|
+
+
+## Grafana-Dashboard				
+|Metric	|Description	|Variable	|Unit	|Influx Query	|Exemple Endpoints|
+|----------|----------|----------|----------|----------|----------|
+OVERVIEW					
+|API calls	|Takes all connections(with return code) from selected cloud with selected command, method in current time interval	|return-code, $mycloud, $mycmd, $mymethod	|count	|``` SELECT count("return_code") FROM "default"./^$mycloud$/ WHERE ("cmd" =~ /^$mycmd$/ AND "method" =~ /^$mymethod$/) AND $timeFilter GROUP BY time($__interval) fill(null)```| |
+|API errors	|Takes all connections(with error return code) from selected cloud with selected command, method in current time interval 	|| return-code, $mycloud, $mycmd, $mymethod	|count	|```SELECT sum("return_code") FROM "default"./^$mycloud$/ WHERE ("cmd" =~ /^$mycmd$/ AND "method" =~ /^$mymethod$/) AND $timeFilter GROUP BY time($__interval)``` ||
+|API success rate	|Takes all connections subtracts the sum of counts with an error-return code and devides it through all connections filtered by selected cloud with selected command, method in current time interval  	|| return-code, $mycloud, $mycmd, $mymethod	|percent	|```SELECT ((count("return_code")-sum("return_code"))/count("return_code")) FROM "$mycloud" WHERE ("cmd" =~ /^$mycmd$/ AND "method" =~ /^$mymethod$/) AND $timeFilter```||	
+|ssh conns	|Takes all connections(with return code) and the command ssh from selected cloud with selected method in current time interval  	|return-code, $mycloud, $mycmd, $mymethod	|count	|```SELECT count("return_code") FROM "default"./^$mycloud$/ WHERE ("cmd" = 'ssh') AND $timeFilter GROUP BY time($__interval) fill(null)```|
+|ssh errors	|Takes all connections with an error return code and the command ssh from selected cloud with selected method in current time interval  	|return-code, $mycloud, $mycmd, $mymethod|	count	|```SELECT sum("return_code") FROM "$mycloud" WHERE ("cmd" = 'ssh') AND $timeFilter GROUP BY time($__interval)```||
+|ssh success rate	|Takes all connections with cmd=ssh subtracts the sum of cmd=ssh-counts with an error-return code and devides it through all connections with cmd=ssh filtered by selected cloud with selected method in current time interval  	|return-code, $mycloud, $mycmd, $mymethod	|percent	|```SELECT ((count("return_code")-sum("return_code"))/count("return_code")) FROM "$mycloud" WHERE ("cmd" = 'ssh') AND $timeFilter```||
+|Resources	|Takes all connections(with return code) and the commands that match the RESOURCES-list in the $mywait-Variable from selected cloud with selected method in current time interval  	|return-code, $mycloud, $mycmd, $mymethod	|count	|SELECT count("return_code") FROM "default"./^$mycloud$/ WHERE ("cmd" =~ /^$mywait$/) AND $timeFilter GROUP BY time($__interval) fill(null)|	
+|Resource errors	|Takes all connections with an error return code and the commands that match the RESOURCES-list in the $mywait-Variable from selected cloud with selected method in current time interval  	|return-code, $mycloud, $mycmd, $mymethod	|count	|```SELECT sum("return_code") FROM "default"./^$mycloud$/ WHERE ("cmd" =~ /^$mywait$/) AND $timeFilter GROUP BY time($__interval)```||
+|iperf success rate	|Takes all connections with cmd=iperf3 subtracts the sum of cmd= iperf3-counts with an error-return code and devides it through all connections with cmd= iperf3 filtered by selected cloud with selected method in current time interval |return-code, $mycloud, $mycmd, $mymethod	|percent	|```SELECT ((count("return_code")-sum("return_code"))/count("return_code")) FROM "$mycloud" WHERE ("cmd" = 'iperf3') AND $timeFilter```||
+STATS					
+|API errors	|Takes all connections with an error return code from selected cloud with selected method in current time interval and grouped by method |return-code,$mycloud, $mycmd, (Group = $mymethod)|	rc	|```SELECT sum("return_code") FROM "default"./^$mycloud$/ WHERE ("cmd" =~ /^$mycmd$/ AND "method" =~ /^$mymethod$/) AND $timeFilter GROUP BY time($__interval), "cmd", "method"	```||
+|Resource errors	|Takes all connections with an error return code the commands that match the RESOURCES-list in the $mywait-Variable  from selected cloud with selected method in current time interval and grouped by wait-command ||# errors	|```SELECT sum("return_code") FROM "default"./^$mycloud$/ WHERE ("cmd" =~ /^$mywait$/) AND $timeFilter GROUP BY time($__interval), "cmd" fill(none)	```|waitDELLBAAS  waitJHVM  waitJHVOLUME  waitLBAAS  WaitVM|
+|Bench (ssh) errors	|Takes all connections with an Benchmark-Error (tagged by benchmark functions in shellscript) from selected cloud with selected method in current time interval and  grouped by ERR($tag_cmd) ||Errs	|```SELECT sum("return_code") FROM "default"./^$mycloud$/ WHERE ("cmd" =~ /^$mybench$/) AND $timeFilter GROUP BY time($__interval), "cmd" fill(null)```|ERR(LBconn)  ERR(totDur)  ERR(4000pi)  ERR(fioBW)  ERR(fioLat10ms)  ERR(fiokIOPS)  ERR(iperf3)  ERR(ping)  ERR(ssh)|
+PERFORMANCE					
+|API response times	|Takes the mean duration from all connections(with return code) from selected cloud with selected command, method in current time interval and groups them by cmd or method||s|```SELECT mean("duration") FROM "default"./^$mycloud$/ WHERE ("cmd" =~ /^$mycmd$/ AND "method" =~ /^$mymethod$/) AND $timeFilter GROUP BY time($__interval), "cmd", "method" fill(none)```||	
+|Resource wait	|Takes the mean duration all connections with the command that match the RESOURCES-list in the $mywait-Variable and the method-tags (A) ACTIVE, (B) available, (C) XDELX (D) the rest from selected cloud with selected method in current time interval and grouped by wait-command |s |(A) ```SELECT mean("duration") FROM "default"./^$mycloud$/ WHERE ("cmd"::tag =~ /^$mywait$/ AND "method"::tag = 'ACTIVE') AND $timeFilter GROUP BY time($__interval), "cmd" fill(none)``` (B) ```SELECT mean("duration") FROM "default"./^$mycloud$/ WHERE ("cmd"::tag =~ /^$mywait$/ AND "method"::tag = 'available') AND $timeFilter GROUP BY time($__interval), "cmd" fthe method-tagill(none)``` (C) ```SELECT mean("duration") FROM "default"./^$mycloud$/ WHERE ("cmd"::tag =~ /^$mywait$/ AND "method"::tag = 'XDELX') AND $timeFilter GROUP BY time($__interval), "cmd" fill(none)``` (D) ```SELECT mean("duration") FROM "default"./^$mycloud$/ WHERE ("cmd"::tag =~ /^$mywait$/ AND "method"::tag !~ /^(ACTIVE\|available\|XDELX)$/) AND $timeFilter GROUP BY time($__interval), "cmd"::tag, "method"::tag fill(none)``` ||
+|Bench |Takes the mean duration from all connections(with return code) with commands thatr match the Bench-list in the $mybench-Variable from selected cloud with selected command, method in current time interval and groups them by cmd or method |s, Gb/s, s, %maxt*10, s*10, MB/s, IO/s, %	|```SELECT mean("duration") FROM "default"./^$mycloud$/ WHERE ("cmd" =~ /^$mybench$/) AND $timeFilter GROUP BY time($__interval), "cmd" fill(none)```||
+
+
+## Variable-Tables
+
+### CLOUDS
+
+* Regex: None
+
+|Cloud-list|Lines in Code | Code| Description|
+|----------|----------|----------|----------|
+|plus-pco||||
+|plus-prod2||||
+|plus-prod3||||
+|plus-prod4||||
+|gx-scs||||
+|stackit||||
+|wavestack1||||
+|cnds||||
+|aov||||
+|datapoc||||
+|ciab||||

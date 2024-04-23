@@ -10,6 +10,8 @@ class Inspector:
         self.env_file_path = env_file_path
         self.env = self.load_env_from_yaml()
         self.client = openstack.connect(cloud="gx")
+        self.test_name = self.env.get("TESTS_NAME_IDENTIFICATION")
+        print(self.test_name)
 
     def load_env_from_yaml(self):
         with open(self.env_file_path, "r") as file:
@@ -148,19 +150,19 @@ class Recover:
         for server in self.conn.compute.servers(all_projects=False):
             self.conn.compute.delete_server(server.id)
 
+#
+# if __name__ == "__main__":
+#     recover = Recover()
+#     recover.delete_security_group_rules()
+#     recover.delete_security_groups()
+#     # recover.delete_routers()
+#     recover.delete_subnets()
+#     # recover.delete_networks()
+#     # recover.delete_servers()
 
 if __name__ == "__main__":
-    recover = Recover()
-    # recover.delete_security_group_rules()
-    # recover.delete_security_groups()
-    # recover.delete_routers()
-    recover.delete_subnets()
-    # recover.delete_networks()
-    recover.delete_servers()
-
-# if __name__ == "__main
-#     inspector = Inspector()
-#     if inspector.check_network_existence("ext01"):
-#         print("Network exists!")
-#     else:
-#         print("Network does not exist.")
+    inspector = Inspector()
+    if inspector.check_network_existence("ext01"):
+        print("Network exists!")
+    else:
+        print("Network does not exist.")

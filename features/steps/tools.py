@@ -53,3 +53,35 @@ def create_subnets(num):
         else:
             break
     return subnet_list
+
+
+def delete_subent_ports(client, subnet_id=None):
+    for port in client.network.ports(network_id=subnet_id):
+        for fixed_ip in port.fixed_ips:
+            if fixed_ip['subnet_id'] == subnet_id:
+                try:
+                    client.network.delete_port(port.id)
+                except Exception as e:
+                    return f"ports on subnet with id: {subnet_id} can't be deleted because exception {e} is raised."
+
+
+def ensure_volume_exist(client, volume_name: str, size: int = 10, interval: int = 2, wait: int = 120,
+                        test_name: str = "scs-hm"):
+    if check_volumes_created(client=client, test_name=test_name) == "available":
+        volumes = list(client.block_store.volumes(name=volume_name))
+        if not volumes:
+            volume = client.block_store.create_volume(size=size, name=volume_name)
+            client.block_store.wait_for_status(volume, 'available', interval=interval, wait=wait)
+
+
+def verify_volumes_deleted(client, test_name):
+    volumes_test = [volume for volume in client.block_store.volumes() if f"{test_name}-volume" in volume.name]
+    assert len(volumes_test) != 0, "Some volumes still exist"
+
+
+def check_volumes_created(client, test_name):
+    for volume in client.volume.volumes():
+        if test_name in volume.name:
+            volume = client.block_store.wait_for_status(volume, 'available', interval=2, wait=120)
+            assert volume.status == 'available', f"Volume {volume.name} not available"
+            return volume.status
