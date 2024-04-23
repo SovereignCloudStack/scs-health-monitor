@@ -13,6 +13,8 @@ import tools
 
 class StepsDef:
 
+    #TODO: add every resource to the __init__ function, purpose: for later deletion
+
     @given("I connect to OpenStack")
     def given_i_connect_to_openstack(context):
         cloud_name = context.env.get("CLOUD_NAME", "gx")
@@ -310,7 +312,7 @@ class StepsDef:
             volume_name = f"{context.test_name}-volume-{num}"
             volume = context.client.block_store.create_volume(size=10, name=volume_name)
             context.volumes.append(volume)
-            tools.ensure_volume_exist(client=context.client, volume_name=volume_name, quantity=quantity_volumes)
+            tools.ensure_volume_exist(client=context.client, volume_name=volume_name)
 
     @then('all volumes should be successfully created')
     def check_volumes_created(context):

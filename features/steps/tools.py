@@ -65,7 +65,7 @@ def delete_subent_ports(client, subnet_id=None):
                     return f"ports on subnet with id: {subnet_id} can't be deleted because exception {e} is raised."
 
 
-def ensure_volume_exist(client, volume_name: str, quantity: int, size: int = 10, interval: int = 2, wait: int = 120):
+def ensure_volume_exist(client, volume_name: str, size: int = 10, interval: int = 2, wait: int = 120):
     volumes = list(client.block_store.volumes(name=volume_name))
     if not volumes:
         volume = client.block_store.create_volume(size=size, name=volume_name)
