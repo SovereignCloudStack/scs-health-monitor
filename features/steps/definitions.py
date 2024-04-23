@@ -312,13 +312,7 @@ class StepsDef:
             volume_name = f"{context.test_name}-volume-{num}"
             volume = context.client.block_store.create_volume(size=10, name=volume_name)
             context.volumes.append(volume)
-            tools.ensure_volume_exist(client=context.client, volume_name=volume_name)
-
-    @then('all volumes should be successfully created')
-    def check_volumes_created(context):
-        for volume in context.volumes:
-            volume = context.client.block_store.wait_for_status(volume, 'available', interval=2, wait=120)
-            assert volume.status == 'available'
+            tools.ensure_volume_exist(client=context.client, volume_name=volume_name, test_name=context.test_name)
 
     @then('I delete all volumes from test')
     def delete_all_volumes(context):
