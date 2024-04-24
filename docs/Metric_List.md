@@ -56,8 +56,8 @@ PERFORMANCE
 
 ### COMMANDS
 
-* Regex: ```/^(nova|neutron|glance|cinder|token|catalog|swift|octavia)$/```
-* Tag/Label: cmd/command
+* Regex: `/^(nova|neutron|glance|cinder|token|catalog|swift|octavia)$/`
+* Tag/Label: `cmd`/`command`
 
 |Command-list	|Lines in Code |Code |Description|
 |----------|----------|----------|----------|
@@ -82,7 +82,7 @@ PERFORMANCE
 |All ||||
 |boot||||
 |console-log
-|create | 1989- 1993| createJHVols()
+|create | 1989- 1993| ```createJHVols(){ JVOLSTIME=()   createResources $NOAZS VOLSTATS JHVOLUME NONE NONE JVOLSTIME id $CINDERTIMEOUT cinder create --image-id $JHIMGID --availability-zone \${VAZS[\$VAZN]} --name ${RPRE}RootVol_JH\$no $JHVOLSIZE }```| responsible for creating Cinder volumes: initializes an array `JVOLSTIME=()` to store timestamps related to the creation of Cinder volumes and calls the `createResources` function with several arguments to create Cinder volumes using the cinder create command: `$NOAZS` (Number of availability zones), `VOLSTATS` (statistics related to volume status), `JHVOLUME` (prefix for the volume name), `NONE` (placeholder), `JVOLSTIME` (array of timestamps) `id` (column to retrieve the volume ID), `$CINDERTIMEOUT` (timeout value for the operation). The actual cinder create command to create the volume specifies the image ID `$JHIMGID`, availability zone, volume name, and volume size `$JHVOLSIZE`. The volume name is constructed using the prefix `${RPRE}RootVol_JH` followed by an index `$no`.
 ||
 |delete |2003 -2006| deleteJHVols()
 |flavor-show
@@ -124,8 +124,8 @@ PERFORMANCE
 
 ### RESOURCES	
 
-* Regex:	```/^wait/``` 
-* Tag/Label: cmd/command
+* Regex:	`/^wait/` 
+* Tag/Label: `cmd/command`
 
 
 |Resource-list |Lines in Code	|Code	| Description |
