@@ -127,8 +127,10 @@
 ### RESOURCES	
 
 * Regex:	`/^wait/` 
-* Tag/Label: `cmd/command`
+* Tag/Label: `cmd`/`command`
+* Source Function: `waitlistResources()` 
 
+	└── Arguments: `STATNM RSRCNM CSTAT STIME PROG1 PROG2 FIELD COMMAND`
 
 |Resource-list |Lines in Code	|Code	| Description |
 |----------|----------|----------|----------|	
@@ -139,6 +141,7 @@
 |waitJHVOLUME |1996 - 2001 | ```waitJHVols(){ waitlistResources VOLSTATS JHVOLUME VOLCSTATS JVOLSTIME "available" "NA" $VOLSTATCOL $CINDERTIMEOUT cinder list handleWaitErr "JH volumes" VOLSTATS $CINDERTIMEOUT cinder show}```| calls the `waitlistResources` function with several arguments and this function waits for Cinder volumes to reach a specific state 'available' before proceeding. the funcion uses the cinder list command to check the status of volumes. After waiting for the volumes, the `handleWaitErr` function is called, where arguments such as the label "JH volumes", statistics related to volume status, a timeout value are passed and the command `cinder show`. this is how any errors that occur during the waiting process are handled.
 |waitLBAAS | 457 - 461 | ```LBWAIT=""  if test -n "$OPENSTACKCLIENT" -a -n "$LOADBALANCER"; then    openstack loadbalancer member create --help \| grep -- --wait >/dev/null 2>&1    if test $? == 0; then LBWAIT="--wait"; fi  fi```| checks if both the variables `$OPENSTACKCLIENT` and `$LOADBALANCER` are not empty. If they are not empty, it uses the `openstack loadbalancer member create --help` command to check if the `--wait` option is available. If the `--wait` option is found, it sets the variable `$LBWAIT` to `"--wait"`. This variable can be used later to control the behavior of a subsequent command related to load balancer member creation.|
 |waitVM
+|waitVols|2016 -2022|`waitVols() {   if test -n "$BOOTFROMIMAGE"; then return 0; fi   #waitResources VOLSTATS VOLUME VOLCSTATS VOLSTIME "available" "NA" "status" $CINDERTIMEOUT cinder show   waitlistResources VOLSTATS VOLUME VOLCSTATS VOLSTIME "available" "NA" $VOLSTATCOL $CINDERTIMEOUT cinder list   handleWaitErr "Volumes" VOLSTATS $CINDERTIMEOUT cinder show }`|
 
 
 ### BENCHMARKS
