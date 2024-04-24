@@ -168,7 +168,103 @@
 
 ## Parent Functions
 
+### STATE and FAILEDNO Flag
+* Lines in Code: 1190 - 1191
+* Description:
+* Code
+`STATE=""`
+`FAILEDNO=0`
+
 ### createResources()
+* Lines in Code: 1207 - 1252
+* Purpose: provide a flexible way to create and manage resources in an OpenStack environment while tracking their creation progress and handling errors
+* Description:
+  - parameters:
+    - `$1` Quantity of resources to create.
+    - `$2` Name of timing statistics array.
+    - `$3` Name of resource list array (appended with "S").
+    - `$4` Name of another resource list array (appended with "S"). This is optional and can be used to reference additional resources.
+    - `$5` Name of yet another resource list array (appended with "S"). This is also optional and can be used to reference more resources.
+    - `$6` Name of array where timestamps of the operation are stored (optional).
+    - `$7` Name of the ID field from the resource to be used for storing in $3.
+    - `$8` Timeout for the operation.
+    - `$9-` OpenStack command to be called referencing `$AZ` (1 or 2), `$no` (running number), `$VAL`, and `$MVAL` (from `$4` and `$5`)
+  - initializes various variables and arrays to store resource lists and timestamps to manage the creation process
+  - loops through the specified quantity of resources, executing the provided OpenStack command for each resource creation
+  - updates the status of the resource creation process based on the command's response
+  - handles any errors encountered during the creation process and returns an appropriate exit code
+  
+* Code
+
+```
+# Create a number of resources and keep track of them
+# $1 => quantity of resources
+# $2 => name of timing statistics array
+# $3 => name of resource list array ("S" appended)
+# $4 => name of resource array ("S" appended, use \$VAL to ref) (optional)
+# $5 => dito, use \$MVAL (optional, use NONE if unneeded)
+# $6 => name of array where we store the timestamp of the operation (opt)
+# $7 => id field from resource to be used for storing in $3
+# $8 => timeout
+# $9- > openstack command to be called
+#
+# In the command you can reference \$AZ (1 or 2), \$no (running number)
+# and \$VAL and \$MVAL (from $4 and $5).
+#
+# NUMBER STATNM RSRCNM OTHRSRC MORERSRC STIME IDNM COMMAND
+createResources()
+{
+  local ctr no
+  declare -i ctr=0
+  local QUANT=$1; local STATNM=$2; local RNM=$3
+  local ORNM=$4; local MRNM=$5
+  local STIME=$6; local IDNM=$7
+  shift; shift; shift; shift; shift; shift; shift
+  local TIMEOUT=$1; shift
+  #if test $TIMEOUTFACT -gt 1; then let TIMEOUT+=2; fi
+  eval local LIST=( \"\${${ORNM}S[@]}\" )
+  eval local MLIST=( \"\${${MRNM}S[@]}\" )
+  if test "$RNM" != "NONE"; then echo -n "New $RNM: "; fi
+  local RC=0
+  local TIRESP
+  FAILEDNO=-1
+  for no in `seq 0 $(($QUANT-1))`; do
+    local AZN=$(($no%$NOAZS))
+    local VAZN=$(($no%$NOVAZS))
+    local AZ=$(($AZ+1))
+    local VAZ=$(($VAZ+1))
+    local VAL=${LIST[$ctr]}
+    local MVAL=${MLIST[$ctr]}
+    local CMD=`eval echo $@ 2>&1`
+    local STM=$(date +%s)
+    if test -n "$STIME"; then eval "${STIME}+=( $STM )"; fi
+    let APICALLS+=1
+    TIRESP=$(ostackcmd_id $IDNM $TIMEOUT $CMD)
+    RC=$?
+    #echo "DEBUG: ostackcmd_id $CMD => $RC" 1>&2
+    updAPIerr $RC
+    local TM
+    read TM ID STATE <<<"$TIRESP"
+    if test $RC == 0; then eval ${STATNM}+="($TM)"; fi
+    let ctr+=1
+    state2col "$STATE"
+    # Workaround for teuto.net
+    if test "$1" = "cinder" && [[ $OS_AUTH_URL == *teutostack* ]]; then echo -en " ${RED}+5s${NORM} " 1>&2; sleep 5; fi
+    if test $RC != 0; then echo -e "${YELLOW}ERROR: $RNM creation failed$NORM" 1>&2; FAILEDNO=$no; return 1; fi
+    if test -n "$ID" -a "$RNM" != "NONE"; then echo -en "$ID $SCOL$STATE$NORM "; fi
+    eval ${RNM}S+="($ID)"
+    # Workaround for loadbalancer member create
+    if test "$STATE" = "PENDING_CREATE"; then sleep 1; fi
+  done
+  if test "$RNM" != "NONE"; then echo; fi
+}
+```
+
+### createResources()
+* Lines in Code: 1484 - 1595
+* Purpose: a versatile and robust tool for waiting for resources to reach a desired state in an OpenStack environment
+* Description:
+  - parameters:
 
 ### waitlistResources()
 
