@@ -168,12 +168,199 @@
 
 ## Parent Functions
 
-### STATE and FAILEDNO Flag
-* Lines in Code: 1190 - 1191
+### ostackcmd_id()
+* Lines in Code: 1024 - 1080
+* Purpose: provide a comprehensive wrapper for executing OpenStack commands with timeout enforcement, error handling, logging, and status extraction capabilities
 * Description:
-* Code
-`STATE=""`
-`FAILEDNO=0`
+  - parameters:
+    - `$1` The ID to extract from the command output
+    - `$2` Timeout for the command execution (in seconds)
+    - `$3`oo: The actual OpenStack command to execute
+  - records the start time of the command execution
+  - executes the specified OpenStack command using the mytimeout function to enforce the provided timeout
+  - captures the command response and determines the command's return code
+  - logs the command execution details including start time, end time, ID, status, command, return code, and response to a logfile
+  - if the command fails and error reporting is enabled, it sends an alarm notification and waits for a specified duration before retrying.
+  - if the command fails due to HTTP 409 conflict, it retries the command after a brief delay.
+  - extracts the ID and status from the command output based on the provided ID name.
+  - checks if the execution time exceeds a threshold and logs a warning if it does.
+  - returns a string containing the execution time, ID, and status of the command.
+* Dependencies: relies on the external functions: `translate`, `mytimeout`, `log_grafana`, `sendalarm` and `errwait` for translating commands, enforcing timeouts, logging, error handling, and alarm notification
+
+* Code:
+```
+# Command wrapper for openstack commands
+# Collecting timing, logging, and extracting id
+# $1 = id to extract
+# $2 = timeout (in s)
+# $3-oo => command
+# Return value: Error from command
+# Output: "TIME ID STATUS"
+ostackcmd_id()
+{
+  local IDNM=$1; shift
+  local TIMEOUT=$1; shift
+  if test $TIMEOUTFACT -gt 1; then let TIMEOUT*=$TIMEOUTFACT; fi
+  local LSTART=$(date +%s.%3N)
+  translate "$@"
+  RESP=$(mytimeout $TIMEOUT ${OSTACKCMD[@]} 2>&1)
+  local RC=$?
+  local LEND=$(date +%s.%3N)
+  local TIM=$(math "%.2f" "$LEND-$LSTART")
+
+  test "$1" = "openstack" -o "$1" = "myopenstack" && shift
+  CMD="$1"
+  if test "$CMD" = "neutron" -a "${2:0:5}" = "lbaas"; then CMD=octavia; fi
+  log_grafana "$CMD" "$2" "$TIM" "" "$RC"
+  if test $RC != 0 -a -z "$IGNORE_ERRORS"; then
+    sendalarm $RC "$*" "$RESP" $TIMEOUT
+    errwait $ERRWAIT
+  fi
+
+  # Retry if we have a HTTP 409
+  if test $RC = 1 -a -z "$NORETRY" && echo "$RESP" | grep '(HTTP 409)' >/dev/null 2>&1; then
+    sleep 5
+    LSTART=$(date +%s.%3N)
+    RESP=$(mytimeout $TIMEOUT ${OSTACKCMD[@]} 2>&1)
+    local RC=$?
+    local LEND=$(date +%s.%3N)
+    local TIM=$(math "%.2f" "$LEND-$LSTART")
+    log_grafana "$MCD" "$2" "$TIM" "" "$RC"
+    if test $RC != 0 -a -z "$IGNORE_ERRORS"; then
+      sendalarm $RC "$*" "$RESP" $TIMEOUT
+      errwait $ERRWAIT
+    fi
+  fi
+
+  STATUS=$(echo "$RESP" | grep "^| *status *|" | sed -e "s/^| *status *| *\([^|]*\).*\$/\1/" -e 's/ *$//')
+  if test -z "$STATUS"; then STATUS=$(echo "$RESP" | grep "^| *provisioning_status *|" | sed -e "s/^| *provisioning_status *| *\([^|]*\).*\$/\1/" -e 's/ *$//'); fi
+  if test "$IDNM" = "DELETE"; then
+    ID="$STATUS"
+    echo "$LSTART/$LEND/$ID/$STATUS: ${OSTACKCMD[@]} => $RC ($STATUS) $RESP" >> $LOGFILE
+  else
+    ID=$(echo "$RESP" | grep "^| *$IDNM *|" | sed -e "s/^| *$IDNM *| *\([^|]*\).*\$/\1/" -e 's/ *$//')
+    echo "$LSTART/$LEND/$ID/$STATUS: ${OSTACKCMD[@]} => $RC ($ID:$STATUS) $RESP" >> $LOGFILE
+    if test "$RC" != "0" -a -z "$IGNORE_ERRORS"; then echo "$TIM $RC"; echo -e "${YELLOW}ERROR: ${OSTACKCMD[@]} => $RC $RESP$NORM" 1>&2; return $RC; fi
+  fi
+  if test "${TIM%.*}" -gt $((3+$TIMEOUT/4)); then echo -e "${YELLOW}Slow ${TIM}s: ${OSTACKCMD[@]} => $RC $RESP$NORM" 1>&2; fi
+  echo "$TIM $ID $STATUS"
+  return $RC
+}
+```
+
+### ostackcmd_tm_retry_N()
+* Lines in Code: 1190 - 1191
+* Purpose: provide helper functions and variables
+* Description
+  - break down:
+    - `ostackcmd_tm_retry_N()` retries executing a reentrant OpenStack command a specified number of times `$NORETRY` with a `2-second sleep` interval between retries. It takes the same parameters as `ostackcmd_tm()`. If the command succeeds `$RRC == 0`, it returns `0`, otherwise, it returns the command's return code `$RRC`.
+    - `ostackcmd_tm_retry()`: a wrapper around `ostackcmd_tm_retry_N()`, setting the number of retries to `2` by `default`
+    - `ostackcmd_tm_retry3()`: similar to `ostackcmd_tm_retry()`, but it retries the command `3` times
+    - `SCOL` variable that holds the color code used for displaying states in grafana. It's initially set to an empty string.
+    - `state2col()` this function sets the color `SCOL` based on the state passed as an argument `$1`. It checks 
+      - if the state is `"ACTIVE"` or `"UP"` and sets `SCOL` to `green`, 
+      - if the state is `"BUILD"`, `"PENDING"`, `"creating"`, `"downloading"`, or `"DOWN"`, it sets `SCOL` to `yellow`, 
+      - and if the state starts with `"ERROR"` or `"error"`, it sets `SCOL` to `red`.
+    - `STATE` variable to store the state of the current operation
+    - `FAILEDNO` variable to track the number of failed operations, initially set to 0
+* Code:
+
+```
+# ostackcmd_tm with a retry after 2s (idempotent commands only)
+ostackcmd_tm_retry_N()
+{
+  local NORETRY=$1
+  local RESLEEP=2
+  local RECTR=0
+  local RRC=0
+  shift
+  while test $RECTR -lt $NORETRY; do
+    ostackcmd_tm "$@"
+    local RRC=$?
+    if test $RRC = 0; then return 0; fi
+    sleep $RESLEEP
+    let RESLEEP+=1
+    let RECTR+=1
+  done
+  return $RRC
+}
+
+# ostackcmd_tm with a retry after 2s (idempotent commands only)
+# Parameters: See ostackcmd_tm
+ostackcmd_tm_retry()
+{
+  ostackcmd_tm_retry_N 2 "$@"
+}
+
+# ostackcmd_tm with a retry after 2s (idempotent commands only)
+# Parameters: See ostackcmd_tm
+ostackcmd_tm_retry3()
+{
+  ostackcmd_tm_retry_N 3 "$@"
+}
+
+SCOL=""
+# Set SCOL according to state in $1
+state2col()
+{
+    SCOL=""
+    local STA="$1"
+    if test "$STA" == "ACTIVE" -o "$STA" == "active" -o "$STA" == "UP"; then SCOL="$GREEN"
+    elif test "$STA" == "BUILD" -o "${STA:0:7}" == "PENDING" -o "$STA" == "creating" -o "$STA" == "downloading" -o "$STA" == "DOWN"; then SCOL="$YELLOW"
+    elif test "${STA:0:5}" == "ERROR" -o "${STA:0:5}" == "error"; then SCOL="$RED"
+    fi
+}
+
+STATE=""
+FAILEDNO=0
+```
+### colstat
+
+* Lines in Code: 1392 - 1412
+* Purpose: provide a useful function for visualizing status information, especially in command-line interfaces, where colors can convey important information quickly
+* Decription:
+  - parameters:
+    - `$1` Status string to be converted
+    - `$2` The desired first status to be highlighted    
+    - `$3` Optional, a second desired status to be highlighted
+  - Output:
+    prints out a one-character string representing the status with colors.
+    returns a code:
+    - `2` if the status matches either `$2` or `$3`
+    - `1` if the status indicates an error
+    - `3` if the status is missing
+    - `0` if the status is in progress or doesn't match any conditions
+  - Color Codes:
+    - `Green (*)` indicates a match with `$2` or `$3`, or a `non-null` status
+    - `Red` indicates an error status
+    - `Default` returns the first character of the status string if no match or error is detected
+
+* Code:
+```
+# Convert status to colored one-char string
+# $1 => status string
+# $2 => wanted1
+# $3 => wanted2 (optional)
+# Return code: 3 == missing, 2 == found, 1 == ERROR, 0 in progress
+colstat()
+{
+  if test "$2" == "NONNULL" -a -n "$1" -a "$1" != "null"; then
+    echo -e "${GREEN}*${NORM}"; return 2
+  elif test "$2" == "$1" || test -n "$3" -a "$3" == "$1"; then
+    echo -e "${GREEN}${1:0:1}${NORM}"; return 2
+  elif test "${1:0:5}" == "error" -o "${1:0:5}" == "ERROR"; then
+    echo -e "${RED}${1:0:1}${NORM}"; return 1
+  elif test -n "$1"; then
+    echo "${1:0:1}"
+  else
+    # Handle empty (error)
+    echo "?"; return 3
+  fi
+  return 0
+}
+```
+
+
 
 ### createResources()
 * Lines in Code: 1207 - 1252
@@ -341,10 +528,202 @@ createResourcesCond()
   if test "$RNM" != "NONE"; then echo; fi
 }
 ```
+
+### deleteResources()
+
+* Lines in Code: 1320- 1390
+* Purpose: provide a function to execute OpenStack commands and handle their responses with helper functions to manage timing statistics, handle errors, and update resource lists.
+* Description:
+  - parameters:
+    - `$1` Name of timing statistics array
+    - `$2` Name of the array containing resources (`"S"` appended)
+    - `$3` Name of the array to store timestamps for deletion (optional, use `""` if unneeded)
+    - `$4` Timeout for the deletion operation
+    - `$5-` OpenStack command to be called for resource deletion. The UUID from the resource list is appended to the command.
+  - initializes various local variables and arrays based on the provided parameters
+  - iterates through the resource list array `${RNM}S` and deletes each resource executing the specified OpenStack command with the resource UUID appended
+  - tracks the deletion status and timestamps of each deletion operation
+  - If an error occurs during deletion, it retries the deletion operation and continues. It keeps track of the failed deletions and stores them for later re-cleanup.
+  - After completing the deletion process, it updates the resource list array `${RNM}S` to reflect any remaining resources
+  - returns the number of errors encountered during the deletion process
+* Dependencies: responses depend on the `ostackcmd_id()` function
+* Code:
+```
+# Delete a number of resources
+# $1 => name of timing statistics array
+# $2 => name of array containing resources ("S" appended)
+# $3 => name of array to store timestamps (optional, use "" if unneeded)
+# $4 => timeout
+# $5- > openstack command to be called
+# The UUID from the resource list ($2) is appended to the command.
+#
+# The resource array ($2) will be modified and the delete items (all) be removed from it
+#
+# STATNM RSRCNM DTIME COMMAND
+deleteResources()
+{
+  local STATNM=$1; local RNM=$2; local DTIME=$3
+  local ERR=0
+  shift; shift; shift
+  local TIMEOUT=$1; shift
+  #if test $TIMEOUTFACT -gt 1; then let TIMEOUT+=2; fi
+  local FAILDEL=()
+  eval local LIST=( \"\${${ORNM}S[@]}\" )
+  #eval local varAlias=( \"\${myvar${varname}[@]}\" )
+  eval local LIST=( \"\${${RNM}S[@]}\" )
+  #echo $LIST
+  test -n "$LIST" && echo -n "Del $RNM: "
+  #for rsrc in $LIST; do
+  local LN=${#LIST[@]}
+  local TIRESP
+  local IGNERRS=0
+  eval "REM${RNM}S=()"
+  while test ${#LIST[*]} -gt 0; do
+    local rsrc=${LIST[-1]}
+    echo -n "$rsrc "
+    local DTM=$(date +%s)
+    if test -n "$DTIME"; then eval "${DTIME}+=( $DTM )"; fi
+    local TM
+    let APICALLS+=1
+    TIRESP=$(ostackcmd_id id $TIMEOUT $@ $rsrc)
+    local RC="$?"
+    if test -z "$IGNORE_ERRORS"; then
+      updAPIerr $RC
+    else
+      let IGNERRS+=$RC
+      RC=0
+    fi
+    read TM ID STATE <<<"$TIRESP"
+    if test $RC != 0; then
+      echo -e "${YELLOW}ERROR deleting $RNM $rsrc; retry and continue ...$NORM" 1>&2
+      let ERR+=1
+      sleep 5
+      TIRESP=$(ostackcmd_id id $(($TIMEOUT+8)) $@ $rsrc)
+      RC=$?
+      updAPIerr $RC
+      if test $RC != 0; then FAILDEL+=($rsrc); fi
+    else
+      eval ${STATNM}+="($TM)"
+    fi
+    unset LIST[-1]
+    if test "$STATE" = "PENDING_DELETE"; then sleep 1; fi
+  done
+  if test -n "$IGNORE_ERRORS" -a $IGNERRS -gt 0; then echo -n " ($IGNERRS errors ignored) "; fi
+  test $LN -gt 0 && echo
+  # FIXME: Should we try again immediately?
+  if test -n "$FAILDEL"; then
+    echo "Store failed dels in REM${RNM}S for later re-cleanup: ${FAILDEL[*]}"
+    eval "REM${RNM}S=(${FAILDEL[*]})"
+  fi
+  # FIXME: We could try to look for a delete suffix in the command before doing this ...
+  # FIXME: This will always be empty ...
+  eval "${RNM}S=(${LIST[*]})"
+  return $ERR
+}
+``` 
+
+
+### waitResources()
+
+* Lines in Code: 1414 - 1482
+* Purpose: ensure that certain resources are in a specific state before proceeding with further actions in automation scripts
+* Description:
+  - parameters:
+    - `$1` Name of the timing statistics array.
+    - `$2` Name of the array containing resources (with "S" appended).
+    - `$3` Name of the array to collect completion timing stats.
+    - `$4` Name of the array with start times.
+    - `$5` Value to wait for.
+    - `$6` Alternative value to wait for.
+    - `$7` Field name to monitor.
+    - `$8` Timeout.
+    - `$9-` OpenStack command for querying status. The values from $2 get appended to the command.
+  - initializes necessary variables and iterates through the resources and queries their status using the provided OpenStack command while collecting timing statistics and logs
+  - if the status matches the desired value, it proceeds to the next resource
+  - if there's an error or the status doesn't match, it logs an error message and continues waiting
+  - repeats this process until the desired state for all resources or the timeout is reached
+  - Output:
+    - returns the number of resources that did not reach the desired state within the timeout period
+
+* Code:
+```
+# Wait for resources reaching a desired state
+# $1 => name of timing statistics array
+# $2 => name of array containing resources ("S" appended)
+# $3 => name of array to collect completion timing stats
+# $4 => name of array with start times
+# $5 => value to wait for
+# $6 => alternative value to wait for
+# $7 => field name to monitor
+# $8 => timeout
+# $9- > openstack command for querying status
+# The values from $2 get appended to the command
+#
+# STATNM RSRCNM CSTAT STIME PROG1 PROG2 FIELD COMMAND
+waitResources()
+{
+  ERRRSC=()
+  local STATNM=$1; local RNM=$2; local CSTAT=$3; local STIME=$4
+  local COMP1=$5; local COMP2=$6; local IDNM=$7
+  shift; shift; shift; shift; shift; shift; shift
+  local TIMEOUT=$1; shift
+  #if test $TIMEOUTFACT -gt 1; then let TIMEOUT+=2; fi
+  local STATI=()
+  eval local RLIST=( \"\${${RNM}S[@]}\" )
+  eval local SLIST=( \"\${${STIME}[@]}\" )
+  local LAST=$(( ${#RLIST[@]} - 1 ))
+  declare -i ctr=0
+  declare -i WERR=0
+  local TIRESP
+  while test -n "${SLIST[*]}" -a $ctr -le 320; do
+    local STATSTR=""
+    for i in $(seq 0 $LAST ); do
+      local rsrc=${RLIST[$i]}
+      if test -z "${SLIST[$i]}"; then STATSTR+=$(colstat "${STATI[$i]}" "$COMP1" "$COMP2"); continue; fi
+      local CMD=`eval echo $@ $rsrc 2>&1`
+      let APICALLS+=1
+      TIRESP=$(ostackcmd_id $IDNM $TIMEOUT $CMD)
+      local RC=$?
+      updAPIerr $RC
+      local TM STAT
+      read TM STAT STATE <<<"$TIRESP"
+      eval ${STATNM}+="( $TM )"
+      if test $RC != 0; then echo -e "\n${YELLOW}ERROR: Querying $RNM $rsrc failed$NORM" 1>&2; return 1; fi
+      STATI[$i]=$STAT
+      STATSTR+=$(colstat "$STAT" "$COMP1" "$COMP2")
+      STE=$?
+      echo -en "Wait $RNM: $STATSTR\r"
+      if test $STE != 0; then
+        if test $STE == 1 -o $STE == 3; then
+          echo -e "\n${YELLOW}ERROR: $NM $rsrc status $STAT$NORM" 1>&2 #; return 1
+          ERRRSC[$WERR]=$rsrc
+          let WERR+=1
+        fi
+        TM=$(date +%s)
+        TM=$(math "%i" "$TM-${SLIST[$i]}")
+        eval ${CSTAT}+="($TM)"
+        if test $STE -ge 2; then GRC=0; else GRC=$STE; fi
+        log_grafana "wait$RNM" "$COMP1" "$TM" "$GRC"
+        unset SLIST[$i]
+      fi
+    done
+    echo -en "Wait $RNM: $STATSTR\r"
+    if test -z "${SLIST[*]}"; then echo; return $WERR; fi
+    let ctr+=1
+    sleep 2
+  done
+  if test $ctr -ge 320; then let WERR+=1; fi
+  echo
+  return $WERR
+}
+```
+
+
+
 ### waitlistResources()
 
 * Lines in Code: 1484 - 1595
-* Purpose: a versatile and robust tool for waiting for resources to reach a desired state in an OpenStack environment
+* Purpose: provide a versatile and robust tool for waiting for resources to reach a desired state in an OpenStack environment
 * Description:
   - parameters:
     - `$1` Name of timing statistics array
@@ -476,81 +855,3 @@ waitlistResources()
   return $misserr
 }
 ```
-
-### deleteResources()
-
-* Lines in Code: 1320- 1390
-* Code:
-```
-# Delete a number of resources
-# $1 => name of timing statistics array
-# $2 => name of array containing resources ("S" appended)
-# $3 => name of array to store timestamps (optional, use "" if unneeded)
-# $4 => timeout
-# $5- > openstack command to be called
-# The UUID from the resource list ($2) is appended to the command.
-#
-# The resource array ($2) will be modified and the delete items (all) be removed from it
-#
-# STATNM RSRCNM DTIME COMMAND
-deleteResources()
-{
-  local STATNM=$1; local RNM=$2; local DTIME=$3
-  local ERR=0
-  shift; shift; shift
-  local TIMEOUT=$1; shift
-  #if test $TIMEOUTFACT -gt 1; then let TIMEOUT+=2; fi
-  local FAILDEL=()
-  eval local LIST=( \"\${${ORNM}S[@]}\" )
-  #eval local varAlias=( \"\${myvar${varname}[@]}\" )
-  eval local LIST=( \"\${${RNM}S[@]}\" )
-  #echo $LIST
-  test -n "$LIST" && echo -n "Del $RNM: "
-  #for rsrc in $LIST; do
-  local LN=${#LIST[@]}
-  local TIRESP
-  local IGNERRS=0
-  eval "REM${RNM}S=()"
-  while test ${#LIST[*]} -gt 0; do
-    local rsrc=${LIST[-1]}
-    echo -n "$rsrc "
-    local DTM=$(date +%s)
-    if test -n "$DTIME"; then eval "${DTIME}+=( $DTM )"; fi
-    local TM
-    let APICALLS+=1
-    TIRESP=$(ostackcmd_id id $TIMEOUT $@ $rsrc)
-    local RC="$?"
-    if test -z "$IGNORE_ERRORS"; then
-      updAPIerr $RC
-    else
-      let IGNERRS+=$RC
-      RC=0
-    fi
-    read TM ID STATE <<<"$TIRESP"
-    if test $RC != 0; then
-      echo -e "${YELLOW}ERROR deleting $RNM $rsrc; retry and continue ...$NORM" 1>&2
-      let ERR+=1
-      sleep 5
-      TIRESP=$(ostackcmd_id id $(($TIMEOUT+8)) $@ $rsrc)
-      RC=$?
-      updAPIerr $RC
-      if test $RC != 0; then FAILDEL+=($rsrc); fi
-    else
-      eval ${STATNM}+="($TM)"
-    fi
-    unset LIST[-1]
-    if test "$STATE" = "PENDING_DELETE"; then sleep 1; fi
-  done
-  if test -n "$IGNORE_ERRORS" -a $IGNERRS -gt 0; then echo -n " ($IGNERRS errors ignored) "; fi
-  test $LN -gt 0 && echo
-  # FIXME: Should we try again immediately?
-  if test -n "$FAILDEL"; then
-    echo "Store failed dels in REM${RNM}S for later re-cleanup: ${FAILDEL[*]}"
-    eval "REM${RNM}S=(${FAILDEL[*]})"
-  fi
-  # FIXME: We could try to look for a delete suffix in the command before doing this ...
-  # FIXME: This will always be empty ...
-  eval "${RNM}S=(${LIST[*]})"
-  return $ERR
-}
-``` 
