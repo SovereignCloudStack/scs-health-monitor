@@ -128,7 +128,7 @@
 
 * Regex:	`/^wait/` 
 * Tag/Label: `cmd`/`command`
-* Source Function: `waitlistResources()` 
+* Parnet Functions: `waitlistResources()` and `handleWaitErr()`
 
 	└── Arguments: `STATNM RSRCNM CSTAT STIME PROG1 PROG2 FIELD COMMAND`
 
@@ -142,6 +142,8 @@
 |waitLBAAS | 457 - 461 | `LBWAIT=""  if test -n "$OPENSTACKCLIENT" -a -n "$LOADBALANCER"; then    openstack loadbalancer member create --help \| grep -- --wait >/dev/null 2>&1    if test $? == 0; then LBWAIT="--wait"; fi  fi`| checks if both the variables `$OPENSTACKCLIENT` and `$LOADBALANCER` are not empty. If they are not empty, it uses the `openstack loadbalancer member create --help` command to check if the `--wait` option is available. If the `--wait` option is found, it sets the variable `$LBWAIT` to `"--wait"`. This variable can be used later to control the behavior of a subsequent command related to load balancer member creation.|
 |waitVM
 |waitVols|2016 -2022|`waitVols() {   if test -n "$BOOTFROMIMAGE"; then return 0; fi   #waitResources VOLSTATS VOLUME VOLCSTATS VOLSTIME "available" "NA" "status" $CINDERTIMEOUT cinder show   waitlistResources VOLSTATS VOLUME VOLCSTATS VOLSTIME "available" "NA" $VOLSTATCOL $CINDERTIMEOUT cinder list   handleWaitErr "Volumes" VOLSTATS $CINDERTIMEOUT cinder show }`| ensures that Cinder volumes are available before proceeding with further actions, unless the VMs are configured to boot from an image by checking if the variable `$BOOTFROMIMAGE` is not empty, which would mean the VMs are configured to boot from an image and the func returns early without waiting for volumes, otherwise it calls the `waitlistResources` function with several arguments and waits for Cinder volumes to reach the `available` state before proceeding. The actual `cinder list` command is used to check the status of vols. If any errors occur during the waiting process the `handleWaitErr` function is called and the label `Volumes`, statistics related to vol status, a timeout value, and the `cinder show` command are passed
+
+
 
 ### BENCHMARKS
 
@@ -162,7 +164,143 @@
 |totDur |			
 
 
+## Parent Functions
 
+### waitlistResources()
+
+* Lines in Code: 1484 - 1595
+* Purpose: a versatile and robust tool for waiting for resources to reach a desired state in an OpenStack environment
+* Description:
+  - parameters:
+    - `$1` Name of timing statistics array
+    - `$2` Name of array containing resources ("S" appended)
+    - `$3` Name of array to collect completion timing stats
+    - `$4` Name of array with start times
+    - `$5` Value to wait for (special XDELX)
+    - `$6` Alternative value to wait for (special: 2ndary XDELX results in waiting also for ERRORED resources)
+    - `$7` Number of column (0 based)
+    - `$8` Timeout
+    - `$9-` OpenStack command for querying status. The values from `$2` get appended to the command.
+  - initializes arrays to store resource names, start times, and statuses for managing the waiting process
+  - loops through the resources, querying their status using the provided OpenStack command and waiting until their desired state or the timeout is reached
+  - handles errors encountered during the waiting process and provides feedback on the progress of the waiting operation, including the number of resources not in the desired state, the time elapsed, and the remaining resources
+  - returns the number of resources not in the desired state after the waiting process completes or the timeout is reached
+
+* Code:
+```
+# Wait for resources reaching a desired state
+# $1 => name of timing statistics array
+# $2 => name of array containing resources ("S" appended)
+# $3 => name of array to collect completion timing stats
+# $4 => name of array with start times
+# $5 => value to wait for (special XDELX)
+# $6 => alternative value to wait for 
+#       (special: 2ndary XDELX results in waiting also for ERRORED res.)
+# $7 => number of column (0 based)
+# $8 => timeout
+# $9- > openstack command for querying status
+# The values from $2 get appended to the command
+#
+# Return value: Number of resources not in desired state (e.g. error, wrong state, missing, ...)
+#
+# STATNM RSRCNM CSTAT STIME PROG1 PROG2 FIELD COMMAND
+waitlistResources()
+{
+  ERRRSC=()
+  local STATNM=$1; local RNM=$2; local CSTAT=$3; local STIME=$4
+  local COMP1=$5; local COMP2=$6; local COL=$7
+  local NERR=0
+  shift; shift; shift; shift; shift; shift; shift
+  local TIMEOUT=$1; shift
+  #echo "waitlistResources $STATNM $RNM $COMP1 $COL $@"
+  #if test $TIMEOUTFACT -gt 1; then let TIMEOUT+=2; fi
+  local STATI=()
+  eval local RLIST=( \"\${${RNM}S[@]}\" )
+  eval RRLIST=( \"\${${RNM}S[@]}\" )
+  eval local SLIST=( \"\${${STIME}[@]}\" )
+  local LAST=$(( ${#RLIST[@]} - 1 ))
+  if test ${#RLIST[@]} != ${#SLIST[@]}; then echo " WARN: RLIST \"${RLIST[@]}\" SLIST \"${SLIST[@]}\""; fi
+  local PARSE="^|"
+  local WAITVAL
+  #echo "waitlistResources \"${RLIST[*]}\" \"${SLIST[*]}\"" 1>&2
+  if test "$COMP1" == "XDELX"; then WAITVAL="del"; else WAITVAL="$COMP1"; fi
+  for no in $(seq 1 $COL); do PARSE="$PARSE[^|]*|"; done
+  PARSE="$PARSE *\([^|]*\)|.*\$"
+  #echo "$PARSE"
+  declare -i ctr=0
+  declare -i WERR=0
+  declare -i misserr=0
+  local waitstart=$(date +%s)
+  if test -n "$CSTAT" -a "$CLEANUPMODE" != "1"; then MAXWAIT=240; else MAXWAIT=30; fi
+  if test -z "${RLIST[*]}"; then return 0; fi
+  while test -n "${RRLIST[*]}" -a $ctr -le $MAXWAIT; do
+    local STATSTR=""
+    local CMD=`eval echo $@ 2>&1`
+    ostackcmd_tm $STATNM $TIMEOUT $CMD
+    if test $? != 0; then
+      echo -e "\n${YELLOW}ERROR: $CMD => $OSTACKRESP$NORM" 1>&2
+      # Only bail out after 6th error;
+      # so we retry in case there are spurious 500/503 (throttling) errors
+      # Do not give up so early on waiting for deletion ...
+      let NERR+=1
+      if test $NERR -ge 6 -a "$COMP1" != "XDELX" -o $NERR -ge 24; then return 1; fi
+      sleep 5
+    fi
+    local TM
+    #misserr=0
+    for i in $(seq 0 $LAST ); do
+      local rsrc=${RLIST[$i]}
+      if test -z "${SLIST[$i]}"; then STATSTR+=$(colstat "${STATI[$i]}" "$COMP1" "$COMP2"); continue; fi
+      local STAT=$(echo "$OSTACKRESP" | grep "^| $rsrc" | sed -e "s@$PARSE@\1@" -e 's/ *$//')
+      #echo "STATUS: \"$STAT\""
+      if test "$COMP1" == "XDELX" -a -z "$STAT"; then STAT="XDELX"; fi
+      STATI[$i]="$STAT"
+      STATSTR+=$(colstat "$STAT" "$COMP1" "$COMP2")
+      STE=$?
+      #echo -en "Wait $RNM $rsrc: $STATSTR\r"
+      # Found or ERROR
+      if test $STE != 0; then
+        # ERROR
+        if test $STE == 1 -o $STE == 3; then
+          # Really wait for deletion of errored resources?
+          if test "$COMP2" == "XDELX"; then continue; fi
+          ERRRSC[$WERR]=$rsrc
+          let WERR+=1
+          let misserr+=1
+          echo -e "\n${YELLOW}ERROR: $NM $rsrc status $STAT$NORM" 1>&2 #; return 1
+        fi
+        # Found
+        TM=$(date +%s)
+        TM=$(math "%i" "$TM-${SLIST[$i]}")
+        unset RRLIST[$i]
+        unset SLIST[$i]
+        #echo -e "State $STAT reached for ($i) $rsrc in $TM secs, remain \"${SLIST[*]}\"" 1>&2
+        if test -n "$CSTAT"; then
+          eval ${CSTAT}+="($TM)"
+          if test $STE -ge 2; then GRC=0; else GRC=$STE; fi
+          log_grafana "wait$RNM" "$COMP1" "$TM" "$GRC"
+        fi
+      fi
+    done
+    echo -en "\rWait $WAITVAL $RNM[${#SLIST[*]}/${#RLIST[*]}]: $STATSTR "
+    # Save 3s
+    if test -z "${SLIST[*]}"; then break; fi
+    # We can stop waiting if all resources have failed/disappeared (more than once)
+    if test $misserr -ge ${#RLIST[@]} -a $WERR -ge $((${#RLIST[@]}*2)); then break; fi
+    sleep 3
+    let ctr+=1
+  done
+  if test $ctr -ge $MAXWAIT; then let WERR+=${#SLIST[*]}; let misserr+=${#SLIST[*]}; fi
+  if test -n "${SLIST[*]}"; then
+    echo " TIMEOUT $(($(date +%s)-$waitstart))"
+    echo -e "\n${YELLOW}Wait TIMEOUT/ERROR $misserr ${NORM} ($(($(date +%s)-$waitstart))s, $ctr iterations), LEFT: ${RED}${RRLIST[*]}:${SLIST[*]}${NORM}" 1>&2
+    #FIXME: Shouldn't we send an alarm right here?
+  else
+    echo " ($(($(date +%s)-$waitstart))s, $ctr iterations)"
+  fi
+  return $misserr
+}
+```
 
 
 
