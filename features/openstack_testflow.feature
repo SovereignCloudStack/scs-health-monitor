@@ -19,11 +19,11 @@ Feature:
 
   Scenario Outline: Connect to OpenStack and create a subnet
     Given I connect to OpenStack
-    Then I should be able to create a subnet with name <subnet_name> in network <network_name> with <cidr>
+    Then I should be able to create <subnet_quantity> subnets
 
     Examples: Test subnets
       |subnet_quantity|
-      |      2        |
+      |       2       |
 
   Scenario: Connect to OpenStack and list networks
     Given I connect to OpenStack
@@ -67,29 +67,17 @@ Feature:
     Given I connect to OpenStack
     Then I should be able to delete a security groups
 
-
-
-  Scenario Outline: Connect to OpenStack and delete a network
+  Scenario: Connect to OpenStack and delete a subnet
     Given I connect to OpenStack
-    When A network with name <network_name> exists
-    Then I should be able to delete a network with name <network_name>
+    Then I should be able to delete subnets
 
-    Examples:Test networks
-      | network_name |
-      | network01    |
-      | network02    |
-      | network03    |
-
-  Scenario Outline: Connect to OpenStack and delete a router
+  Scenario: Connect to OpenStack and delete a network
     Given I connect to OpenStack
-    When A router with name <router_name> exists
-    Then I should be able to delete a router with name <router_name>
+    Then I should be able to delete a networks
 
-    Examples: Test routers
-      | router_name |
-      | router01    |
-      | router02    |
-      | router03    |
+  Scenario: Connect to OpenStack and delete a router
+    Given I connect to OpenStack
+    Then I should be able to delete routers
 
 
 
