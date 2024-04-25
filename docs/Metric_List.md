@@ -82,7 +82,7 @@
 |All ||||
 |boot||||
 |console-log
-|create |1742 - 1752 | `createNets() {  ERC=0  createResources 1 NETSTATS JHNET NONE NONE "" id $NETTIMEOUT nutron net-create "${RPRE}NET_JH" \|\| ERC=$?  if test $NONAZS -le 1; then    createResources $NONETS NETSTATS NET NONE NONE "" id $NETTIMEOUT neutron net-create "${RPRE}NET_VM_\$no" \|\|ERC=$?  else    createResources $NONETS NETSTATS NET NONE NONE "" id $NETTIMEOUT neutron net-create --availability-zone-hint"\${NAZS[\$((\$no%$NONAZS))]}" "${RPRE}NET_VM_\$no" \|\| ERC=$?  fi  return $ERC}`
+|create |1742 - 1752 | https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L1742-L1752 | orchestrates the creation of networks, handling any errors that may occur during the process and returning an appropriate error code: initializes the `ERC` variable to zero, used to track any errors that occur during the network creation process. Then it calls the `createResources`function to create the single `JHNET`-network `${RPRE}NET_JH` and assigns the output to `ERC`, if successful. If an error occurs, 'ERC' is updated with the error code. Then it checks if the number of availability zones `NONAZS` is less than or equal to one. If `true`, it creates networks for each VM `NONETS` without specifying any availability zones. If `false`, it creates networks for each virtual machine and specifies the availability zone hint based on the array `NAZS`. Then returns the final error code ERC to indicate the success or failure of the network creation process.
 ||1989 - 1993| `createJHVols(){ JVOLSTIME=()   createResources $NOAZS VOLSTATS JHVOLUME NONE NONE JVOLSTIME id $CINDERTIMEOUT cinder create --image-id $JHIMGID --availability-zone \${VAZS[\$VAZN]} --name ${RPRE}RootVol_JH\$no $JHVOLSIZE }`| responsible for creating Cinder volumes: initializes an array `JVOLSTIME=()` to store timestamps related to the creation of Cinder volumes and calls the `createResources` function with several arguments to create Cinder volumes using the cinder create command: `$NOAZS` (Number of availability zones), `VOLSTATS` (statistics related to volume status), `JHVOLUME` (prefix for the vol name), `NONE` (placeholder), `JVOLSTIME` (array of timestamps) `id` (column to retrieve the vol ID), `$CINDERTIMEOUT` (timeout value for the operation). The actual `cinder create` command to create the volume specifies the image ID `$JHIMGID`, availability zone, vol name and vol size `$JHVOLSIZE`. The vol name is constructed using the prefix `${RPRE}RootVol_JH` followed by an index `$no`| creates networks for both the Jump Host and VMs in the OpenStack environment, handles any errors and returns exit codes by caslling the `createResources` function to create a network for the JH and specifing the following parameters: `1` (number of networks to create), `NETSTATS` (statistics related to network status), `JHNET` (prefix for the network name), `NONE` (placeholder), `id` (column to retrieve the network ID), `$NETTIMEOUT` (timeout value for the operation), `neutron net-create "${RPRE}NET_JH"`is the actual `neutron` command to create the network for the JH constructing the network name using the prefix `${RPRE}NET_JH`. Then the creation of networks for VM is handled with an if statementthat checks whether there is only one availability zone (NONAZS <= 1) so it would not specify an availability zone hint. Else it specifies an availability zone hint based on the available availability zones. The return `$ERC` statement returns the value that indicates whether any errors occurred during the network creation process|
 ||2008 - 2013|`createVols() { if test -n "$BOOTFROMIMAGE"; then return 0; fi VOLSTIME=() createResources $NOVMS VOLSTATS VOLUME NONE NONE VOLSTIME id $CINDERTIMEOUT cinder create --image-id $IMGID --availability-zone \${VAZS[\$VAZN]} --name ${RPRE}RootVol_VM\$no $VOLSIZE}`| creates Cinder volumes for virtual machines, except when the virtual machines are booted from an image therefore it checks if the variable `$BOOTFROMIMAGE` is not empty, which would mean the virtual machines should be booted from an image, so the function immediately returns without creating volumes. `VOLSTIME=()` initializes an array to store timestamps related to the creation of Cinder volumes and calls the `createResources` function with several arguments: `$NOVMS` (number of virtual machines), `VOLSTATS` (statistics related to vol status), `VOLUME` (prefix for the vol name),`NONE` (placeholder), `VOLSTIME` (array to store timestamps), `id` (column to retrieve the vol ID), `$CINDERTIMEOUT` (timeout value for the operation). The actual `cinder create` command specifies the image ID `$IMGID`, availability zone, vol name and vol size `$VOLSIZE`. The vol name is constructed using the prefix `${RPRE}RootVol_VM` followed by an index `$no`|
 |delete |1754 - 1761|  `deleteNets() {   if test -n "$SECONDNET"; then     deleteResources NETSTATS SECONDNET "" $NETTIMEOUT neutron net-delete   fi   deleteResources NETSTATS NET "" $NETTIMEOUT neutron net-delete   deleteResources NETSTATS JHNET "" $NETTIMEOUT neutron net-delete }` |  handles the deletion of networks in the OpenStack environment, including main network for VMs and any secondary networks if specified. It checks if the variable `$SECONDNET` is not empty, which means there is a secondary network that needs to be deleted, so it proceeds with deleting it by calling the `deleteResources` function to delete the secondary network. The following parameters are specified: `NETSTATS` (statistics related to network status), `SECONDNET` (prefix for the secondary network name), `""` (placeholder), `$NETTIMEOUT` (timeout value for the operation). The actual `neutron net-delete` command deletes the network.
@@ -249,21 +249,15 @@ ostackcmd_id()
 }
 ```
 
-### ostackcmd_tm_retry_N() and helper functions
-* Lines in Code: 1190 - 1191
+### ostackcmd_tm_retry-Versions
+* Lines in Code: 1145 - 1176 [link:https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L1145-L1176]
 * Purpose: provide helper functions and variables
 * Description
   - break down:
     - `ostackcmd_tm_retry_N()` retries executing a reentrant OpenStack command a specified number of times `$NORETRY` with a `2-second sleep` interval between retries. It takes the same parameters as `ostackcmd_tm()`. If the command succeeds `$RRC == 0`, it returns `0`, otherwise, it returns the command's return code `$RRC`.
     - `ostackcmd_tm_retry()`: a wrapper around `ostackcmd_tm_retry_N()`, setting the number of retries to `2` by `default`
     - `ostackcmd_tm_retry3()`: similar to `ostackcmd_tm_retry()`, but it retries the command `3` times
-    - `SCOL` variable that holds the color code used for displaying states in grafana. It's initially set to an empty string.
-    - `state2col()` this function sets the color `SCOL` based on the state passed as an argument `$1`. It checks 
-      - if the state is `"ACTIVE"` or `"UP"` and sets `SCOL` to `green`, 
-      - if the state is `"BUILD"`, `"PENDING"`, `"creating"`, `"downloading"`, or `"DOWN"`, it sets `SCOL` to `yellow`, 
-      - and if the state starts with `"ERROR"` or `"error"`, it sets `SCOL` to `red`.
-    - `STATE` variable to store the state of the current operation
-    - `FAILEDNO` variable to track the number of failed operations, initially set to 0
+
 * Code:
 
 ```
@@ -299,7 +293,21 @@ ostackcmd_tm_retry3()
 {
   ostackcmd_tm_retry_N 3 "$@"
 }
-
+```
+## SCOL, state2col(), STATE, FAIEDNO
+* Lines in Code: 1178 - 1191 [link:https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L1178-L1191]
+* Purpose: provide helper functions and variables
+* Description
+  - break down:
+    - `SCOL` variable that holds the color code used for displaying states. It's initially set to an empty string.
+    - `state2col()` this function sets the color `SCOL` based on the state passed as an argument `$1`. It checks 
+      - if the state is `"ACTIVE"` or `"UP"` and sets `SCOL` to `green`, 
+      - if the state is `"BUILD"`, `"PENDING"`, `"creating"`, `"downloading"`, or `"DOWN"`, it sets `SCOL` to `yellow`, 
+      - and if the state starts with `"ERROR"` or `"error"`, it sets `SCOL` to `red`.
+    - `STATE` variable to store the state of the current operation
+    - `FAILEDNO` variable to track the number of failed operations, initially set to 0
+* Code:
+```
 SCOL=""
 # Set SCOL according to state in $1
 state2col()
