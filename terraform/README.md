@@ -9,7 +9,7 @@ Prerequisites
 Before proceeding, ensure you have the following prerequisites:
 1) **Access to an OpenStack environment:** Obtain credentials and access permissions to an OpenStack cloud platform.
 2) **Terraform installed:** Install Terraform on your local machine. Refer to the Terraform documentation for installation instructions.
-3) **OpenStack provider plugin:** Install the OpenStack provider plugin for Terraform. Refer to the Terraform OpenStack provider documentation for installation details.
+3) **OpenStack provider plugin:** Install the OpenStack provider plugin for Terraform. Refer to the Terraform OpenStack provider documentation for [installation details](https://github.com/terraform-provider-openstack/terraform-provider-openstack).
 4) **Network configuration:** Define the external network ID and subnet CIDR block for internet connectivity.
 5) **SSH key pair:** Generate an SSH key pair to access the jump host securely.
 
