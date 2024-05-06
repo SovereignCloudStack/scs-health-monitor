@@ -1,6 +1,12 @@
 # METRIC OVERVIEW
 
-This is an overview on the metrics, that are supposed to be monitored and presented based on the [api_monitor.sh](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh) and the connected [grafana dashboard](https://github.com/SovereignCloudStack/openstack-health-monitor/tree/main/dashboard). The first table explains the grafana-variables that enable the dashboard to be dynamic as they present keys to be filtered by the user, to reduce the metrics to certain 
+This is an overview on the metrics, that are supposed to be monitored and presented based on the [api_monitor.sh](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh) and the connected [grafana dashboard](https://github.com/SovereignCloudStack/openstack-health-monitor/tree/main/dashboard). The first table explains the grafana-variables that enable the dashboard to be dynamic as they present keys to be filtered by the user in order to specify the results.
+
+The next table presents the metrics of the actual dashboard panels and their InfluxDB-Query, which has to be translated into PromQL for we are using prometheus for pushing and scraping metrics.
+
+below that we find the Varible-Tables, that explain the keys and tags (in PromQL: labels) created in the api_monitor.sh to add more information to the metrics like making them seperable and provide more informations. It is explained how and where these keys are generated in the source code. As the gneration of these monitoring keys and tags is highly connected to the functional part of the testing this is an approach to breakdown the source code and deliver a look up table in order to create the new testing modules in the behavoir driven design.
+
+Therefore the parent or root functions for all the creation, deletion and waiting functions in the source code are explained in the last section of this documentation.
 
 ## Variables
 
