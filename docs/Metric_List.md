@@ -155,7 +155,6 @@ Therefore the parent or root functions for all the creation, deletion and waitin
 
 
 ### BENCHMARKS
-### BENCHMARKS
 
 * Regex:	```/^(4000pi|iperf3|ssh|totDur|LBconn|ping|fioBW|fiokIOPS|fioLat10ms)$/```
 * Tag/Label:	cmd / command
