@@ -1,5 +1,7 @@
 # METRIC OVERVIEW
 
+This is an overview on the metrics, that are supposed to be monitored and presented based on the [api_monitor.sh](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh) and the connected [grafana dashboard](https://github.com/SovereignCloudStack/openstack-health-monitor/tree/main/dashboard). The first table explains the grafana-variables that enable the dashboard to be dynamic as they present keys to be filtered by the user, to reduce the metrics to certain 
+
 ## Variables
 
 |Metric/Label|	Description |	Variable |	Exemples|
