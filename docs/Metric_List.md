@@ -167,25 +167,6 @@
 | totDur        | Max cycle time (`$MAXCYC`), an calculated upper bound (including magic numbers) how long one iteration may take depending on the tasks which are performed | Relative performance (`$RELPERF`)      | Number of slow iterations, which is incremented by one when `$THISRUNTIME` is greater than `$MAXCYC` | [L4455-L4484](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L4455-L4484)                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Log measured relative duration of current iteration (var `$RELPERF`, relative performance/time; calculated `echo "scale=2; 10*$THISRUNTIME/$MAXCYC" \| bc -l`). Send alert if performance of one cycle is slow. See commit [7fa38](https://github.com/SovereignCloudStack/openstack-health-monitor/commit/7fa38f9f86280bc409783e81c7b6cd0345dca530). FYI: `$TOTTIME` is the overall runtime summing up all iterations and is present in overall stats. |			
 
 
-
-* Regex:	`/^(4000pi|iperf3|ssh|totDur|LBconn|ping|fioBW|fiokIOPS|fioLat10ms)$/`
-* Tag/Label:	cmd / command
-
-|Cloud-list |Lines in Code |Code	|Description|
-|----------|----------|----------|----------|				
-|All
-|4000pi			
-|LBconn			
-|fioBW			
-|fioLat10ms			
-|fiokIOPS			
-|iperf3| 3426 - 3494|| performs iperf3 tests between multiple hosts. It iterates through each pair of source and target hosts, connects to each target host, and runs iperf3 tests to measure the network bandwidth, CPU utilization, and other metrics. The results are then displayed and optionally logged. Additionally handles retries if the initial test fails: `Creates Waitscript` First it creates a bash script named `${RPRE}wait` that waits for a specified command to become available on the system. Then it iterates over each VM to conduct iperf3 tests. It determines the source (`SRC`) and target (`TGT`) IP addresses for each test and ensures that the `SRC` and `TGT` are valid and not empty. Then it retrieves the floating IP address (`FLT`) associated with the target VM. It sets up SSH connectivity to the floating IP address and copies the `${RPRE}wait` script to the target. It executes iperf3 tests between the source and target using SSH, collecting the results in JSON format (`IPJSON`). `Handling Retries` if the initial iperf3 test fails, it retries after a brief delay (sleep 16). `Parsing and Logging Results`the JSON output of iperf3 tests is parsed to extract bandwidth information for sending and receiving data, as well as CPU utilization. Then it logs this output to a specified log file (`$LOGFILE`). It also logs the results to a Grafana server for monitoring. `Cleanup` the `${RPRE}wait` script is removed after completing all tests. `Output` the results of each iperf3 test are printed, including the source and target IP addresses, bandwidth, and CPU utilization.
-|
-|ping		|	
-|ssh	|3102 - 3176|		
-|totDur |			
-
-
 ## Parent Functions
 
 ### ostackcmd_id()
