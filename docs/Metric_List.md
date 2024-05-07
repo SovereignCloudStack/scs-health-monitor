@@ -123,8 +123,11 @@ Therefore the parent or root functions for all the creation, deletion and waitin
 |net-create
 |net-delete
 |net-external-list
-|port-create|`createPorts()`|[L1957-L1962](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L1957-L1962)|creates ports for VMs based on previously specified conditions and configurations|
-|port-delete
+|port-create|`createJHPorts()`|[L1942-L1955](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L1942-L1955)|
+||`createPorts()`|[L1957-L1962](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L1957-L1962)|creates ports for VMs based on previously specified conditions and configurations|
+||`create2ndPorts()`|[L1964-L1970](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L1964-L1970)|
+|port-delete|`deleteJHPorts()`|
+||`deletePorts()`|[L1977-L1980](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L1977-L1980)||
 |port-list
 |port-show
 |port-update
