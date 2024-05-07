@@ -97,7 +97,8 @@ Therefore the parent or root functions for all the creation, deletion and waitin
 ||`deleteJHVols()`|[L2003-L2006 ](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L2003-L2006)|deletes Cinder volumes that match the specified prefix for the volume name `JHVOLUME` by calling the  `deleteResources` function with several arguments and using the cinder delete command: `VOLSTATS` (statistics related to volume status), `JHVOLUME` (prefix for the volume name),`""`(placeholder), `$CINDERTIMEOUT` (timeout value for the operation), `cinder delete` to delete the volumes|
 ||`deleteVols()`|[L2024-L2028](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L2024-L2028)|deletes Cinder volumes associated with virtual machines, unless the virtual machines are configured to boot from an image than it returns without performing any deletion checks if the variable $BOOTFROMIMAGE is not empty. If it is not empty, it means the virtual machines are configured to boot from an image, so the function returns early without attempting to delete volumes. It calls the `deleteResources` function with several arguments: `VOLSTATS` (statistics related to vol status), `VOLUME` (prefix for the vol name), `""` (placeholder), `$CINDERTIMEOUT` (timeout value for the operation). The actual `cinder delete` command deletes the volumes|
 |flavor-show
-|floatingip-create
+|floatingip-create | [L2080-L2128](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L2080-L2128)| `SNATROUTE=""` `createFIPs()` |automates the process of creating Floating IPs `FIPs` and setting routes via a Virtual IP `VIP`. Initializes $SNATROUTE as local variable to an empty string before hand. Then checks for Port Ownership: if `$FIPWAITPORTDEVOWNER` is set, it waits for `JHPORTS` to have a device owner before proceeding, because the ports need to be created and assigned to a VM before associating a FIP. The `FIPs` are created `neutron floatingip-create` command. If the creation fails or if `$INJECTFIPERR` is set, the func returns with an error. Next the VIP is retrieved from the router's external gateway information and it is determened if `SNAT` is enabled on the router. If disabled, it updates the router's routes to use the VIP as the next hop.
+If SNAT is enabled, proceeds and prints that no action is needed. `$SNATROUTE` is then set to indicate whether setting the route via SNAT gateways was successful. By using `neutron floatingip-list` the FIPs associated with the ports are extracted and stored in the `FLOAT` variable and added to the `FLOATS` array. The list of FIPs is printed as an output.
 |floatingip-delete
 |floatingip-list
 |image-show
@@ -302,7 +303,7 @@ ostackcmd_tm_retry3()
   ostackcmd_tm_retry_N 3 "$@"
 }
 ```
-## SCOL, state2col(), STATE, FAIEDNO
+### SCOL, state2col(), STATE, FAIEDNO
 * Lines in Code: L1178-L1191 [link:https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L1178-L1191]
 * Purpose: provide helper functions and variables
 * Description
@@ -331,7 +332,7 @@ state2col()
 STATE=""
 FAILEDNO=0
 ```
-### colstat
+#### colstat
 
 * Lines in Code: [L1392-L1412](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L1392-L1412)  
 * Purpose: provide a useful function for visualizing status information, especially in command-line interfaces, where colors can convey important information quickly
