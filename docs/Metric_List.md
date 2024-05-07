@@ -153,7 +153,6 @@ Therefore the parent or root functions for all the creation, deletion and waitin
 |waitVols|`waitVols()`|[L2016-L2022](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L2016-L2022)| ensures that Cinder volumes are available before proceeding with further actions, unless the VMs are configured to boot from an image by checking if the variable `$BOOTFROMIMAGE` is not empty, which would mean the VMs are configured to boot from an image and the func returns early without waiting for volumes, otherwise it calls the `waitlistResources` function with several arguments and waits for Cinder volumes to reach the `available` state before proceeding. The actual `cinder list` command is used to check the status of vols. If any errors occur during the waiting process the `handleWaitErr` function is called and the label `Volumes`, statistics related to vol status, a timeout value, and the `cinder show` command are passed
 
 
-
 ### BENCHMARKS
 
 * Regex:	```/^(4000pi|iperf3|ssh|totDur|LBconn|ping|fioBW|fiokIOPS|fioLat10ms)$/```
@@ -873,3 +872,14 @@ waitlistResources()
   return $misserr
 }
 ```
+
+### extract_ip()
+
+* Lines in Code: [L2074-L2078](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L2074-L2078) 
+* Purpose: extracts the IP address from the output of the `neutron port-show` command, which provides detailed information about a Neutron port
+* Description:
+  - parameters:
+    - `$1` the output of the `neutron port-show` command as input
+  - uses `grep` to search for lines containing the string `'| fixed_ips '` containing information about the IP addresses associated with the port
+  - then `sed` is used with the pattern stored in the variable `$PORTFIXED` to extract and format the IP address from the matched line
+  - outputs the extracted IP address
