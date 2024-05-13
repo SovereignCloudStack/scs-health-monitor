@@ -900,57 +900,26 @@ waitlistResources()
 * Lines in Code: [L4098-L4504](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L4098-L4504) 
 * Purpose: main part to orchestrate the deployment, testing, and cleanup of resources in an OpenStack environment, while also monitoring for errors and performance issues
 * Description:
-Initialization:
+  - Entering the loop: the first section sets up the environment, initializes error counters, and declares arrays to manage resources and track deployment progress. It enters the while loop that continues as long as the loop counter `loop` is not equal to `MAXITER` (maximum iteration count), `INTERRUPTED` is unset and the loop will continue as long as the stop signal file `stop-os-hm` does not exist (`! -e stop-os-hm`).
+  - First the Error Counters are declared as integer variables, including `PINGERRORS`, `APIERRORS`, `APITIMEOUTS`, `VMERRORS`, `LBERRORS`, `WAITERRORS` and `CONNERRORS`. These counters track different types of errors that may occur during the deployment process
+  - Next arrays are declared to store the start times of resource creation operations. They store timestamps for various resources being created during the deployment process, such as volumes, VMs, LBs, etc.
+  - Followed by the declaration of the arrays to manage resources across different OpenStack services, such as `Neutron` (networking), `Cinder` (block storage) and `Nova` (compute), meaning there are arrays to keep track of resources created during the deployment process and to perform cleanup operations later: 
+    - `NETS` (network IDs), 
+    - `SUBNETS` (subnet IDs), 
+    - `SGROUPS` (security group IDs), 
+    - `PORTS` (port IDs), 
+    - `VIPS` (VIP IDs), 
+    - `FIPS` (floating IPs), 
+    - `VOLUMES` (volume IDs), 
+    - `VMS` (VM IDs), 
+    - `LBAASS` (load balancer IDs), 
+    - etc.
 
-It starts by setting the start time (MSTART) using the current timestamp.
-It checks if an OpenStack token is provided (OPENSTACKTOKEN) and retrieves the token using the getToken function.
-It sets the token timestamp (TOKENSTAMP) using the current timestamp.
-Main Functionality:
 
-It has several conditional branches based on the first argument passed to the script ($1).
-If $1 is "CLEANUP", it triggers a cleanup process, which involves deleting various resources.
-If $1 is "CONNTEST", it initiates connectivity testing.
-Otherwise, it proceeds with the deployment process.
-Deployment:
-
-It starts by checking if a new project needs to be created based on the value of REFRESHPRJ.
-It retrieves image IDs, flavor information, and other necessary details for deployment.
-It creates routers, networks, subnets, router interfaces, security groups, load balancers, volumes, key pairs, ports, and JumpHost volumes.
-It waits for the completion of various resource creations using wait functions.
-It creates virtual machines (VMs) and floating IPs (FIPs) for both JumpHosts and regular VMs.
-It performs connectivity tests between VMs, tests load balancers if enabled, and performs additional tests if specified (e.g., full connection tests).
-It cleans up resources if required, deletes routers, networks, subnets, security groups, load balancers, VMs, FIPs, volumes, key pairs, and ports.
-It sends alarms and logs various statistics and errors encountered during the deployment and testing process.
-Error Handling and Reporting:
-
-It tracks and accumulates various errors, timeouts, and retries encountered during the deployment and testing phases.
-It raises alarms for slow performance and sends recovery alarms.
-It logs and reports cumulative errors, timeouts, retries, and other statistics at the end of each run.
-Miscellaneous:
-
-It contains several commented-out lines and TODOs, indicating areas for improvement or future development.
 
 * Code:
 ```
-# Wait for resources reaching a desired state
-# $1 => name of timing statistics array
-# $2 => name of array containing resources ("S" appended)
-# $3 => name of array to collect completion timing stats
-# $4 => name of array with start times
-# $5 => value to wait for (special XDELX)
-# $6 => alternative value to wait for 
-#       (special: 2ndary XDELX results in waiting also for ERRORED res.)
-# $7 => number of column (0 based)
-# $8 => timeout
-# $9- > openstack command for querying status
-# The values from $2 get appended to the command
-#
-# Return value: Number of resources not in desired state (e.g. error, wrong state, missing, ...)
-#
-# STATNM RSRCNM CSTAT STIME PROG1 PROG2 FIELD COMMAND
-waitlistResources()
-{
-  # MAIN LOOP
+# MAIN LOOP
 while test $loop != $MAXITER -a -z "$INTERRUPTED" -a ! -e stop-os-hm; do
 
 declare -i PINGERRORS=0
@@ -1357,5 +1326,4 @@ let CUMCONNERRPRS+=$CONNERRORS
 let CUMAPICALLS+=$APICALLS
 let CUMVMS+=$ROUNDVMS
 let RUNS+=1
-}
 ```
