@@ -191,36 +191,39 @@ class StepsDef:
                     name_or_id=sec_group.id
                 ), f"Security group with name {sec_group.name} was not deleted"
 
-    @then("I should be able to create a security group rule with direction {direction} "
-          "protocol {protocol} and port range {port_range_min} to {port_range_max}")
-    def create_security_group_rule(context, direction: str,
-                                   protocol: str, port_range_min: int, port_range_max: int):
+    @then("I should be able to create {security_group_rules_quantity} security group rules")
+    def create_security_group_rules(context, security_group_rules_quantity: str):
         sec_groups = list(context.client.network.security_groups())
-        for sec_group in sec_groups:
-            if context.test_name in sec_group.name:
-                sel_sec_group = context.client.network.find_security_group(name_or_id=sec_group.name)
-                sel_sec_group_rules = [
-                    rule for rule in context.client.network.security_group_rules(
-                        direction=direction,
-                        protocol=protocol,
+        base_port = 80
+        for num in range(1, int(security_group_rules_quantity) + 1):
+            port_range_min = base_port + num - 1
+            port_range_max = port_range_min
+            for sec_group in sec_groups:
+                if context.test_name in sec_group.name:
+                    sel_sec_group = context.client.network.find_security_group(name_or_id=sec_group.name)
+                    sel_sec_group_rules = [
+                        rule for rule in context.client.network.security_group_rules(
+                            direction="ingress",
+                            protocol="tcp",
+                            port_range_min=port_range_min,
+                            port_range_max=port_range_max
+                        )
+                        if rule.security_group_id == sel_sec_group.id
+                    ]
+                    assert len(
+                        sel_sec_group_rules) == 0, "There are already security group rules for the selected groups"
+
+                    context.client.network.create_security_group_rule(
+                        security_group_id=sel_sec_group.id,
+                        direction="ingress",
+                        ethertype="IPv4",
+                        protocol="tcp",
                         port_range_min=port_range_min,
-                        port_range_max=port_range_max
+                        port_range_max=port_range_max,
+                        remote_ip_prefix="0.0.0.0/0"
                     )
-                    if rule.security_group_id == sel_sec_group.id
-                ]
-                assert len(sel_sec_group_rules) == 0, "There are already security group rules for the selected groups"
 
-                context.client.network.create_security_group_rule(
-                    security_group_id=sel_sec_group.id,
-                    direction=direction,
-                    ethertype="IPv4",
-                    protocol=protocol,
-                    port_range_min=port_range_min,
-                    port_range_max=port_range_max,
-                    remote_ip_prefix="0.0.0.0/0"
-                )
-
-        assert len(sec_groups) > 0, "There are no security groups"
+            assert len(sec_groups) > 0, "There are no security groups"
 
     @then("I should be able to delete a security group rules")
     def delete_security_group_rules(context,):
