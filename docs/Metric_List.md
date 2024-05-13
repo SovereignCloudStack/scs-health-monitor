@@ -914,8 +914,12 @@ waitlistResources()
     - `VMS` (VM IDs), 
     - `LBAASS` (load balancer IDs), 
     - etc.
-
-
+  - After that the Alarm Buffer and Alarm Counters are declared:
+    - `ALARMBUFFER` array to buffer alarm messages before sending them
+    - `SENTALARMS` and `BUFFEREDALARMS` are integer variables to count the sent and buffered alarms
+  - Then starts the Main Functionality by initializing `MSTART` (start time) with the urrent timestamp
+  - Followed by checking for the `OPENSTACKTOKEN` retrieving the token with `getToken()` and stting the token timestamp `TOKENSTAMP` with the current timestamp.
+  
 
 * Code:
 ```
