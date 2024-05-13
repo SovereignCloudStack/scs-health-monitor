@@ -1,85 +1,26 @@
-Feature:
-  Test creation and deletion resources
+Feature: Test creation and deletion of resources
 
-  Scenario Outline: Create a router
+  Scenario Outline: Manage resources in OpenStack
     Given I connect to OpenStack
+
     Then I should be able to create <router_quantity> routers
-
-    Examples: Test routers
-      |router_quantity|
-      |       3       |
-
-  Scenario Outline: Connect to OpenStack and create a network
-    Given I connect to OpenStack
     Then I should be able to create <network_quantity> networks
-
-    Examples: Test networks
-      | network_quantity |
-      |         3        |
-
-  Scenario Outline: Connect to OpenStack and create a subnet
-    Given I connect to OpenStack
     Then I should be able to create <subnet_quantity> subnets
+    Then I should be able to create <security_group_quantity> security groups
+    Then I should be able to create <security_group_rules_quantity> security group rules
+    Then I create <quantity_volumes> volumes
 
-    Examples: Test subnets
-      |subnet_quantity|
-      |       2       |
-
-  Scenario: Connect to OpenStack and list networks
-    Given I connect to OpenStack
     Then I should be able to list networks
-
-  Scenario: Connect to OpenStack and list subnets
-    Given I connect to OpenStack
     Then I should be able to list subnets
-
-  Scenario: Connect to OpenStack and list routers
-    Given I connect to OpenStack
     Then I should be able to list routers
 
-   Scenario Outline: Connect to OpenStack and create a security group
-    Given I connect to OpenStack
-    Then I should be able to create <security_group_quantity> security groups
-
-    Examples: Test security groups
-      |security_group_quantity|
-      |             2         |
-
-#  Scenario Outline: Connect to OpenStack and create a security group rule
-#    Given I connect to OpenStack
-#    Then I should be able to create a security group rule for <security_group_name> with direction <direction> protocol <protocol> and port range <port_range_min> to <port_range_max>
-#
-#    Examples: Test security groups rule
-#      | security_group_name | direction | protocol | port_range_min | port_range_max |
-#      | sg01                | ingress   | tcp      | 80             | 120            |
-
-#  Scenario Outline: Connect to OpenStack and delete a security group rule
-#    Given I connect to OpenStack
-#    When A security group rule for <security_group_name> with direction <direction> protocol <protocol> and port range <port_range_min> to <port_range_max> exists
-#    Then I should be able to delete the security group rule for <security_group_name> with direction <direction> protocol <protocol> and port range <port_range_min> to <port_range_max>
-#
-#    Examples: Test security groups rule
-#      | security_group_name | direction | protocol | port_range_min | port_range_max |
-#      | sg01                | ingress   | tcp      | 81             | 119            |
-
-  Scenario: Connect to OpenStack and delete a security groups
-
-    Given I connect to OpenStack
+    Then I delete all volumes from test
+    Then I should be able to delete a security group rules
     Then I should be able to delete a security groups
-
-  Scenario: Connect to OpenStack and delete a subnet
-    Given I connect to OpenStack
     Then I should be able to delete subnets
-
-  Scenario: Connect to OpenStack and delete a network
-    Given I connect to OpenStack
     Then I should be able to delete a networks
-
-  Scenario: Connect to OpenStack and delete a router
-    Given I connect to OpenStack
     Then I should be able to delete routers
 
-
-
-
-
+    Examples: Testflow resources
+      | router_quantity | network_quantity | subnet_quantity | security_group_quantity | security_group_rules_quantity  | quantity_volumes |
+      |        3        |        3         |        2        |            2            |              2                 |        2         |

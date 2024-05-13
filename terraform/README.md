@@ -24,7 +24,7 @@ This is an example configuration that can be provided to terraform by adding a *
 
 **Contents of .auto.tfvars**:
 ```
-global_prefix       = "erik-"
+global_prefix       = "shshm-terraform-"
 external_network_id = "ebfe5546-f09f-4f42-ab54-094e457d42ec"
 availability_zone   = "nova"
 image_id            = "36ba766d-3252-4a65-80df-b33c18b19015"
