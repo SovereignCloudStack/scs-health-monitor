@@ -919,7 +919,19 @@ waitlistResources()
     - `SENTALARMS` and `BUFFEREDALARMS` are integer variables to count the sent and buffered alarms
   - Then starts the Main Functionality by initializing `MSTART` (start time) with the urrent timestamp
   - Followed by checking for the `OPENSTACKTOKEN` retrieving the token with `getToken()` and stting the token timestamp `TOKENSTAMP` with the current timestamp.
-  
+  - the main functionality  has several conditional branches based on the first argument `$1` passed to the script:
+    - if `$1` is "CLEANUP", the cleanup process is triggered involving deleting various resources
+    - if `$1` is "CONNTEST", connectivity testing is initiated
+    -  Otherwise the deployment process is proceeded
+  - the deployment process starts by checking if a new project needs to be created based on the value of `REFRESHPRJ`.
+    - retrieves image IDs, flavor information, and other necessary details for deployment.
+    - creates routers, networks, subnets, router interfaces, security groups, load balancers, volumes, key pairs, ports, and JumpHost volumes.
+    - waits for the completion of the resource creations using wait functions (see below)
+    - creates VMs and FIPs for both JumpHosts and regular VMs
+    - performs connectivity tests between VMs, tests load balancers if enabled, and performs additional tests if specified (e.g., full connection tests)
+    - cleans up resources if required, deletes routers, networks, subnets, security groups, load balancers, VMs, FIPs, volumes, key pairs, and ports.
+    - raises alarms for slow performance and sends recovery alarms
+    - logs and reports cumulative errors, timeouts, retries, and other statistics at the end of each run
 
 * Code:
 ```
