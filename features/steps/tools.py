@@ -1,7 +1,20 @@
 import ipaddress
 
 import yaml
-from openstack.network.v2._proxy import Proxy
+
+
+class Collector:
+
+    def __init__(self):
+        self.networks: list = list()
+        self.subnets: list = list()
+        self.routers: list = list()
+        self.jumphosts: list = list()
+        self.floating_ips: list = list()
+        self.security_groups: list = list()
+        self.security_groups_rules: list = list()
+        self.virtual_machines: list = list()
+        self.volumes: list = list()
 
 
 class Tools:
