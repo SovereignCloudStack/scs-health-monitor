@@ -926,12 +926,16 @@ waitlistResources()
   - the deployment process starts by checking if a new project needs to be created based on the value of `REFRESHPRJ`.
     - retrieves image IDs, flavor information, and other necessary details for deployment.
     - creates routers, networks, subnets, router interfaces, security groups, load balancers, volumes, key pairs, ports, and JumpHost volumes.
-    - waits for the completion of the resource creations using wait functions (see below)
+    - waits for the completion of the resource creations using wait functions (see below*)
     - creates VMs and FIPs for both JumpHosts and regular VMs
     - performs connectivity tests between VMs, tests load balancers if enabled, and performs additional tests if specified (e.g., full connection tests)
     - cleans up resources if required, deletes routers, networks, subnets, security groups, load balancers, VMs, FIPs, volumes, key pairs, and ports.
     - raises alarms for slow performance and sends recovery alarms
     - logs and reports cumulative errors, timeouts, retries, and other statistics at the end of each run
+  - * wait functions: ensuring that the deployment process waits until resources are ready before proceeding further. They help handle asynchronous operations in the OpenStack environment and ensure that subsequent steps in the deployment process are executed only when the required resources are available in the desired state.
+    - `waitLBs` waits for the load balancers specified in the array `$LBAASS` to reach the provisioning status`"ACTIVE"`. Therefore it calls `waitlistResources()` with the parameters `LBAAS` and `"ACTIVE"`. If the `--nostat` flag is not provided, it also waits for LB statistics `LBCSTATS` to be available. Any errors are handled by calling `handleWaitErr()`, which checks for errors in the LB status and prints them if necessary.
+    - `waitdelLBs` waits for LBs from the array `${DELLBAASS[*]}` to be deleted. Therefore calls `waitlistResources()` with the parameters `LBSTATS` and `"XDELX"` indicating deletion. The deletion is retried, if it did not succeed.
+    - `waitlistResources()` is a general-purpose function, described above used for waiting for resources to reach a certain state. in this section it takes the array containing resource IDs `$LBSTATS` or `$LBCSTATS` as parameters and the type of resource `$LBAAS`, the expected status `"ACTIVE"` and the timeout value. It repeatedly queries the OpenStack API to check the status of the specified resources until they reach the expected state or the timeout is reached. With the `--nostat` flag unset, it also waits for additional resource statistics.
 
 * Code:
 ```
