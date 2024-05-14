@@ -7,6 +7,7 @@ The next table presents the metrics of the actual dashboard panels and their Inf
 below that we find the Varible-Tables, that explain the keys and tags (in PromQL: labels) created in the api_monitor.sh to add more information to the metrics like making them seperable and provide more informations. It is explained how and where these keys are generated in the source code. As the gneration of these monitoring keys and tags is highly connected to the functional part of the testing this is an approach to breakdown the source code and deliver a look up table in order to create the new testing modules in the behavoir driven design.
 
 Therefore the parent or root functions for all the creation, deletion and waiting functions in the source code are explained in the last section of this documentation.
+Finally the main loop is also analized, focussing on the relevant functions that are needed to generate the statistics, like the wait-functions.
 
 ## Variables
 
@@ -148,11 +149,13 @@ Therefore the parent or root functions for all the creation, deletion and waitin
 |Resource-list |`method`|Lines in Code| Description |
 |----------|----------|----------|----------|	
 |All	||||
-|waitDELLBAAS
+|waitDELLBAAS| see `waitdelLBs()`
 |waitJHPORT
 |waitJHVM
-|waitJHVOLUME |`waitJHVols()`|[L1996-L2001](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L1996-L2001)|  calls the `waitlistResources` function with several arguments and this function waits for Cinder volumes to reach a specific state 'available' before proceeding. the funcion uses the cinder list command to check the status of volumes. After waiting for the volumes, the `handleWaitErr` function is called, where arguments such as the label "JH volumes", statistics related to volume status, a timeout value are passed and the command `cinder show`. this is how any errors that occur during the waiting process are handled.
-|waitLBAAS ||[L457-L461](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L457-L461)|checks if both the variables `$OPENSTACKCLIENT` and `$LOADBALANCER` are not empty. If they are not empty, it uses the `openstack loadbalancer member create --help` command to check if the `--wait` option is available. If the `--wait` option is found, it sets the variable `$LBWAIT` to `"--wait"`. This variable can be used later to control the behavior of a subsequent command related to load balancer member creation.|
+|waitJHVOLUME |`waitJHVols()`|[L1996-L2001](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L1996-L2001)|  calls the `waitlistResources` function with several arguments and this function waits for Cinder volumes to reach a specific state `available` before proceeding. the funcion uses the cinder list command to check the status of volumes. After waiting for the volumes, the `handleWaitErr` function is called, where arguments such as the label `"JH volumes"`, statistics related to volume status, a timeout value are passed and the command `cinder show`. this is how any errors that occur during the waiting process are handled.
+|waitLBAAS ||[L457-L461](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L457-L461)|checks if both the variables `$OPENSTACKCLIENT` and `$LOADBALANCER` are not empty. If they are not empty, it uses the `openstack loadbalancer member create --help` command to check if the `--wait` option is available. If the `--wait` option is found, it sets the variable `$LBWAIT` to `"--wait"`. This variable can be used later to control the behavior of a subsequent command related to load balancer member creation.
+||`waitLBs()` `waitlistResources()` `neutron lbaas-loadbalancer-list()` `handleWaitErr()`| [L2483-L2493](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L2483-L2493)| related to waiting for LBs, ensuring that they are properly provisioned. It waits for LBs to reach the `"ACTIVE"` state. takes an optional argument `--nostat` to skip collecting statistics during the wait, if provided. Else `waitlistResources()` is called with the following arguments: `LBSTATS` (timing statistics array), `LBAAS` (array containing LBs), `LBCSTATS` (array to collect completion timing stats), `LBSTIME` (array with start times), `"ACTIVE"` (value to wait for), `"NONONO"` (alternative value to wait for), `4` (timeout value), `$NETTIMEOUT`  (timeout value for OpenStack commands), `neutron lbaas-loadbalancer-list` (OpenStack command to list LBs), `handleWaitErr` is called if any errors encountered during the wait.
+|| `waitdelLBs()` `waitlistResources()` `neutron lbaas-loadbalancer-list()`| [L2495-L2501](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L2495-L2501)| waits for LBs to be deleted. checks if there are LBs to delete (`DELLBAASS` array is not empty) and calls `waitlistResources()` to delete LBs with following arguments: `LBSTATS` (timing statistics array), `DELLBAASS` (array containing LBs to delete), `LBDSTATS` (array to collect completion timing stats), `LBDTIME` (array with start times), `"XDELX"`(value to wait for -> indicating deletion), `$FORCEDEL` (optional to force deletion), `2` (timeout value), `$NETTIMEOUT` (timeout value for OpenStack commands), `neutron lbaas-loadbalancer-list` (OpenStack command to list LBs)
 |waitVM
 |waitVols|`waitVols()`|[L2016-L2022](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L2016-L2022)| ensures that Cinder volumes are available before proceeding with further actions, unless the VMs are configured to boot from an image by checking if the variable `$BOOTFROMIMAGE` is not empty, which would mean the VMs are configured to boot from an image and the func returns early without waiting for volumes, otherwise it calls the `waitlistResources` function with several arguments and waits for Cinder volumes to reach the `available` state before proceeding. The actual `cinder list` command is used to check the status of vols. If any errors occur during the waiting process the `handleWaitErr` function is called and the label `Volumes`, statistics related to vol status, a timeout value, and the `cinder show` command are passed
 
@@ -887,3 +890,460 @@ waitlistResources()
   - uses `grep` to search for lines containing the string `'| fixed_ips '` containing information about the IP addresses associated with the port
   - then `sed` is used with the pattern stored in the variable `$PORTFIXED` to extract and format the IP address from the matched line
   - outputs the extracted IP address
+
+
+## Main Functions
+
+### MAIN LOOP
+
+
+* Lines in Code: [L4098-L4504](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L4098-L4504) 
+* Purpose: main part to orchestrate the deployment, testing, and cleanup of resources in an OpenStack environment, while also monitoring for errors and performance issues
+* Description:
+  - Entering the loop: the first section sets up the environment, initializes error counters, and declares arrays to manage resources and track deployment progress. It enters the while loop that continues as long as the loop counter `loop` is not equal to `MAXITER` (maximum iteration count), `INTERRUPTED` is unset and the loop will continue as long as the stop signal file `stop-os-hm` does not exist (`! -e stop-os-hm`).
+  - First the Error Counters are declared as integer variables, including `PINGERRORS`, `APIERRORS`, `APITIMEOUTS`, `VMERRORS`, `LBERRORS`, `WAITERRORS` and `CONNERRORS`. These counters track different types of errors that may occur during the deployment process
+  - Next arrays are declared to store the start times of resource creation operations. They store timestamps for various resources being created during the deployment process, such as volumes, VMs, LBs, etc.
+  - Followed by the declaration of the arrays to manage resources across different OpenStack services, such as `Neutron` (networking), `Cinder` (block storage) and `Nova` (compute), meaning there are arrays to keep track of resources created during the deployment process and to perform cleanup operations later: 
+    - `NETS` (network IDs), 
+    - `SUBNETS` (subnet IDs), 
+    - `SGROUPS` (security group IDs), 
+    - `PORTS` (port IDs), 
+    - `VIPS` (VIP IDs), 
+    - `FIPS` (floating IPs), 
+    - `VOLUMES` (volume IDs), 
+    - `VMS` (VM IDs), 
+    - `LBAASS` (load balancer IDs), 
+    - etc.
+  - After that the Alarm Buffer and Alarm Counters are declared:
+    - `ALARMBUFFER` array to buffer alarm messages before sending them
+    - `SENTALARMS` and `BUFFEREDALARMS` are integer variables to count the sent and buffered alarms
+  - Then starts the Main Functionality by initializing `MSTART` (start time) with the urrent timestamp
+  - Followed by checking for the `OPENSTACKTOKEN` retrieving the token with `getToken()` and stting the token timestamp `TOKENSTAMP` with the current timestamp.
+  - the main functionality  has several conditional branches based on the first argument `$1` passed to the script:
+    - if `$1` is "CLEANUP", the cleanup process is triggered involving deleting various resources
+    - if `$1` is "CONNTEST", connectivity testing is initiated
+    -  Otherwise the deployment process is proceeded
+  - the deployment process starts by checking if a new project needs to be created based on the value of `REFRESHPRJ`.
+    - retrieves image IDs, flavor information, and other necessary details for deployment.
+    - creates routers, networks, subnets, router interfaces, security groups, load balancers, volumes, key pairs, ports, and JumpHost volumes.
+    - waits for the completion of the resource creations using wait functions (see below*)
+    - creates VMs and FIPs for both JumpHosts and regular VMs
+    - performs connectivity tests between VMs, tests load balancers if enabled, and performs additional tests if specified (e.g., full connection tests)
+    - cleans up resources if required, deletes routers, networks, subnets, security groups, load balancers, VMs, FIPs, volumes, key pairs, and ports.
+    - raises alarms for slow performance and sends recovery alarms
+    - logs and reports cumulative errors, timeouts, retries, and other statistics at the end of each run
+  - * wait functions: ensuring that the deployment process waits until resources are ready before proceeding further. They help handle asynchronous operations in the OpenStack environment and ensure that subsequent steps in the deployment process are executed only when the required resources are available in the desired state.
+    - `waitLBs` waits for the load balancers specified in the array `$LBAASS` to reach the provisioning status`"ACTIVE"`. Therefore it calls `waitlistResources()` with the parameters `LBAAS` and `"ACTIVE"`. If the `--nostat` flag is not provided, it also waits for LB statistics `LBCSTATS` to be available. Any errors are handled by calling `handleWaitErr()`, which checks for errors in the LB status and prints them if necessary.
+    - `waitdelLBs` waits for LBs from the array `${DELLBAASS[*]}` to be deleted. Therefore calls `waitlistResources()` with the parameters `LBSTATS` and `"XDELX"` indicating deletion. The deletion is retried, if it did not succeed.
+    - `waitlistResources()` is a general-purpose function, described above used for waiting for resources to reach a certain state. in this section it takes the array containing resource IDs `$LBSTATS` or `$LBCSTATS` as parameters and the type of resource `$LBAAS`, the expected status `"ACTIVE"` and the timeout value. It repeatedly queries the OpenStack API to check the status of the specified resources until they reach the expected state or the timeout is reached. With the `--nostat` flag unset, it also waits for additional resource statistics.
+
+* Code:
+```
+# MAIN LOOP
+while test $loop != $MAXITER -a -z "$INTERRUPTED" -a ! -e stop-os-hm; do
+
+declare -i PINGERRORS=0
+declare -i APIERRORS=0
+declare -i APITIMEOUTS=0
+declare -i VMERRORS=0
+declare -i LBERRORS=0
+declare -i WAITERRORS=0
+declare -i CONNERRORS=0
+declare -i APICALLS=0
+declare -i ROUNDVMS=0
+
+# Arrays to store resource creation start times
+declare -a VOLSTIME=()
+declare -a JVOLSTIME=()
+declare -a VMSTIME=()
+declare -a JVMSTIME=()
+declare -a LBSTIME=()
+declare -a LBDTIME=()
+
+# List of resources - neutron
+declare -a NETS=()
+declare -a SUBNETS=()
+declare -a JHNETS=()
+declare -a JHSUBNETS=()
+declare -a SGROUPS=()
+declare -a JHPORTS=()
+declare -a PORTS=()
+declare -a VIPS=()
+declare -a FIPS=()
+declare -a FLOATS=()
+# cinder
+declare -a JHVOLUMES=()
+declare -a VOLUMES=()
+# nova
+declare -a KEYPAIRS=()
+declare -a VMS=()
+declare -a JHVMS=()
+# LB
+declare -a LBAASS=()
+declare -a DELLBAASS=()
+declare -a POOLS=()
+declare -a LISTENERS=()
+declare -a MEMBERS=()
+declare -a HEALTHMONS=()
+SNATROUTE=""
+
+declare -a ALARMBUFFER=()
+declare -i SENTALARMS=0
+declare -i BUFFEREDALARMS=0
+
+# Main
+MSTART=$(date +%s)
+# Get token
+if test -n "$OPENSTACKTOKEN"; then
+  getToken
+  if test -z "$CINDER_EP" -o -z "$NOVA_EP" -o -z "$GLANCE_EP" -o -z "$NEUTRON_EP" -o -z "$TOKEN"; then
+    echo "Trouble getting token/catalog, retry ..."
+    sleep 2
+    getToken
+  fi
+  TOKENSTAMP=$(date +%s)
+fi
+# Debugging: Start with volume step
+if test "$1" = "CLEANUP"; then
+  CLEANUPMODE=1
+  if test -n "$2"; then RPRE=$2; if test ${RPRE%_} == ${RPRE}; then RPRE=${RPRE}_; fi; fi
+  if test "$TAG" == "1"; then TAGARG="--tag ${RPRE%_}"; fi
+  echo -e "$BOLD *** Start cleanup $RPRE $TAGARG *** $NORM"
+  #SECONDNET=1
+  cleanup
+  echo -e "$BOLD *** Cleanup complete *** $NORM"
+  # We always return 0 here, as we dont want to stop the testing on failed cleanups.
+  exit 0
+elif test "$1" = "CONNTEST"; then
+  if test -n "$2"; then RPRE=$2; if test ${RPRE%_} == ${RPRE}; then RPRE=${RPRE}_; fi; fi
+  if test "$TAG" == "1"; then TAGARG="--tag ${RPRE%_}"; fi
+  while test $loop != $MAXITER -a -z "$INTERRUPTED"; do
+   echo -e "$BOLD *** Start connectivity test for $RPRE ($((loop+1))/$MAXITER) *** $NORM"
+   # Only collect resource on e. 10th iteration
+   if test "$(($loop%10))" == 0; then collectRes; else echo " Reuse known resources ..."; sleep 2; fi
+   if test -z "${VMS[*]}"; then echo "No VMs found"; exit 1; fi
+   #echo "FLOATs: ${FLOATS[*]} JHVMS: ${JHVMS[*]}"
+   testjhinet
+   RC=$?
+   if test $RC != 0; then
+     sendalarm 2 "JH unreachable" "$ERR" 20
+     if test -n "$EXITERR"; then exit 2; fi
+     let VMERRORS+=$RC
+     errwait $ERRWAIT
+   fi
+   #echo "REDIRS: ${REDIRS[*]}"
+   wait222
+   # Defer alarms
+   #if test $? != 0; then exit 2; fi
+   testsnat
+   RC=$?
+   if test $RC != 0; then
+     sendalarm 2 "VMs unreachable/can not ping outside" "$ERR" 16
+     if test -n "$EXITERR"; then exit 3; fi
+     let VMERRORS+=$RC
+     errwait $ERRWAIT
+   fi
+   if test -n "$RESHUFFLE" -a -n "$STARTRESHUFFLE"; then reShuffle; fi
+   fullconntest
+   #if test $? != 0; then exit 4; fi
+   log_grafana ping stats $FPRETRY $FPERR
+   if test $FPERR -gt 0; then
+     PINGERRORS+=$FPERR
+     sendalarm 2 "Connectivity errors" "$FPERR + $FPRETRY\n$ERR" 5
+     if test -n "$EXITERR"; then exit 4; fi
+     # Error counting done by fullconntest already
+     errwait $ERRWAIT
+   elif test $FPRETRY != 0; then
+     echo -e "${YELLOW}Warning:${NORM} Needed $FPRETRY ping retries"
+   fi
+   log_grafana ping errors 1 $FPERR
+   log_grafana ping retries 1 $FPRETRY
+   if test -n "$RESHUFFLE"; then
+     reShuffle
+     fullconntest
+     log_grafana ping stats $FPRETRY $FPERR
+     if test $FPERR -gt 0; then
+       PINGERRORS+=$FPERR
+       sendalarm 2 "Connectivity errors" "$FPERR + $FPRETRY\n$ERR" 5
+       if test -n "$EXITERR"; then exit 4; fi
+       # Error counting done by fullconntest already
+       errwait $ERRWAIT
+       fi
+     let SUCCRUNS+=1
+   fi
+   echo -e "$BOLD *** Connectivity test complete *** $NORM"
+   let SUCCRUNS+=1
+   if test $SUCCWAIT -ge 0; then sleep $SUCCWAIT; else echo -n "Hit enter to continue ..."; read ANS; fi
+   let loop+=1
+   # Refresh token after 10hrs
+   if test -n "$TOKENSTAMP" && test $(($(date +%s)-$TOKENSTAMP)) -ge 36000; then
+     getToken
+     TOKENSTAMP=$(date +%s)
+   fi
+   # TODO: We don't do anything with the collected statistics in CONNTEST yet ... fix!
+  done
+  exit 0 #$RC
+else # test "$1" = "DEPLOY"; then
+ if test "$REFRESHPRJ" != 0 && test $(($RUNS%$REFRESHPRJ)) == 0; then createnewprj; fi
+ # Complete setup
+ echo -e "$BOLD *** Start deployment $((loop+1))/$MAXITER for $NOAZS SNAT JumpHosts + $NOVMS VMs *** $NORM ($TRIPLE) $TAGARG"
+ date
+ unset THISRUNSUCCESS
+ # Image IDs
+ JHIMGID=$(ostackcmd_search "$JHIMG" $GLANCETIMEOUT glance image-list $JHIMGFILT | awk '{ print $2; }')
+ if test -z "$JHIMGID" -o "$JHIMGID" == "0"; then sendalarm 1 "No JH image $JHIMG found, aborting." "" $GLANCETIMEOUT; exit 1; fi
+ IMGID=$(ostackcmd_search "$IMG" $GLANCETIMEOUT glance image-list $IMGFILT | awk '{ print $2; }')
+ if test -z "$IMGID" -o "$IMG" == "0"; then sendalarm 1 "No image $IMG found, aborting." "" $GLANCETIMEOUT; exit 1; fi
+ let APICALLS+=2
+ # Retrieve root volume size
+ ostackcmd_tm_retry GLANCESTATS $GLANCETIMEOUT glance image-show -f json $JHIMGID
+ if test $? != 0; then
+  let APIERRORS+=1; sendalarm 1 "glance image-show failed" "" $GLANCETIMEOUT
+  errwait $ERRWAIT
+  let loop+=1
+  continue
+ else
+  MD=$(echo "$OSTACKRESP" | jq '.min_disk' | tr -d '"')
+  SZ=$(echo "$OSTACKRESP" | jq '.size' | tr -d '"')
+  USER=$(echo "$OSTACKRESP" | jq '.properties.image_original_user' | tr -d '"')
+  SZ=$((SZ/1024/1024/1024))
+  if test "$SZ" -gt "$MD"; then MD=$SZ; fi
+  JHVOLSIZE=$(($MD+$ADDJHVOLSIZE))
+  if test -n "$USER" -a "$USER" != "null"; then JHDEFLTUSER="$USER"; fi
+ fi
+ ostackcmd_tm_retry GLANCESTATS $GLANCETIMEOUT glance image-show -f json $IMGID
+ if test $? != 0; then
+  let APIERRORS+=1; sendalarm 1 "glance image-show failed" "" $GLANCETIMEOUT
+ else
+  MD=$(echo "$OSTACKRESP" | jq '.min_disk' | tr -d '"')
+  SZ=$(echo "$OSTACKRESP" | jq '.size' | tr -d '"')
+  USER=$(echo "$OSTACKRESP" | jq '.properties.image_original_user' | tr -d '"')
+  SZ=$((SZ/1024/1024/1024))
+  if test "$SZ" -gt "$MD"; then MD=$SZ; fi
+  VOLSIZE=$(($MD+$ADDVMVOLSIZE))
+  if test -n "$USER" -a "$USER" != "null"; then DEFLTUSER="$USER"; fi
+ fi
+ #let APICALLS+=2
+ # Check VM flavor
+ ostackcmd_tm_retry NOVASTATS $NOVATIMEOUT nova flavor-show -f json $FLAVOR
+ if test $? != 0; then
+  let APIERRORS+=1; sendalarm 1 "nova flavor-show $FLAVOR failed" "" $NOVATIMEOUT; exit 1
+ else
+  VMFLVDISK=$(echo "$OSTACKRESP" | jq '.disk')
+  if test $VMFLVDISK -lt $VOLSIZE -a -n "$BOOTFROMIMAGE"; then
+    patch_openstackclient
+    NEED_BLKDEV=1
+    VMVOLSIZE=${VMVOLSIZE:-$VOLSIZE}
+  else
+    unset NEED_BLKDEV
+    #unset VMVOLSIZE
+  fi
+ fi
+ echo "Using images JH $JHDEFLTUSER@$JHIMG ($JHVOLSIZE GB), VM $DEFLTUSER@$IMG ($VOLSIZE GB)"
+ echo "Deploying on AZs ${AZS[*]} (Volumes: ${VAZS[*]}, Networks: ${NAZS[*]})"
+ if createRouters; then
+  if createNets; then
+   if createSubNets; then
+    if createRIfaces; then
+     if createSGroups -a -z "$INTERRUPTED" -a ! -e stop-os-hm; then
+      createLBs;
+      if createJHVols; then
+       if createVIPs; then
+        if createJHPorts; then
+         if createVols; then
+          if createKeypairs; then
+           createPorts
+           waitJHVols # TODO: Error handling
+           if createJHVMs; then
+            let ROUNDVMS=$NOAZS
+            if createFIPs; then
+             waitVols  # TODO: Error handling
+             if createVMs; then
+              let ROUNDVMS+=$NOVMS
+              waitJHVMs
+              RC=$?
+              if test $RC != 0; then
+               #sendalarm $RC "Timeout waiting for JHVM ${RRLIST[*]}" "$WAITERRSTR" $((4*$MAXWAIT))
+               # FIXME: Shouldn't we count errors and abort here? Without JumpHosts, the rest is hopeless ...
+               if test $RC -gt $NOAZS; then let VMERRORS+=$NOAZS; else let VMERRORS+=$RC; fi
+              else
+               # loadbalancer
+               waitLBs
+               LBWAITERR=$?
+               if test -n "$LBAASS"; then LBERRORS=$LBWAITERR; fi
+               # No error handling here (but alarms are generated)
+               waitVMs
+               # Errors will be counted later again
+               setmetaVMs
+               create2ndSubNets
+               create2ndPorts
+               # Test JumpHosts
+               # NOTE: Alarms and Grafana error logging are not fully aligned here
+               testjhinet
+               RC=$?
+               # Retry
+               if test $RC != 0; then echo "$ERR"; sleep 5; testjhinet; RC=$?; fi
+               # Non-working JH breaks us ...
+               if test $RC != 0; then
+                 let VMERRORS+=$RC
+                 sendalarm $RC "$ERR" "" 70
+                 errwait $VMERRWAIT
+                 # FIXME: Shouldn't we abort here?
+                 echo -e "${BOLD}Aborting this deployment due to non-functional JH, clean up now ...${NORM}"
+                 sleep 1
+                 MSTOP=$(date +%s)
+               else
+                # Test normal hosts
+                #setPortForward
+                setPortForwardGen
+                WSTART=$(date +%s)
+                wait222
+                WAITERRORS=$?
+                # No need to send alarm yet, will do after testsnat
+                #if test $WAITERRORS != 0; then
+                #  sendalarm $RC "$ERR" "" $((4*$MAXWAIT))
+                #  errwait $VMERRWAIT
+                #fi
+                testsnat
+                RC=$?
+                let VMERRORS+=$((RC/2))
+                if test $RC != 0; then
+                  sendalarm $RC "$ERR" "" $((4*$MAXWAIT))
+                  errwait $VMERRWAIT
+                fi
+                # Attach and config 2ndary NICs
+                config2ndNIC
+                MSTOP=$(date +%s)
+                # Full connection test
+                if test -n "$FULLCONN" -a -z "$INTERRUPTED" -a ! -e stop-os-hm; then
+                  fullconntest
+                  # Test for FPERR instead?
+                  if test $FPERR -gt 0; then
+                    PINGERRORS+=$FPERR
+                    sendalarm 2 "Connectivity errors" "$FPERR + $FPRETRY\n$ERR" 5
+                    errwait $ERRWAIT
+                  elif test $FPRETRY != 0; then
+                   echo -e "${YELLOW}Warning:${NORM} Needed $FPRETRY ping retries"
+                  fi
+                  log_grafana ping stats $FPRETRY $FPERR
+                  if test -n "$SECONDNET" -a -n "$RESHUFFLE"; then
+                    reShuffle
+                    fullconntest
+                    if test $FPERR -gt 0; then
+                      PINGERRORS+=$FPERR
+                      log_grafana ping stats $FPRETRY $FPERR
+                      sendalarm 2 "Connectivity errors" "$FPERR + $FPRETRY\n$ERR" 5
+                      errwait $ERRWAIT
+                    fi
+                  fi
+		  if test -n "$IPERF"; then iperf3test; fi
+                  #MSTOP=$(date +%s)
+                fi
+                # TODO: Create disk ... and attach to JH VMs ... and test access
+                # TODO: Attach additional net interfaces to JHs ... and test IP addr
+                WAITTIME+=($(($MSTOP-$WSTART)))
+                # Test load balancer
+                if test -n "$LOADBALANCER" -a $LBERRORS = 0 -a -z "$INTERRUPTED" -a ! -e stop-os-hm; then
+		 LBACTIVE=1
+		 testLBs
+                else
+		 LBACTIVE=0
+		fi
+                TESTTIME=$(($(date +%s)-$MSTOP))
+                echo -e "$BOLD *** SETUP DONE ($(($MSTOP-$MSTART))s), TESTS DONE (${TESTTIME}s), DELETE AGAIN $NORM"
+                let SUCCRUNS+=1
+                THISRUNSUCCESS=1
+		sleep 1
+		if test $SUCCWAIT -ge 0; then echo -n "Sleep ... (safe to hit ^C) ..."; sleep $SUCCWAIT; echo;
+		else echo -n "Hit enter to continue ..."; read ANS; fi
+                # Refresh token if needed
+                if test -n "$TOKENSTAMP" && test $(($(date +%s)-$TOKENSTAMP)) -ge 36000; then
+                  getToken
+                  TOKENSTAMP=$(date +%s)
+                fi
+                # Subtract waiting time (5s here)
+                MSTART=$(($MSTART+$(date +%s)-$MSTOP))
+                if test -n "$LOADBALANCER" -a "$LBACTIVE" = "1"; then cleanLBs; fi
+               fi
+               # TODO: Detach and delete disks again
+              fi; #JH wait successful
+             fi; deleteVMs
+            fi; deleteFIPs
+           fi; deleteJHVMs
+          fi; deleteKeypairs
+         fi; waitdelVMs; deleteVols
+        fi; waitdelJHVMs
+        #echo -e "${BOLD}Ignore port del errors; VM cleanup took care already.${NORM}"
+        IGNORE_ERRORS=1
+        delete2ndPorts
+        #if test -n "$SECONDNET" -o -n "$MANUALPORTSETUP"; then deletePorts; fi
+        #deletePorts; deleteJHPorts	# not strictly needed, ports are del by VM del
+        unset IGNORE_ERRORS
+       fi; deleteVIPs
+      fi; waitLBs --nostat; deleteLBs
+      delPortsLBs
+      deleteJHVols
+     # There is a chance that some VMs were not created, but ports were allocated, so clean ...
+     fi; cleanupPorts; deleteSGroups
+    fi # Wait for LBs to vanish, try deleting again, in case they had been in PENDING_XXXX before
+    CLEANUPMODE=1
+    if ! waitdelLBs; then unset CLEANUPMODE LBDSTATS; LBAASS=(${DELLBAASS[*]}); deleteLBs; waitdelLBs; fi
+    unset CLEANUPMODE; deleteRIfaces
+   fi; deleteSubNets
+  fi; deleteNets
+ fi
+ # We may recycle the router
+ if test $(($loop+1)) == $MAXITER -o -n "$INTERRUPTED" -o $((($loop+1)%$ROUTERITER)) == 0 -o -e stop-os-hm; then deleteRouters; fi
+ #echo "${NETSTATS[*]}"
+ echo -e "$BOLD *** Cleanup complete *** $NORM"
+ THISRUNTIME=$(($(date +%s)-$MSTART+$TESTTIME))
+ # Only account successful runs for total runtime stats
+ if test -n "$THISRUNSUCCESS"; then
+   TOTTIME+=($THISRUNTIME)
+ fi
+ # Raise an alarm if we have not yet sent one and we're very slow despite this
+ if test -n "$OPENSTACKTOKEN"; then
+   if test -n "$BOOTALLATONCE"; then CON=400; NFACT=12; FACT=24; else CON=384; NFACT=12; FACT=36; fi
+ else
+   if test -n "$BOOTALLATONCE"; then CON=416; NFACT=16; FACT=24; else CON=400; NFACT=16; FACT=36; fi
+ fi
+ if test "$VOLNEEDSTAG" == "1"; then let FACT+=2; fi
+ MAXCYC=$(($CON+($FACT+$NFACT/2)*$NOAZS+$NFACT*$NONETS+$FACT*$NOVMS))
+ MINCYC=$(($MAXCYC/6))
+ if test -n "$SECONDNET"; then let MAXCYC+=$(($NFACT*$NONETS+$NFACT*$NOVMS)); fi
+ if test -n "$RESHUFFLE"; then let MAXCYC+=$((2*$NFACT*$NOVMS)); fi
+ if test -n "$FULLCONN"; then let MAXCYC+=$(($NOVMS*$NOVMS/10)); fi
+ if test -n "$IPERF"; then let MAXCYC+=$((6*$NONETS)); fi
+ if test -n "$LOADBALANCER"; then let MAXCYC+=$((36+4*$NOVMS+$WAITLB)); fi
+ if test -n "$SKIPKILLLB"; then let MAXCYC-=$((20+2*$NOVMS)); fi
+ # FIXME: We could check THISRUNSUCCESS instead?
+ SLOW=0
+ if test $VMERRORS = 0 -a $WAITERRORS = 0 -a $THISRUNTIME -gt $MAXCYC; then
+    sendalarm 1 "SLOW PERFORMANCE" "Cycle time: $THISRUNTIME (max $MAXCYC)" $MAXCYC
+    #waiterr $WAITERR
+    SLOW=1
+ fi
+ if test -z "$THISRUNSUCCESS"; then let SLOW+=1; fi
+ RELPERF=$(echo "scale=2; 10*$THISRUNTIME/$MAXCYC" | bc -l)
+ log_grafana "totDur" "$MAXCYC" "$RELPERF" "$SLOW"
+ sendbufferedalarms
+ sendrecoveryalarm
+ allstats
+ if test -n "$FULLCONN"; then CONNTXT="$CONNERRORS Conn Errors, "; else CONNTXT=""; fi
+ if test -n "$LOADBALANCER"; then LBTXT="$LBERRORS LB Errors, "; else LBTXT=""; fi
+ echo -e "This run ($((loop+1))/$MAXITER): Overall $ROUNDVMS / ($NOVMS + $NOAZS) VMs, $APICALLS CLI calls: $(($(date +%s)-$MSTART))s+${TESTTIME}s=${THISRUNTIME}s $((100*$THISRUNTIME/$MAXCYC))%\n $VMERRORS VM login errors, $WAITERRORS VM timeouts, $APIERRORS API errors (of which $APITIMEOUTS API timeouts), $PINGERRORS Ping Errors\n ${CONNTXT}${LBTXT}$(date +'%Y-%m-%d %H:%M:%S %Z')"
+#else
+#  usage
+fi
+let CUMAPIERRORS+=$APIERRORS
+let CUMAPITIMEOUTS+=$APITIMEOUTS
+let CUMVMERRORS+=$VMERRORS
+let CUMLBERRORS+=$LBERRORS
+let CUMPINGRETRIES+=$FPRETRY
+let CUMPINGERRORS+=$PINGERRORS
+let CUMWAITERRORS+=$WAITERRORS
+let CUMCONNERRPRS+=$CONNERRORS
+let CUMAPICALLS+=$APICALLS
+let CUMVMS+=$ROUNDVMS
+let RUNS+=1
+```
