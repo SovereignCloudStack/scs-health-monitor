@@ -32,6 +32,13 @@ class StepsDef:
     def connect_to_openstack(context, network_name: str):
         network = context.client.network.find_network(name_or_id=network_name)
         assert network is not None, f"Network with {network_name} doesn't exists"
+    
+    #TODO: loadbalancers    
+    @when("A load balancer with name {lb_name} exists")
+    def connect_to_openstack(context, lb_name: str):
+        lb = context.client.load_balancer.find_loadbalancer(name_or_id=lb_name)
+        assert lb is not None, f"Network with {lb_name} doesn't exists"
+
 
     @when('A VM with name {vm_name} exists')
     def vm_exists(context, vm_name: str):
