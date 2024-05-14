@@ -36,7 +36,8 @@ class StepsDef:
     #TODO: loadbalancers    
     @when("A load balancer with name {lb_name} exists")
     def connect_to_openstack(context, lb_name: str):
-        lb = context.client.load_balancer.find_loadbalancer(name_or_id=lb_name)
+        lb = context.client.network.find_load_balancer(name_or_id=lb_name)
+        #context.client.load_balancer.find_loadbalancer
         assert lb is not None, f"Network with {lb_name} doesn't exists"
 
 
@@ -121,6 +122,20 @@ class StepsDef:
             context.collector.networks.append(network.id)
             assert not context.client.network.find_network(
                 name_or_id=network), f"Network called {network} created"
+
+    #TODO: loadbalancers
+    @then("I should be able to create {lb_quantity} loadbalancers for {network_name}")
+    def create_a_lb(context, lb_quantity: str, network_name: str):
+        print("start")
+        network = context.client.network.find_network(name_or_id=network_name)
+        print(network)
+        for num in range(1, int(lb_quantity) + 1):
+            print(num)
+            print(context.client)
+            lb = context.client.network.create_load_balancer(name=f"{context.test_name}-loadbalancer-{num}")
+            print(lb)
+            assert not context.client.network.find_load_balancer(
+                name_or_id=lb), f"Network called {lb} created"
 
     @then("I should be able to delete a networks")
     def delete_a_network(context):
