@@ -13,7 +13,7 @@ import tools
 
 class StepsDef:
 
-    #TODO: add every resource to the __init__ function, purpose: for later deletion
+    collector = tools.Collector()
 
     @given("I connect to OpenStack")
     def given_i_connect_to_openstack(context):
