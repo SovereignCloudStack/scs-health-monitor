@@ -124,15 +124,23 @@ class StepsDef:
                 name_or_id=network), f"Network called {network} created"
 
     #TODO: loadbalancers
-    @then("I should be able to create {lb_quantity} loadbalancers for {network_name}")
-    def create_a_lb(context, lb_quantity: str, network_name: str):
+    @then("I should be able to create {lb_quantity} loadbalancers for {subnet_name} in network {network_name}")
+    def create_a_lb(context, lb_quantity: str, subnet_name: str, network_name: str):
         print("start")
         network = context.client.network.find_network(name_or_id=network_name)
+        assert network is not None, f"Network with name {network_name} does not exist"
         print(network)
+        subnet = context.client.network.find_subnet(name_or_id=subnet_name)
+        assert (
+                subnet is not None
+        ), f"Subnet with name {subnet_name} does not exist in network {network_name}"
+        print(subnet)
+        
         for num in range(1, int(lb_quantity) + 1):
             print(num)
-            print(context.client)
-            lb = context.client.network.create_load_balancer(name=f"{context.test_name}-loadbalancer-{num}")
+            print(context.client.network)
+            lb = context.client.network.create_load_balancer(name=f"{context.test_name}-loadbalancer-{num}",subnet_id=subnet.id)
+  
             print(lb)
             assert not context.client.network.find_load_balancer(
                 name_or_id=lb), f"Network called {lb} created"
