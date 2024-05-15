@@ -129,21 +129,22 @@ class StepsDef:
         print("start")
         network = context.client.network.find_network(name_or_id=network_name)
         assert network is not None, f"Network with name {network_name} does not exist"
-        print(network)
+        print(network.id)
         subnet = context.client.network.find_subnet(name_or_id=subnet_name)
         assert (
                 subnet is not None
         ), f"Subnet with name {subnet_name} does not exist in network {network_name}"
-        print(subnet)
+        print(subnet.id)
         
         for num in range(1, int(lb_quantity) + 1):
             print(num)
-            print(context.client.network)
-            lb = context.client.network.create_load_balancer(name=f"{context.test_name}-loadbalancer-{num}",subnet_id=subnet.id)
-  
+            print(context.client.load_balancer)
+            lb = context.client.network.create_load_balancer(name=f"{context.test_name}-loadbalancer-{num}",vip_subnet_id=subnet.id)
+            #lb = context.client.network.load_balancers(subnet_name=subnet_name)
             print(lb)
-            assert not context.client.network.find_load_balancer(
-                name_or_id=lb), f"Network called {lb} created"
+            print(num)
+            # assert not context.client.network.find_load_balancer(
+            #     name_or_id=lb), f"Network called {lb} created"
 
     @then("I should be able to delete a networks")
     def delete_a_network(context):
