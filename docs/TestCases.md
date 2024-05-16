@@ -141,88 +141,98 @@ For Openstack you can check ports and operational tools by using the command:
 `openstack catalog list`
 and will get:
 ```
-+-------------+----------------+-------------------------------------------------------------------+
-| Name        | Type           | Endpoints                                                         |
-+-------------+----------------+-------------------------------------------------------------------+
-| keystone    | identity       | RegionOne                                                         |
-|             |                |   internal: https://api-int.gx-scs.sovereignit.cloud:5000         |
-|             |                | RegionOne                                                         |
-|             |                |   public: https://api.gx-scs.sovereignit.cloud:5000               |
-|             |                |                                                                   |
-| designate   | dns            | RegionOne                                                         |
-|             |                |   internal: https://api-int.gx-scs.sovereignit.cloud:9001         |
-|             |                | RegionOne                                                         |
-|             |                |   public: https://api.gx-scs.sovereignit.cloud:9001               |
-|             |                |                                                                   |
-| barbican    | key-manager    | RegionOne                                                         |
-|             |                |   internal: https://api-int.gx-scs.sovereignit.cloud:9311         |
-|             |                | RegionOne                                                         |
-|             |                |   public: https://api.gx-scs.sovereignit.cloud:9311               |
-|             |                |                                                                   |
-| swift       | object-store   | RegionOne                                                         |
-|             |                |   public: https://api.gx-scs.sovereignit.cloud:8080/swift/v1/AUTH |
-|             |                | _476672f1023b4bac8837f95a76881757                                 |
-|             |                | RegionOne                                                         |
-|             |                |   admin: https://api-int.gx-scs.sovereignit.cloud:8080/swift/v1/A |
-|             |                | UTH_476672f1023b4bac8837f95a76881757                              |
-|             |                | RegionOne                                                         |
-|             |                |   internal: https://api-int.gx-scs.sovereignit.cloud:8080/swift/v |
-|             |                | 1/AUTH_476672f1023b4bac8837f95a76881757                           |
-|             |                |                                                                   |
-| nova_legacy | compute_legacy | RegionOne                                                         |
-|             |                |   public: https://api.gx-                                         |
-|             |                | scs.sovereignit.cloud:8774/v2/476672f1023b4bac8837f95a76881757    |
-|             |                | RegionOne                                                         |
-|             |                |   internal: https://api-int.gx-                                   |
-|             |                | scs.sovereignit.cloud:8774/v2/476672f1023b4bac8837f95a76881757    |
-|             |                |                                                                   |
-| neutron     | network        | RegionOne                                                         |
-|             |                |   internal: https://api-int.gx-scs.sovereignit.cloud:9696         |
-|             |                | RegionOne                                                         |
-|             |                |   public: https://api.gx-scs.sovereignit.cloud:9696               |
-|             |                |                                                                   |
-| cinderv3    | volumev3       | RegionOne                                                         |
-|             |                |   public: https://api.gx-                                         |
-|             |                | scs.sovereignit.cloud:8776/v3/476672f1023b4bac8837f95a76881757    |
-|             |                | RegionOne                                                         |
-|             |                |   internal: https://api-int.gx-                                   |
-|             |                | scs.sovereignit.cloud:8776/v3/476672f1023b4bac8837f95a76881757    |
-|             |                |                                                                   |
-| nova        | compute        | RegionOne                                                         |
-|             |                |   internal: https://api-int.gx-scs.sovereignit.cloud:8774/v2.1    |
-|             |                | RegionOne                                                         |
-|             |                |   public: https://api.gx-scs.sovereignit.cloud:8774/v2.1          |
-|             |                |                                                                   |
-| heat-cfn    | cloudformation | RegionOne                                                         |
-|             |                |   public: https://api.gx-scs.sovereignit.cloud:8000/v1            |
-|             |                | RegionOne                                                         |
-|             |                |   internal: https://api-int.gx-scs.sovereignit.cloud:8000/v1      |
-|             |                |                                                                   |
-| placement   | placement      | RegionOne                                                         |
-|             |                |   public: https://api.gx-scs.sovereignit.cloud:8780               |
-|             |                | RegionOne                                                         |
-|             |                |   internal: https://api-int.gx-scs.sovereignit.cloud:8780         |
-|             |                |                                                                   |
-| glance      | image          | RegionOne                                                         |
-|             |                |   public: https://api.gx-scs.sovereignit.cloud:9292               |
-|             |                | RegionOne                                                         |
-|             |                |   internal: https://api-int.gx-scs.sovereignit.cloud:9292         |
-|             |                |                                                                   |
-| octavia     | load-balancer  | RegionOne                                                         |
-|             |                |   public: https://api.gx-scs.sovereignit.cloud:9876               |
-|             |                | RegionOne                                                         |
-|             |                |   internal: https://api-int.gx-scs.sovereignit.cloud:9876         |
-|             |                | RegionOne                                                         |
-|             |                |   admin: https://api-int.gx-scs.sovereignit.cloud:9876            |
-|             |                |                                                                   |
-| heat        | orchestration  | RegionOne                                                         |
-|             |                |   internal: https://api-int.gx-                                   |
-|             |                | scs.sovereignit.cloud:8004/v1/476672f1023b4bac8837f95a76881757    |
-|             |                | RegionOne                                                         |
-|             |                |   public: https://api.gx-                                         |
-|             |                | scs.sovereignit.cloud:8004/v1/476672f1023b4bac8837f95a76881757    |
-|             |                |                                                                   |
-+-------------+----------------+-------------------------------------------------------------------+
++-------------+----------------+---------------------------------------------------------+
+| Name        | Type           | Endpoints                                               |
++-------------+----------------+---------------------------------------------------------+
+| keystone    | identity       | RegionOne                                               |
+|             |                |   internal: https://api-int.gx-                         |
+|             |                | scs.sovereignit.cloud:5000                              |
+|             |                | RegionOne                                               |
+|             |                |   public: https://api.gx-scs.sovereignit.cloud:5000     |
+|             |                |                                                         |
+| designate   | dns            | RegionOne                                               |
+|             |                |   internal: https://api-int.gx-                         |
+|             |                | scs.sovereignit.cloud:9001                              |
+|             |                | RegionOne                                               |
+|             |                |   public: https://api.gx-scs.sovereignit.cloud:9001     |
+|             |                |                                                         |
+| barbican    | key-manager    | RegionOne                                               |
+|             |                |   internal: https://api-int.gx-                         |
+|             |                | scs.sovereignit.cloud:9311                              |
+|             |                | RegionOne                                               |
+|             |                |   public: https://api.gx-scs.sovereignit.cloud:9311     |
+|             |                |                                                         |
+| swift       | object-store   | RegionOne                                               |
+|             |                |   public: https://api.gx-scs.sovereignit.cloud:8080/swi |
+|             |                | ft/v1/AUTH_476672f1023b4bac8837f95a76881757             |
+|             |                | RegionOne                                               |
+|             |                |   admin: https://api-int.gx-scs.sovereignit.cloud:8080/ |
+|             |                | swift/v1/AUTH_476672f1023b4bac8837f95a76881757          |
+|             |                | RegionOne                                               |
+|             |                |   internal: https://api-int.gx-scs.sovereignit.cloud:80 |
+|             |                | 80/swift/v1/AUTH_476672f1023b4bac8837f95a76881757       |
+|             |                |                                                         |
+| nova_legacy | compute_legacy | RegionOne                                               |
+|             |                |   public: https://api.gx-scs.sovereignit.cloud:8774/v2/ |
+|             |                | 476672f1023b4bac8837f95a76881757                        |
+|             |                | RegionOne                                               |
+|             |                |   internal: https://api-int.gx-scs.sovereignit.cloud:87 |
+|             |                | 74/v2/476672f1023b4bac8837f95a76881757                  |
+|             |                |                                                         |
+| neutron     | network        | RegionOne                                               |
+|             |                |   internal: https://api-int.gx-                         |
+|             |                | scs.sovereignit.cloud:9696                              |
+|             |                | RegionOne                                               |
+|             |                |   public: https://api.gx-scs.sovereignit.cloud:9696     |
+|             |                |                                                         |
+| cinderv3    | volumev3       | RegionOne                                               |
+|             |                |   public: https://api.gx-scs.sovereignit.cloud:8776/v3/ |
+|             |                | 476672f1023b4bac8837f95a76881757                        |
+|             |                | RegionOne                                               |
+|             |                |   internal: https://api-int.gx-scs.sovereignit.cloud:87 |
+|             |                | 76/v3/476672f1023b4bac8837f95a76881757                  |
+|             |                |                                                         |
+| nova        | compute        | RegionOne                                               |
+|             |                |   internal: https://api-int.gx-                         |
+|             |                | scs.sovereignit.cloud:8774/v2.1                         |
+|             |                | RegionOne                                               |
+|             |                |   public: https://api.gx-                               |
+|             |                | scs.sovereignit.cloud:8774/v2.1                         |
+|             |                |                                                         |
+| heat-cfn    | cloudformation | RegionOne                                               |
+|             |                |   public: https://api.gx-scs.sovereignit.cloud:8000/v1  |
+|             |                | RegionOne                                               |
+|             |                |   internal: https://api-int.gx-                         |
+|             |                | scs.sovereignit.cloud:8000/v1                           |
+|             |                |                                                         |
+| placement   | placement      | RegionOne                                               |
+|             |                |   public: https://api.gx-scs.sovereignit.cloud:8780     |
+|             |                | RegionOne                                               |
+|             |                |   internal: https://api-int.gx-                         |
+|             |                | scs.sovereignit.cloud:8780                              |
+|             |                |                                                         |
+| glance      | image          | RegionOne                                               |
+|             |                |   public: https://api.gx-scs.sovereignit.cloud:9292     |
+|             |                | RegionOne                                               |
+|             |                |   internal: https://api-int.gx-                         |
+|             |                | scs.sovereignit.cloud:9292                              |
+|             |                |                                                         |
+| octavia     | load-balancer  | RegionOne                                               |
+|             |                |   public: https://api.gx-scs.sovereignit.cloud:9876     |
+|             |                | RegionOne                                               |
+|             |                |   internal: https://api-int.gx-                         |
+|             |                | scs.sovereignit.cloud:9876                              |
+|             |                | RegionOne                                               |
+|             |                |   admin: https://api-int.gx-scs.sovereignit.cloud:9876  |
+|             |                |                                                         |
+| heat        | orchestration  | RegionOne                                               |
+|             |                |   internal: https://api-int.gx-scs.sovereignit.cloud:80 |
+|             |                | 04/v1/476672f1023b4bac8837f95a76881757                  |
+|             |                | RegionOne                                               |
+|             |                |   public: https://api.gx-scs.sovereignit.cloud:8004/v1/ |
+|             |                | 476672f1023b4bac8837f95a76881757                        |
+|             |                |                                                         |
++-------------+----------------+---------------------------------------------------------+
 ```
 
 this is supposed to be the latest status and the commands for the right tools might not be prompted in the IDE using the openstack SDK. So in case of troubles creating resources etc. it's advised to look for the right commands in the [Documentation](Use new Octavia api for creating Load balancers:

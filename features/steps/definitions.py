@@ -128,26 +128,24 @@ class StepsDef:
     #TODO: loadbalancers
     @then("I should be able to create {lb_quantity} loadbalancers for {subnet_name} in network {network_name}")
     def create_a_lb(context, lb_quantity: str, subnet_name: str, network_name: str):
-        print("start")
         network = context.client.network.find_network(name_or_id=network_name)
         assert network is not None, f"Network with name {network_name} does not exist"
         print(network.id)
+                # TODO: Verify by checking whether subnet is in network's subnet ids list
+        # network.subnet_ids
         subnet = context.client.network.find_subnet(name_or_id=subnet_name)
         assert (
                 subnet is not None
         ), f"Subnet with name {subnet_name} does not exist in network {network_name}"
-        print(subnet.id)
-        
+        print(subnet.id)        
         for num in range(1, int(lb_quantity) + 1):
             lb_name = f"{context.test_name}-loadbalancer-{num}"
-            lb=context.client.load_balancer.create_load_balancer(name=lb_name, vip_subnet_id=subnet.id)
-            print(lb)
-            time.sleep(6000)
-            print(lb)
-            assert not lb, f"Expected LB {lb_name} not present"
-            # assert not context.client.load_balancer.find_load_balancer(
-            #     name_or_id=lb_name), f"Expected LB {lb_name} not present"
-
+            assert context.client.load_balancer.create_load_balancer(name=lb_name, vip_subnet_id=subnet.id).provisioning_status == "PENDING_CREATE", f"Expected LB {lb_name} not in creation"
+            lb_return=context.client.load_balancer.wait_for_load_balancer(name_or_id=lb_name, status='ACTIVE', failures=['ERROR'], interval=2, wait=300)
+            print(lb_return.provisioning_status)
+            print(num)         
+            assert lb_return.provisioning_status == "ACTIVE", f"Expected LB {lb_name} not Active"
+            assert lb_return.operating_status == "ONLINE", f"Expected LB {lb_name} not Online"
 
 
     @then("I should be able to delete a networks")
