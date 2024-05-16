@@ -18,7 +18,7 @@ class StepsDef:
     @given("I connect to OpenStack")
     def given_i_connect_to_openstack(context):
         cloud_name = context.env.get("CLOUD_NAME")
-        context.test_name = context.env.get("TESTS_NAME_IDENTIFICATION")
+        context.test_name = context.env.get("TESTS_NAME_IDENTIFICATION","scs-hm")
         context.vm_image = context.env.get("VM_IMAGE")
         context.flavor_name = context.env.get("FLAVOR_NAME")
         context.client = openstack.connect(cloud=cloud_name)
@@ -53,6 +53,8 @@ class StepsDef:
     ):
         network = context.client.network.find_network(name_or_id=network_name)
         assert network is not None, f"Network with name {network_name} does not exist"
+        # TODO: Verify by checking whether subnet is in network's subnet ids list
+        # network.subnet_ids
         subnet = context.client.network.find_subnet(name_or_id=subnet_name)
         assert (
                 subnet is not None
@@ -137,14 +139,12 @@ class StepsDef:
         print(subnet.id)
         
         for num in range(1, int(lb_quantity) + 1):
-            print(num)
-            print(context.client.load_balancer)
-            lb = context.client.network.create_load_balancer(name=f"{context.test_name}-loadbalancer-{num}",vip_subnet_id=subnet.id)
-            #lb = context.client.network.load_balancers(subnet_name=subnet_name)
-            print(lb)
-            print(num)
-            # assert not context.client.network.find_load_balancer(
-            #     name_or_id=lb), f"Network called {lb} created"
+            lb_name = f"{context.test_name}-loadbalancer-{num}"
+            context.client.load_balancer.create_load_balancer(name=lb_name, vip_subnet_id=subnet.id)
+            assert not context.client.load_balancer.find_load_balancer(
+                name_or_id=lb_name), f"Expected LB {lb_name} not present"
+
+
 
     @then("I should be able to delete a networks")
     def delete_a_network(context):
