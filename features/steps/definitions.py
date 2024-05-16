@@ -140,9 +140,13 @@ class StepsDef:
         
         for num in range(1, int(lb_quantity) + 1):
             lb_name = f"{context.test_name}-loadbalancer-{num}"
-            context.client.load_balancer.create_load_balancer(name=lb_name, vip_subnet_id=subnet.id)
-            assert not context.client.load_balancer.find_load_balancer(
-                name_or_id=lb_name), f"Expected LB {lb_name} not present"
+            lb=context.client.load_balancer.create_load_balancer(name=lb_name, vip_subnet_id=subnet.id)
+            print(lb)
+            time.sleep(6000)
+            print(lb)
+            assert not lb, f"Expected LB {lb_name} not present"
+            # assert not context.client.load_balancer.find_load_balancer(
+            #     name_or_id=lb_name), f"Expected LB {lb_name} not present"
 
 
 
