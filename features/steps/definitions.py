@@ -125,14 +125,14 @@ class StepsDef:
             assert not context.client.network.find_network(
                 name_or_id=network), f"Network called {network} created"
 
-    #TODO: loadbalancers
+    #TODO: create loadbalancers inherit subnets and networks
     @then("I should be able to create {lb_quantity} loadbalancers for {subnet_name} in network {network_name}")
     def create_a_lb(context, lb_quantity: str, subnet_name: str, network_name: str):
         network = context.client.network.find_network(name_or_id=network_name)
         assert network is not None, f"Network with name {network_name} does not exist"
         print(network.id)
                 # TODO: Verify by checking whether subnet is in network's subnet ids list
-        # network.subnet_ids
+                # network.subnet_ids
         subnet = context.client.network.find_subnet(name_or_id=subnet_name)
         assert (
                 subnet is not None
@@ -147,7 +147,22 @@ class StepsDef:
             assert lb_return.provisioning_status == "ACTIVE", f"Expected LB {lb_name} not Active"
             assert lb_return.operating_status == "ONLINE", f"Expected LB {lb_name} not Online"
 
-
+    #TODO: delete loadbalancers
+    @then("I should be able to delete a loadbalancer")
+    def delete_a_lb(context):
+        # lb_list=list(context.client.load_balancer.load_balancers)
+        # print(lb_list)
+        print("--------")
+        context_return=context.client.load_balancer.find_load_balancer(name_or_id='scs-hm-loadbalancer-1')
+        print(context_return)
+        assert context.client.load_balancer.delete_load_balancer(context_return,cascade=True), f"Expected LB {context_return.name} could not be deleted"
+        print("iterations")
+        print("--------")
+        #assert True, f"i dont know"
+        # for lb in lb_list:
+        #      #if f"{context.test_name}-loadbalancer" in lb.name:
+        #         assert context.client.load_balancer.delete_load_balancer(lb,cascade=True), f"Expected LB {lb} could not be deleted"       
+ 
     @then("I should be able to delete a networks")
     def delete_a_network(context):
 

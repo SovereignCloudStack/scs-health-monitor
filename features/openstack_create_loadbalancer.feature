@@ -9,4 +9,4 @@ Feature: OpenStack Network Creation
 
 		Examples: Test loadbalancers
 			| lb_quantity | subnet_name			| network_name 			|
-			| 1	    			| scs-hm-subnet-1 | scs-hm-network-1	|
+			| 3	    			| scs-hm-subnet-1 | scs-hm-network-1	|
