@@ -147,22 +147,17 @@ class StepsDef:
             assert lb_return.provisioning_status == "ACTIVE", f"Expected LB {lb_name} not Active"
             assert lb_return.operating_status == "ONLINE", f"Expected LB {lb_name} not Online"
 
-    #TODO: delete loadbalancers
     @then("I should be able to delete a loadbalancer")
     def delete_a_lb(context):
-        # lb_list=list(context.client.load_balancer.load_balancers)
-        # print(lb_list)
+        lb_list=list(context.client.load_balancer.load_balancers())
         print("--------")
-        context_return=context.client.load_balancer.find_load_balancer(name_or_id='scs-hm-loadbalancer-1')
-        print(context_return)
-        assert context.client.load_balancer.delete_load_balancer(context_return,cascade=True), f"Expected LB {context_return.name} could not be deleted"
-        print("iterations")
+        for lb in lb_list:
+            print(lb.name)
+            if f"{context.test_name}-loadbalancer" in lb.name:
+                 assert context.client.load_balancer.delete_load_balancer(lb,cascade=True), f"Expected LB {lb} could not be deleted"       
+        print("--------")            
         print("--------")
-        #assert True, f"i dont know"
-        # for lb in lb_list:
-        #      #if f"{context.test_name}-loadbalancer" in lb.name:
-        #         assert context.client.load_balancer.delete_load_balancer(lb,cascade=True), f"Expected LB {lb} could not be deleted"       
- 
+
     @then("I should be able to delete a networks")
     def delete_a_network(context):
 
