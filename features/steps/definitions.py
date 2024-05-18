@@ -59,6 +59,7 @@ class StepsDef:
     def create_a_router(context, router_quantity: str):
         for num in range(1, int(router_quantity) + 1):
             router = context.client.network.create_router(name=f"{context.test_name}-{num}")
+            context.collector.routers.append(router.id)
             assert router is not None, f"Failed to create router with name {context.test_name}-{num}"
 
     @when("A security group with name {security_group_name} exists")
@@ -110,6 +111,7 @@ class StepsDef:
     def create_a_network(context, network_quantity: str):
         for num in range(1, int(network_quantity) + 1):
             network = context.client.network.create_network(name=f"{context.test_name}-network-{num}")
+            context.collector.networks.append(network.id)
             assert not context.client.network.find_network(
                 name_or_id=network), f"Network called {network} created"
 
@@ -127,7 +129,8 @@ class StepsDef:
     def create_a_jumphost(context, jumphost_name: str):
         server = context.client.network.find_network(name_or_id=jumphost_name)
         assert server is None, f"Jumphost with {jumphost_name} already exists"
-        context.client.compute.create_server(name=jumphost_name)
+        jumphost = context.client.compute.create_server(name=jumphost_name)
+        context.collector.jumphosts.append(jumphost.id)
         context.client.network.delete_network(server)
         assert context.client.network.find_network(name_or_id=server), f"Jumphost called {jumphost_name} created"
 
@@ -146,6 +149,7 @@ class StepsDef:
                         name=f"{context.test_name}-subnet-{num}",
                         network_id=network.id, ip_version=4, cidr=cidr[num - 1])
                     time.sleep(5)
+                    context.collector.subnets.append(subnet.id)
                     assert not context.client.network.find_network(name_or_id=subnet), \
                         f"Failed to create subnet with name {subnet}"
             else:
@@ -175,6 +179,7 @@ class StepsDef:
                 name=security_group_name,
                 description=f"this is the description for security group: {security_group_name}"
             )
+            context.collector.security_groups.append(security_group.id)
             assert (
                     security_group is not None
             ), f"Security group with name {security_group.name} was not found"
@@ -213,7 +218,7 @@ class StepsDef:
                     assert len(
                         sel_sec_group_rules) == 0, "There are already security group rules for the selected groups"
 
-                    context.client.network.create_security_group_rule(
+                    new_security_group_rule = context.client.network.create_security_group_rule(
                         security_group_id=sel_sec_group.id,
                         direction="ingress",
                         ethertype="IPv4",
@@ -222,6 +227,7 @@ class StepsDef:
                         port_range_max=port_range_max,
                         remote_ip_prefix="0.0.0.0/0"
                     )
+                    context.collector.security_groups_rules.append(new_security_group_rule.id)
 
             assert len(sec_groups) > 0, "There are no security groups"
 
@@ -266,6 +272,7 @@ class StepsDef:
             nat_destination=nat_destination, port=port, wait=wait,
             timeout=timeout)
         floating_ip = FloatingIPCloudMixin.get_floating_ip(ip.id)
+        context.collector.floating_ips.append(floating_ip.id)
         assert floating_ip is None, f"floating ip was not created"
 
     @then("I should be able to delete floating ip with id: {floating_ip_id}")
@@ -297,6 +304,7 @@ class StepsDef:
                     except DuplicateResource as e:
                         assert e, "Server already created!"
                     created_server = context.client.compute.find_server(name_or_id=vm_name)
+                    context.collector.virtual_machines.append(created_server.id)
                     assert created_server, f"VM with name {vm_name} was not created successfully"
 
     @then('I should be able to delete the VMs')
@@ -314,6 +322,7 @@ class StepsDef:
         for num in range(1, int(quantity_volumes) + 1):
             volume_name = f"{context.test_name}-volume-{num}"
             volume = context.client.block_store.create_volume(size=10, name=volume_name)
+            context.collector.volumes.append(volume.id)
             context.volumes.append(volume)
             tools.ensure_volume_exist(client=context.client, volume_name=volume_name, test_name=context.test_name)
 
