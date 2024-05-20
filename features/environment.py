@@ -1,5 +1,5 @@
 from prometheus_client import push_to_gateway, REGISTRY
-from steps.tools import Tools
+from steps.tools import Tools, Collector
 from libs.loggerClass import Logger
 from libs.PrometheusExporter import PrometheusExporter, LabelNames
 from libs.DateTimeProvider import DateTimeProvider
@@ -36,6 +36,8 @@ def before_all(context):
     context.logger = Logger(level=DEFAULT_LOG_LEVEL)
     context.prometheusExporter = PrometheusExporter()
     context.prometheusExporter.add_default_label(LabelNames.CLOUD_LABEL, cloudName)
+
+    context.collector = Collector()
 
 def after_all(context):
     context.stop_time = DateTimeProvider.get_current_utc_time()
