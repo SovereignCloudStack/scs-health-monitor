@@ -36,9 +36,8 @@ def before_all(context):
     context.logger = Logger(level=DEFAULT_LOG_LEVEL)
     context.prometheusExporter = PrometheusExporter()
     context.prometheusExporter.add_default_label(LabelNames.CLOUD_LABEL, cloudName)
-    
-    collector = Collector()
-    context.collector = collector
+
+    context.collector = Collector()
 
 def after_all(context):
     context.stop_time = DateTimeProvider.get_current_utc_time()
