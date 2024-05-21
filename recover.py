@@ -11,7 +11,9 @@ class Recover:
 
     @staticmethod
     def show_confirmation_popup():
-        result = messagebox.askyesno("Confirmation", "Do you want to proceed?")
+        result = messagebox.askyesno(
+            "Confirmation",
+            "Do you want to proceed with the deletion of all resources?")
         if result:
             print("User clicked Yes")
         else:
