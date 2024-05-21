@@ -150,13 +150,10 @@ class StepsDef:
     @then("I should be able to delete a loadbalancer")
     def delete_a_lb(context):
         lb_list=list(context.client.load_balancer.load_balancers())
-        print("--------")
         for lb in lb_list:
             print(lb.name)
             if f"{context.test_name}-loadbalancer" in lb.name:
                  assert context.client.load_balancer.delete_load_balancer(lb,cascade=True), f"Expected LB {lb} could not be deleted"       
-        print("--------")            
-        print("--------")
 
     @then("I should be able to delete a networks")
     def delete_a_network(context):
