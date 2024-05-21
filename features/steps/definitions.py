@@ -34,8 +34,7 @@ class StepsDef:
     
     @when("A load balancer with name {lb_name} exists")
     def connect_to_openstack(context, lb_name: str):
-        #old:lb = context.client.network.find_load_balancer(name_or_id=lb_name)
-        lb= context.client.load_balancer.find_load_balancer(name_or_id=lb_name)
+        lb = context.client.load_balancer.find_load_balancer(name_or_id=lb_name)
         assert lb is not None, f"Network with {lb_name} doesn't exists"
 
 
@@ -277,7 +276,6 @@ class StepsDef:
             if context.test_name in sec_group.name:
                 sel_sec_group = context.client.network.find_security_group(name_or_id=sec_group.name)
                 sel_sec_group_rules = []
-
                 for rule in context.client.network.security_group_rules():
                     if rule.security_group_id == sel_sec_group.id:
                         sel_sec_group_rules.append(rule)
