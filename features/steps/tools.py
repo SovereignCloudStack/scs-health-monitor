@@ -15,6 +15,7 @@ class Collector:
         self.security_groups_rules: list = list()
         self.virtual_machines: list = list()
         self.volumes: list = list()
+        self.loadbalancers: list = list()
 
 
 class Tools:
