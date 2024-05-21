@@ -36,7 +36,7 @@ class StepsDef:
     @when("A load balancer with name {lb_name} exists")
     def connect_to_openstack(context, lb_name: str):
         #old:lb = context.client.network.find_load_balancer(name_or_id=lb_name)
-        lb= context.client.load_balancer.find_load_balancer(name_or_id=lb_name)
+        lb = context.client.load_balancer.find_load_balancer(name_or_id=lb_name)
         assert lb is not None, f"Network with {lb_name} doesn't exists"
 
 
