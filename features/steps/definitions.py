@@ -17,7 +17,7 @@ class StepsDef:
     @given("I connect to OpenStack")
     def given_i_connect_to_openstack(context):
         cloud_name = context.env.get("CLOUD_NAME")
-        context.test_name = context.env.get("TESTS_NAME_IDENTIFICATION")
+        context.test_name = context.env.get("TESTS_NAME_IDENTIFICATION","scs-hm")
         context.vm_image = context.env.get("VM_IMAGE")
         context.flavor_name = context.env.get("FLAVOR_NAME")
         context.client = openstack.connect(cloud=cloud_name)
@@ -31,6 +31,13 @@ class StepsDef:
     def connect_to_openstack(context, network_name: str):
         network = context.client.network.find_network(name_or_id=network_name)
         assert network is not None, f"Network with {network_name} doesn't exists"
+    
+    @when("A load balancer with name {lb_name} exists")
+    def connect_to_openstack(context, lb_name: str):
+        #old:lb = context.client.network.find_load_balancer(name_or_id=lb_name)
+        lb= context.client.load_balancer.find_load_balancer(name_or_id=lb_name)
+        assert lb is not None, f"Network with {lb_name} doesn't exists"
+
 
     @when('A VM with name {vm_name} exists')
     def vm_exists(context, vm_name: str):
@@ -122,6 +129,31 @@ class StepsDef:
             context.collector.networks.append(network.id)
             assert not context.client.network.find_network(
                 name_or_id=network), f"Network called {network} created"
+
+    @then("I should be able to create {lb_quantity} loadbalancers for {subnet_name} in network {network_name}")
+    def create_a_lb(context, lb_quantity: str, subnet_name: str, network_name: str):
+        network = context.client.network.find_network(name_or_id=network_name)
+        assert network is not None, f"Network with name {network_name} does not exist"
+        subnet = context.client.network.find_subnet(name_or_id=subnet_name)
+        assert (
+                subnet is not None
+        ), f"Subnet with name {subnet_name} does not exist in network {network_name}"       
+        for num in range(1, int(lb_quantity) + 1):
+            lb_name = f"{context.test_name}-loadbalancer-{num}"
+            assert context.client.load_balancer.create_load_balancer(name=lb_name, vip_subnet_id=subnet.id).provisioning_status == "PENDING_CREATE", f"Expected LB {lb_name} not in creation"
+            lb_return=context.client.load_balancer.wait_for_load_balancer(name_or_id=lb_name, status='ACTIVE', failures=['ERROR'], interval=2, wait=300)
+            print(lb_return.provisioning_status)
+            print(num)         
+            assert lb_return.provisioning_status == "ACTIVE", f"Expected LB {lb_name} not Active"
+            assert lb_return.operating_status == "ONLINE", f"Expected LB {lb_name} not Online"
+
+    @then("I should be able to delete a loadbalancer")
+    def delete_a_lb(context):
+        lb_list=list(context.client.load_balancer.load_balancers())
+        for lb in lb_list:
+            print(lb.name)
+            if f"{context.test_name}-loadbalancer" in lb.name:
+                 assert context.client.load_balancer.delete_load_balancer(lb,cascade=True), f"Expected LB {lb} could not be deleted"       
 
     @then("I should be able to delete a networks")
     def delete_a_network(context):
