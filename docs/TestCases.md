@@ -134,3 +134,17 @@ In the target state, each test case described in the Bash script would be transl
 
 ### Inputs
 TODO list inputs for test cases in python
+
+### Errors and Updates
+
+For Openstack you can check ports and operational tools by using the command:
+`openstack catalog list`
+and will get a list of the services that manage the resources
+
+this is supposed to be the latest status and the commands for the right tools might not be prompted in the IDE using the openstack SDK. So in case of troubles creating resources etc. it's advised to look for the right commands in the [Documentation](Use new Octavia api for creating Load balancers:
+https://docs.openstack.org/openstacksdk/latest).
+
+Like for exemple creating loadbalancers is no longer handled by `neutron`, so the suggested methods lead to an Api-Error, since it is now handled by `octavia` now.
+Therefor you have to look for the right methods in the [documentation concerning load_balancer_v2](Use new Octavia api for creating Load balancers:
+https://docs.openstack.org/openstacksdk/latest/user/proxies/load_balancer_v2.html
+9342064d)
