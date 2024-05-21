@@ -141,6 +141,7 @@ class StepsDef:
             lb_name = f"{context.test_name}-loadbalancer-{num}"
             assert context.client.load_balancer.create_load_balancer(name=lb_name, vip_subnet_id=subnet.id).provisioning_status == "PENDING_CREATE", f"Expected LB {lb_name} not in creation"
             lb_return=context.client.load_balancer.wait_for_load_balancer(name_or_id=lb_name, status='ACTIVE', failures=['ERROR'], interval=2, wait=300)
+            context.collector.load_balancers.append(lb_return.id)
             print(lb_return.provisioning_status)
             print(num)         
             assert lb_return.provisioning_status == "ACTIVE", f"Expected LB {lb_name} not Active"
