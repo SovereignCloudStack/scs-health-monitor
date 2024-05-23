@@ -23,14 +23,16 @@ auth_args = {
     'interface':context['OS_INTERFACE']
 }
 
-# Establish OpenStack connection
+
 client = openstack.connection.Connection(**auth_args)
 print("connected")
-
+######################### Establish OpenStack connection#########################
 
 # Ping function
 def myping(host):
+    #print(f"ping {host}")
     response = subprocess.run(['ping', '-c', '1', '-w', '1', host], stdout=subprocess.DEVNULL)
+    #print(response.returncode)
     if response.returncode == 0:
         print(".", end="", flush=True)
         return 0
@@ -39,28 +41,35 @@ def myping(host):
     if response.returncode == 0:
         print("o", end="", flush=True)
         return 1
-    print("X", end="", flush=True)
+    print("X", end="", flush=True) # success
     return 2
 
 # Collect IPs from OpenStack
 def collect_ips():
+    print("collecting ips")
     ports = client.network.ports()
     ips = []
     for port in ports:
         for fixed_ip in port.fixed_ips:
             ips.append(fixed_ip['ip_address'])
-    print(ips)
     return ips
 
 # Remote command execution
 def execute_remote_command(host, port, username, private_key_path, command):
     key = paramiko.RSAKey(filename=private_key_path)
+    print("key")
     ssh = paramiko.SSHClient()
+    print("ssh-client")
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    print("set_missing_host_key_policy")
     ssh.connect(hostname=host, port=port, username=username, pkey=key)
-    stdin, stdout, stderr = ssh.exec_command(command)
+    print("ssh connected")
+    stdin, stdout, stderr = ssh.exec_command(f"python3 -c \"from __main__ import fullconntest; fullconntest()\"")
+    print("executed fullconn")
     result = stdout.read().decode().strip()
+    print(f"result {result}")
     ssh.close()
+    print("ssh closed")
     return result
 
 # Main function to perform connectivity check
@@ -76,37 +85,36 @@ def fullconntest():
         result = myping(ip)
         if result == 1:
             retries += 1
-        elif result == 2:
+        elif result != 2:
             fails += 1
 
-    print(f" {retries} {fails}")
+    print(f"retries: {retries}\nfails{fails}")
     return retries + fails
 
 if __name__ == "__main__":
     # Configure your SSH parameters
     FLOATS = ['localhost'] #'213.131.230.89'
-    JHNO = 3  # Update as necessary
+    JHNO = 3 # TODO: generic read jump host quantity
     DEFLTUSER = context['DEFLTUSER']
     DATADIR = context['DATADIR']
     KEYPAIRS = [context['KEYPAIRS']]
-    REDIRS = [['tcp,22']]  # Update as necessary
-
+    REDIRS = [['tcp,22']] # TODO: generic 
     # for jhno in range(JHNO):
-    #     for red in REDIRS[jhno]:
+    #     for ports in REDIRS[jhno]:
             # port = int(red.split(',')[1])
-            # command = f"python3 -c \"from __main__ import fullconntest; fullconntest()\""
-            # result = execute_remote_command(FLOATS[jhno], port, DEFLTUSER, os.path.join(DATADIR, KEYPAIRS[1]), command)
-            # print("result"+result)
-    for red in REDIRS[0]:
-        port = int(red.split(',')[1])
+            
+    for ports in REDIRS[0]:
+        port = int(ports.split(',')[1])
+    
     print(port)
 
-    
-    # command = f"python3 -c \"from __main__ import fullconntest; fullconntest()\""
-    # result = execute_remote_command(FLOATS[0], int(port), DEFLTUSER, os.path.join(DATADIR, KEYPAIRS[0]), command)
-    result = execute_remote_command(FLOATS[0], int(port), DEFLTUSER, os.path.join(DATADIR, KEYPAIRS[0]), fullconntest())
-
-    print(f"FLOATS {FLOATS} DEFLUSER {DEFLTUSER}")
-
+    fullconntest()
+  #  command = f"python3 -c \"from __main__ import fullconntest; fullconntest()\""
+  #  result = execute_remote_command(FLOATS[0], int(port), DEFLTUSER, os.path.join(DATADIR, KEYPAIRS[0]), command)
+    #response = subprocess.run(['ping', '-c', '1', '-w', '3', '10.8.3.210'], stdout=subprocess.DEVNULL)
+    #print(f"response {response}")
+    #print(f"returncode {response.returncode}")
+    #result = execute_remote_command(FLOATS[0], int(port), DEFLTUSER, os.path.join(DATADIR, KEYPAIRS[0]), fullconntest())
+    #print(f"FLOATS {FLOATS} DEFLUSER {DEFLTUSER}")
     print("result"+result)
 
