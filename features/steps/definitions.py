@@ -12,7 +12,6 @@ import tools
 
 
 class StepsDef:
-
     collector = tools.Collector()
 
     @given("I connect to OpenStack")
@@ -60,6 +59,15 @@ class StepsDef:
         for num in range(1, int(router_quantity) + 1):
             router = context.client.network.create_router(name=f"{context.test_name}-{num}")
             assert router is not None, f"Failed to create router with name {context.test_name}-{num}"
+
+    @then("I should be able to create port for subnets")
+    def create_port_for_subnets(context):
+        subnets = context.client.network.subnets()
+        for subnet in subnets:
+            if f"{context.test_name}-subnet" in subnet.name:
+                port = context.client.network.create_port(subnet_id=subnet.id)
+                context.port_id = port.id
+            assert context.port_id, f"Port creation failed for port {context.port_id}"
 
     @when("A security group with name {security_group_name} exists")
     def security_group_with_name_exists(context, security_group_name: str):
@@ -115,7 +123,6 @@ class StepsDef:
 
     @then("I should be able to delete a networks")
     def delete_a_network(context):
-
         for network in context.client.network.networks:
             if f"{context.test_name}-network" in network.name:
                 context.client.network.delete_network(network)
@@ -226,7 +233,7 @@ class StepsDef:
             assert len(sec_groups) > 0, "There are no security groups"
 
     @then("I should be able to delete a security group rules")
-    def delete_security_group_rules(context,):
+    def delete_security_group_rules(context, ):
         sec_groups = list(context.client.network.security_groups())
         for sec_group in sec_groups:
             if context.test_name in sec_group.name:
@@ -254,7 +261,6 @@ class StepsDef:
         for zone in availability_zones:
             if zone.name == name:
                 context.compute.delete_availability_zone(name=zone.name)
-
 
     @then(
         "I should be able to create a floating ip on {subnet}, on {server}, with {fixed_address}, for {nat_destination}"
@@ -325,10 +331,3 @@ class StepsDef:
                 context.client.block_store.delete_volume(volume, ignore_missing=True)
         assert filter(lambda alist: f"{context.test_name}" not in alist, list(context.client.block_store.volumes()))
         tools.verify_volumes_deleted(context.client, context.test_name)
-
-
-
-
-
-
-
