@@ -66,6 +66,7 @@ def execute_remote_command(host, port, username, private_key_path, command):
 # Main function to perform connectivity check
 def fullconntest():
     ips = collect_ips()
+    print(f"ips {ips}")
     print(f"VM2VM Connectivity Check ... ({' '.join(ips)})")
 
     retries = 0
@@ -83,11 +84,11 @@ def fullconntest():
 
 if __name__ == "__main__":
     # Configure your SSH parameters
-    FLOATS = ['	213.131.230.89']
+    FLOATS = ['localhost'] #'213.131.230.89'
     JHNO = 3  # Update as necessary
-    DEFLTUSER = ''
-    DATADIR = ''
-    KEYPAIRS = ['']
+    DEFLTUSER = context['DEFLTUSER']
+    DATADIR = context['DATADIR']
+    KEYPAIRS = [context['KEYPAIRS']]
     REDIRS = [['tcp,22']]  # Update as necessary
 
     # for jhno in range(JHNO):
@@ -99,7 +100,13 @@ if __name__ == "__main__":
     for red in REDIRS[0]:
         port = int(red.split(',')[1])
     print(port)
-    command = f"python3 -c \"from __main__ import fullconntest; fullconntest()\""
-    result = execute_remote_command(FLOATS[0], int(port), DEFLTUSER, os.path.join(DATADIR, KEYPAIRS[0]), command)
+
+    
+    # command = f"python3 -c \"from __main__ import fullconntest; fullconntest()\""
+    # result = execute_remote_command(FLOATS[0], int(port), DEFLTUSER, os.path.join(DATADIR, KEYPAIRS[0]), command)
+    result = execute_remote_command(FLOATS[0], int(port), DEFLTUSER, os.path.join(DATADIR, KEYPAIRS[0]), fullconntest())
+
+    print(f"FLOATS {FLOATS} DEFLUSER {DEFLTUSER}")
+
     print("result"+result)
 
