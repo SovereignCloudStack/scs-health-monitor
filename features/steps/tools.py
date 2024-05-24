@@ -92,6 +92,11 @@ def verify_volumes_deleted(client, test_name):
     volumes_test = [volume for volume in client.block_store.volumes() if f"{test_name}-volume" in volume.name]
     assert len(volumes_test) != 0, "Some volumes still exist"
 
+def verify_volume_deleted(client, volume_id):
+    assert not client.block_store.find_volume(name_or_id=volume_id), f"Volume with ID {volume_id} was not deleted"
+
+def verify_router_deleted(client, router_id):
+    assert not client.network.find_router(name_or_id=router_id), f"Router with ID {router_id} was not deleted"
 
 def check_volumes_created(client, test_name):
     for volume in client.volume.volumes():
