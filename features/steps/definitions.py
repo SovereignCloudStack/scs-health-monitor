@@ -67,6 +67,7 @@ class StepsDef:
             router = context.client.network.create_router(name=f"{context.test_name}-{num}")
             context.collector.routers.append(router.id)
             assert router is not None, f"Failed to create router with name {context.test_name}-{num}"
+        assert len(context.collector.routers) == int(router_quantity), f"Failed to create the desired amount of routers"
 
     @when("A security group with name {security_group_name} exists")
     def security_group_with_name_exists(context, security_group_name: str):
@@ -99,14 +100,21 @@ class StepsDef:
 
     @then("I should be able to delete routers")
     def delete_a_router(context):
-        for router in context.client.network.routers():
-            if context.test_name in router.name:
-                assert router is not None, f"Router with name {router.name} doesn't exist"
-                context.client.network.delete_router(router)
-                time.sleep(2)
-                assert not context.client.network.find_router(
-                    name_or_id=router.name
-                ), f"Router with name {router.name} was not deleted"
+        for router_id in context.collector.routers[:]:
+            context.client.network.delete_router(router_id)
+            time.sleep(2)
+            tools.verify_router_deleted(context.client, router_id)
+            context.collector.routers.remove(router_id)
+        if context.collector.routers:
+            for router in context.client.network.routers():
+                if context.test_name in router.name:
+                    assert router is not None, f"Router with name {router.name} doesn't exist"
+                    context.client.network.delete_router(router)
+                    time.sleep(2)
+                    tools.verify_router_deleted(context.client, router.id)
+                    if router.id in context.collector.routers:
+                        context.collector.routers.remove(router.id)
+        assert len(context.collector.routers) == 0, f"Failed to delete routers"
 
     @then("I should be able to list networks")
     def list_networks(context):
@@ -120,6 +128,7 @@ class StepsDef:
             context.collector.networks.append(network.id)
             assert not context.client.network.find_network(
                 name_or_id=network), f"Network called {network} created"
+        assert len(context.collector.networks) == int(network_quantity), f"Failed to create the desired amount of networks"
 
     @then("I should be able to create {lb_quantity} loadbalancers for {subnet_name} in network {network_name}")
     def create_a_lb(context, lb_quantity: str, subnet_name: str, network_name: str):
@@ -138,23 +147,41 @@ class StepsDef:
             print(num)         
             assert lb_return.provisioning_status == "ACTIVE", f"Expected LB {lb_name} not Active"
             assert lb_return.operating_status == "ONLINE", f"Expected LB {lb_name} not Online"
+        assert len(context.collector.load_balancers) == int(lb_quantity), f"Failed to create the desired amount of LBs"
 
     @then("I should be able to delete a loadbalancer")
     def delete_a_lb(context):
-        lb_list=list(context.client.load_balancer.load_balancers())
-        for lb in lb_list:
-            print(lb.name)
-            if f"{context.test_name}-loadbalancer" in lb.name:
-                 assert context.client.load_balancer.delete_load_balancer(lb,cascade=True), f"Expected LB {lb} could not be deleted"       
+        for lb_id in context.collector.load_balancers[:]:
+            assert context.client.load_balancer.delete_load_balancer(lb_id,cascade=True), f"Expected LB {lb_id} could not be deleted"
+            context.collector.load_balancers.remove(lb_id)
+        if context.collector.load_balancers:
+            lb_list=list(context.client.load_balancer.load_balancers())
+            for lb in lb_list:
+                print(lb.name)
+                if f"{context.test_name}-loadbalancer" in lb.name:
+                    assert context.client.load_balancer.delete_load_balancer(lb,cascade=True), f"Expected LB {lb} could not be deleted"
+                    if lb.id in context.collector.load_balancers:
+                        context.collector.load_balancers.remove(lb.id)
+        assert len(context.collector.load_balancers) == 0, f"Failed to delete LBs"
 
     @then("I should be able to delete a networks")
     def delete_a_network(context):
-        for network in context.client.network.networks:
-            if f"{context.test_name}-network" in network.name:
-                context.client.network.delete_network(network)
-                assert not context.client.network.find_network(
-                    name_or_id=network
-                ), f"Network called {network.name} already deleted"
+        for network_id in context.collector.networks[:]:
+            context.client.network.delete_network(network_id)            
+            assert not context.client.network.find_network(
+                    name_or_id=network_id
+            ), f"Network with ID {network_id} already deleted"
+            context.collector.networks.remove(network_id)
+        if context.collector.networks:
+            for network in context.client.network.networks():
+                if f"{context.test_name}-network" in network.name:
+                    context.client.network.delete_network(network)
+                    assert not context.client.network.find_network(
+                        name_or_id=network
+                    ), f"Network called {network.name} already deleted"
+                    if network.id in context.collector.networks:
+                        context.collector.networks.remove(network.id)
+        assert len(context.collector.networks) == 0, f"Failed to delete networks"
 
     @then("I should be able to create a jumphost with name {jumphost_name}")
     def create_a_jumphost(context, jumphost_name: str):
@@ -185,19 +212,30 @@ class StepsDef:
                         f"Failed to create subnet with name {subnet}"
             else:
                 continue
+        assert len(context.collector.subnets) == int(subnet_quantity), f"Failed to create the desired amount of subnets"
 
     @then("I should be able to delete subnets")
     def delete_a_subnet(context):
-        for network in context.client.network.networks():  # list of networks
-            for subnet_id in network.subnet_ids:
-                for subnet in context.client.network.subnets():
-                    if f"{context.test_name}-subnet" in subnet.name:
-                        tools.delete_subent_ports(context.client, subnet_id=subnet_id)
-                        subnet = context.client.network.find_subnet(name_or_id=subnet_id)
-                        assert subnet, f"Subnet with id {subnet} does not exist"
-                        context.client.network.delete_subnet(subnet_id)
-                        assert context.client.network.find_subnet(
-                            name_or_id=subnet), f"Subnet with id {subnet} was not deleted"
+        for subnet_id in context.collector.subnets[:]:
+            tools.delete_subent_ports(context.client, subnet_id=subnet_id)
+            context.client.network.delete_subnet(subnet_id)
+            assert not context.client.network.find_subnet(
+                            name_or_id=subnet_id), f"Subnet with id {subnet_id} was not deleted"
+            context.collector.subnets.remove(subnet_id)
+        if context.collector.subnets:
+            for network in context.client.network.networks():  # list of networks
+                for subnet_id in network.subnet_ids:
+                    for subnet in context.client.network.subnets():
+                        if f"{context.test_name}-subnet" in subnet.name:
+                            tools.delete_subent_ports(context.client, subnet_id=subnet_id)
+                            subnet = context.client.network.find_subnet(name_or_id=subnet_id)
+                            assert subnet, f"Subnet with id {subnet} does not exist"
+                            context.client.network.delete_subnet(subnet_id)
+                            assert context.client.network.find_subnet(
+                                name_or_id=subnet), f"Subnet with id {subnet} was not deleted"
+                            if subnet_id in context.collector.subnets:
+                                context.collector.subnets.remove(subnet_id)
+        assert len(context.collector.subnets) == 0, f"Failed to delete all subnets"
 
     @then("I should be able to create {security_group_quantity} security groups")
     def create_security_group(context, security_group_quantity: str):
@@ -214,18 +252,30 @@ class StepsDef:
             assert (
                     security_group is not None
             ), f"Security group with name {security_group.name} was not found"
+        assert len(context.collector.security_groups) == int(security_group_quantity), f"Failed to create the desired amount of security groups"
 
     @then("I should be able to delete a security groups")
     def delete_a_security_group(context):
-        for sec_group in context.client.network.security_groups():
-            security_group = context.client.network.find_security_group(name_or_id=sec_group.id)
-            assert security_group, f"Security group with name {sec_group.name} does not exist"
-            if f"{context.test_name}-sg" in sec_group.name:
-                context.client.network.delete_security_group(sec_group.id)
-                time.sleep(2)
-                assert not context.client.network.find_security_group(
-                    name_or_id=sec_group.id
-                ), f"Security group with name {sec_group.name} was not deleted"
+        for sec_group_id in context.collector.security_groups[:]:
+            context.client.network.delete_security_group(sec_group_id)
+            time.sleep(2)
+            assert not context.client.network.find_security_group(
+                name_or_id=sec_group_id
+            ), f"Security group with id {sec_group_id} was not deleted"
+            context.collector.security_groups.remove(sec_group_id)
+        if context.collector.security_groups:
+            for sec_group in context.client.network.security_groups():
+                security_group = context.client.network.find_security_group(name_or_id=sec_group.id)
+                assert security_group, f"Security group with name {sec_group.name} does not exist"
+                if f"{context.test_name}-sg" in sec_group.name:
+                    context.client.network.delete_security_group(sec_group.id)
+                    time.sleep(2)
+                    assert not context.client.network.find_security_group(
+                        name_or_id=sec_group.id
+                    ), f"Security group with name {sec_group.name} was not deleted"
+                    if sec_group.id in context.collector.security_groups:
+                        context.collector.security_groups.remove(sec_group.id)
+        assert len(context.collector.security_groups) == 0, f"Failed to delete security groups"
 
     @then("I should be able to create {security_group_rules_quantity} security group rules")
     def create_security_group_rules(context, security_group_rules_quantity: str):
@@ -261,20 +311,28 @@ class StepsDef:
                     context.collector.security_groups_rules.append(new_security_group_rule.id)
 
             assert len(sec_groups) > 0, "There are no security groups"
+        assert len(context.collector.security_groups_rules) == int(security_group_rules_quantity), f"Failed to create the desired amount of security group rules"
 
     @then("I should be able to delete a security group rules")
     def delete_security_group_rules(context,):
-        sec_groups = list(context.client.network.security_groups())
-        for sec_group in sec_groups:
-            if context.test_name in sec_group.name:
-                sel_sec_group = context.client.network.find_security_group(name_or_id=sec_group.name)
-                sel_sec_group_rules = []
-                for rule in context.client.network.security_group_rules():
-                    if rule.security_group_id == sel_sec_group.id:
-                        sel_sec_group_rules.append(rule)
-                        context.client.network.delete_security_group_rule(rule.id)
-                assert len(sel_sec_group_rules) > 0, "There are no security group rules for the selected groups"
-        assert len(sec_groups) > 0, "There are no security groups"
+        for sec_group_rule_id in context.collector.security_groups_rules[:]:
+            context.client.network.delete_security_group_rule(sec_group_rule_id)
+            context.collector.security_groups_rules.remove(sec_group_rule_id)
+        if context.collector.security_groups_rules:        
+            sec_groups = list(context.client.network.security_groups())
+            for sec_group in sec_groups:
+                if context.test_name in sec_group.name:
+                    sel_sec_group = context.client.network.find_security_group(name_or_id=sec_group.name)
+                    sel_sec_group_rules = []
+                    for rule in context.client.network.security_group_rules():
+                        if rule.security_group_id == sel_sec_group.id:
+                            sel_sec_group_rules.append(rule)
+                            context.client.network.delete_security_group_rule(rule.id)
+                            if rule.id in context.collector.security_groups_rules:
+                                context.collector.security_groups_rules.remove(rule.id)
+                    assert len(sel_sec_group_rules) > 0, "There are no security group rules for the selected groups"
+            assert len(sec_groups) > 0, "There are no security groups"
+        assert len(context.collector.security_groups_rules) == 0, f"Failed to delete security groups rules"
 
     @then("I should be able to create availability zone named {availability zone}")
     def create_availability_zone(context, availability_zone_name):
@@ -306,13 +364,15 @@ class StepsDef:
         assert floating_ip is None, f"floating ip was not created"
 
     @then("I should be able to delete floating ip with id: {floating_ip_id}")
-    def delete_floating_ip(self, floating_ip_id):
-        FloatingIPCloudMixin.delete_floating_ip(floating_ip_id=floating_ip_id)
-        floating_ip = FloatingIPCloudMixin.get_floating_ip(floating_ip_id)
-        assert floating_ip is not None, f"floating ip with id {floating_ip_id} was not created"
+    def delete_floating_ip(context, floating_ip_id):
+        for ip_id in context.collector.floating_ips[:]:
+            FloatingIPCloudMixin.delete_floating_ip(floating_ip_id=ip_id)
+            floating_ip = FloatingIPCloudMixin.get_floating_ip(ip_id)
+            assert floating_ip is not None, f"floating ip with id {ip_id} was not deleted"
+            context.collector.floating_ips.remove(ip_id)
+        assert len(context.collector.floating_ips) == 0, f"Failed to delete floating IPs"
 
-    @then(
-        "I should be able to create {vms_quantity} VMs")
+    @then("I should be able to create {vms_quantity} VMs")
     def create_vm(context, vms_quantity: str):
         for network in context.client.network.networks():
             if context.test_name in network.name:
@@ -333,18 +393,24 @@ class StepsDef:
                         context.client.compute.wait_for_server(server)
                     except DuplicateResource as e:
                         assert e, "Server already created!"
+                    time.sleep(5)
                     created_server = context.client.compute.find_server(name_or_id=vm_name)
                     context.collector.virtual_machines.append(created_server.id)
                     assert created_server, f"VM with name {vm_name} was not created successfully"
+        assert len(context.collector.virtual_machines) == int(vms_quantity), f"Failed to create the desired amount of VMs"
 
     @then('I should be able to delete the VMs')
     def delete_vm(context):
+        vms = context.collector.virtual_machines if len(context.collector.virtual_machines) else list()
         for vm in context.client.compute.servers():
-            if context.test_name in vm.name:
+            if vm.id in vms or context.test_name in vm.name:
                 context.client.compute.delete_server(vm.id)
                 context.client.compute.wait_for_delete(vm)
-                deleted_server = context.client.compute.find_server(name_or_id=vm.name)
-                assert deleted_server is None, f"VM with name {vm.name} was not deleted successfully"
+                deleted_server = context.client.compute.find_server(name_or_id=vm.id)
+                assert deleted_server, f"VM with name {vm.name} was not deleted successfully"
+                if vm.id in context.collector.virtual_machines:
+                    context.collector.virtual_machines.remove(vm.id)
+        assert len(context.collector.virtual_machines) == 0, f"Failed to delete VMs"
 
     @then("I create {quantity_volumes} volumes")
     def create_multiple_volumes(context, quantity_volumes):
@@ -355,15 +421,27 @@ class StepsDef:
             context.collector.volumes.append(volume.id)
             context.volumes.append(volume)
             tools.ensure_volume_exist(client=context.client, volume_name=volume_name, test_name=context.test_name)
+        assert len(context.collector.volumes) == int(quantity_volumes), f"Failed to create the desired amount of volumes"
 
     @then('I delete all volumes from test')
     def delete_all_volumes(context):
-        volumes = list(context.client.block_store.volumes())
-        for volume in volumes:
-            if f"{context.test_name}-volume" in volume.name:
-                context.client.block_store.delete_volume(volume, ignore_missing=True)
-        assert filter(lambda alist: f"{context.test_name}" not in alist, list(context.client.block_store.volumes()))
+        for volume_id in context.collector.volumes[:]:
+            context.client.block_store.delete_volume(volume_id, ignore_missing=True)
+            time.sleep(2)
+            tools.verify_volume_deleted(context.client, volume_id=volume_id)
+            context.collector.volumes.remove(volume_id)
+        if context.collector.volumes:
+            volumes = list(context.client.block_store.volumes())
+            for volume in volumes:
+                if f"{context.test_name}-volume" in volume.name:
+                    context.client.block_store.delete_volume(volume, ignore_missing=True)
+                    time.sleep(2)
+                    tools.verify_volume_deleted(context.client, volume_id=volume.id)
+                    if volume.id in context.collector.volumes:
+                        context.collector.volumes.remove(volume.id)
+            assert filter(lambda alist: f"{context.test_name}" not in alist, list(context.client.block_store.volumes()))
         tools.verify_volumes_deleted(context.client, context.test_name)
+        assert len(context.collector.volumes) == 0, f"Failed to delete volumes"
 
 
 
