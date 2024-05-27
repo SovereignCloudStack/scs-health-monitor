@@ -73,6 +73,8 @@ class StepsDef:
             if f"{context.test_name}-network" in network.name:
                 port = context.client.network.create_port(network_id=network.id)
                 assert port is not None, f"Port creation failed for port {port.id}"
+                context.collector.ports.append(port.id)
+
 
     @when("A security group with name {security_group_name} exists")
     def security_group_with_name_exists(context, security_group_name: str):
@@ -180,8 +182,14 @@ class StepsDef:
 
     @then("I am able to delete all the ports")
     def delete_network_ports(context):
-        pass
-
+        for port in context.collector.ports:
+            context.client.network.delete_port(port.id)
+        if len(context.client.ports) != 0:
+            for network in context.client.network.networks():
+                remaining_ports = list(context.client.network.ports(network_id=context.network_id))
+                for port in remaining_ports:
+                    context.client.network.delete_port(port.id)
+        assert len(context.client.ports) != 0, f"failed to delete all ports from all networks under test."
 
     @then('I should be able to create {subnet_quantity} subnets')
     def create_a_subnet(context, subnet_quantity: str):
