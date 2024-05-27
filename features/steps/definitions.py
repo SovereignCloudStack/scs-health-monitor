@@ -184,9 +184,9 @@ class StepsDef:
     def delete_network_ports(context):
         for port in context.collector.ports:
             context.client.network.delete_port(port.id)
-        if len(context.client.ports) != 0:
+        if len(context.collector.ports) != 0:
             for network in context.client.network.networks():
-                remaining_ports = list(context.client.network.ports(network_id=context.network_id))
+                remaining_ports = list(context.client.network.ports(network_id=context.network.id))
                 for port in remaining_ports:
                     context.client.network.delete_port(port.id)
         assert len(context.client.ports) != 0, f"failed to delete all ports from all networks under test."
