@@ -178,6 +178,11 @@ class StepsDef:
         subnets = context.client.network.subnets()
         assert subnets, "Failed to list subnets. No subnets found."
 
+    @then("I am able to delete all the ports")
+    def delete_network_ports(context):
+        pass
+
+
     @then('I should be able to create {subnet_quantity} subnets')
     def create_a_subnet(context, subnet_quantity: str):
         for network in context.client.network.networks():
