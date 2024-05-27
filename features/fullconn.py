@@ -124,7 +124,7 @@ echo " retries: $retries fails: $fails total: {total}"
     #     result = myping(ip)
     #     if result == 1:
     #         retries += 1
-    #     elif result != 2:
+    #     elif result = 2:
     #         fails += 1
 
     # print(f"\nretries: {retries}\nfails: {fails}")
