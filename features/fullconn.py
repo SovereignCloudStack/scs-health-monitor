@@ -64,8 +64,11 @@ def execute_remote_command(host, port, username, private_key_path, command):
     print("set_missing_host_key_policy")
     ssh.connect(hostname=host, port=port, username=username, pkey=key)
     print("ssh connected")
-    stdin, stdout, stderr = ssh.exec_command(f"python3 -c \"from __main__ import fullconntest; fullconntest()\"")
+    stdin, stdout, stderr = ssh.exec_command(f'echo Hello, world!')
+    #stdin, stdout, stderr = ssh.exec_command(f"python3 -c \"from __main__ import fullconntest; fullconntest()\"")
+
     print("executed fullconn")
+    print(stdout)
     result = stdout.read().decode().strip()
     print(f"result {result}")
     ssh.close()
@@ -88,33 +91,38 @@ def fullconntest():
         elif result != 2:
             fails += 1
 
-    print(f"retries: {retries}\nfails{fails}")
+    print(f"\nretries: {retries}\nfails: {fails}")
     return retries + fails
 
 if __name__ == "__main__":
     # Configure your SSH parameters
-    FLOATS = ['localhost'] #'213.131.230.89'
-    JHNO = 3 # TODO: generic read jump host quantity
+    FLOATS = ['localhost','localhost','localhost'] #'213.131.230.89'
+    JHNO = 1 # TODO: generic read jump host quantity
     DEFLTUSER = context['DEFLTUSER']
     DATADIR = context['DATADIR']
     KEYPAIRS = [context['KEYPAIRS']]
-    REDIRS = [['tcp,22']] # TODO: generic 
-    # for jhno in range(JHNO):
-    #     for ports in REDIRS[jhno]:
-            # port = int(red.split(',')[1])
-            
-    for ports in REDIRS[0]:
-        port = int(ports.split(',')[1])
-    
-    print(port)
+    REDIRS = [['tcp,22'],['tcp,22'],['tcp,22']] # TODO: generic 
 
-    fullconntest()
-  #  command = f"python3 -c \"from __main__ import fullconntest; fullconntest()\""
-  #  result = execute_remote_command(FLOATS[0], int(port), DEFLTUSER, os.path.join(DATADIR, KEYPAIRS[0]), command)
-    #response = subprocess.run(['ping', '-c', '1', '-w', '3', '10.8.3.210'], stdout=subprocess.DEVNULL)
-    #print(f"response {response}")
-    #print(f"returncode {response.returncode}")
+    for jhno in range(JHNO):
+            print(jhno)
+            for red in REDIRS[jhno]:
+                port = int(red.split(',')[1])
+                print(port)
+                command = f"python3 -c \"from __main__ import fullconntest; fullconntest()\""
+                result = execute_remote_command(FLOATS[jhno], port, DEFLTUSER, os.path.join(DATADIR, KEYPAIRS[jhno]), fullconntest())
+                print(f"result {result}")
+            
+    # for ports in REDIRS[0]:
+    #     port = int(ports.split(',')[1])
+    
+    # print(port)
+
+    #fullconntest()
+
+    #command = f"python3 -c \"from __main__ import fullconntest; fullconntest()\""
+    #result = execute_remote_command(FLOATS[0], int(port), DEFLTUSER, os.path.join(DATADIR, KEYPAIRS[0]), command)
     #result = execute_remote_command(FLOATS[0], int(port), DEFLTUSER, os.path.join(DATADIR, KEYPAIRS[0]), fullconntest())
-    #print(f"FLOATS {FLOATS} DEFLUSER {DEFLTUSER}")
-    print("result"+result)
+    
+    
+    #print("result"+result)
 
