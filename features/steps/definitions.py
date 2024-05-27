@@ -6,7 +6,6 @@ from openstack.cloud._floating_ip import FloatingIPCloudMixin
 import time
 import random
 import string
-import re
 
 from openstack.exceptions import DuplicateResource
 
@@ -68,14 +67,12 @@ class StepsDef:
             context.collector.routers.append(router.id)
             assert router is not None, f"Failed to create router with name {context.test_name}-{num}"
 
-    @then("I should be able to create port for subnets")
-    def create_port_for_subnets(context):
-        subnets = context.client.network.subnets()
-        for subnet in subnets:
-            if f"{context.test_name}-subnet" in subnet.name:
-                port = context.client.network.create_port(subnet_id=subnet.id)
-                pprint(port)
-            assert port is not None, f"Port creation failed for port {port.id}"
+    @then("I should be able to create port for networks")
+    def create_port_for_network(context):
+        for network in context.client.network.networks():
+            if f"{context.test_name}-network" in network.name:
+                port = context.client.network.create_port(network_id=network.id)
+                assert port is not None, f"Port creation failed for port {port.id}"
 
     @when("A security group with name {security_group_name} exists")
     def security_group_with_name_exists(context, security_group_name: str):
