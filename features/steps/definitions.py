@@ -1,10 +1,11 @@
+from pprint import pprint
+
 from behave import given, when, then
 import openstack
 from openstack.cloud._floating_ip import FloatingIPCloudMixin
 import time
 import random
 import string
-import re
 
 from openstack.exceptions import DuplicateResource
 
@@ -12,7 +13,6 @@ import tools
 
 
 class StepsDef:
-
     collector = tools.Collector()
 
     @given("I connect to OpenStack")
@@ -38,6 +38,11 @@ class StepsDef:
         lb = context.client.load_balancer.find_load_balancer(name_or_id=lb_name)
         assert lb is not None, f"Network with {lb_name} doesn't exists"
 
+
+    @when("A load balancer with name {lb_name} exists")
+    def connect_to_openstack(context, lb_name: str):
+        lb = context.client.load_balancer.find_load_balancer(name_or_id=lb_name)
+        assert lb is not None, f"Network with {lb_name} doesn't exists"
 
     @when('A VM with name {vm_name} exists')
     def vm_exists(context, vm_name: str):
@@ -68,6 +73,16 @@ class StepsDef:
             context.collector.routers.append(router.id)
             assert router is not None, f"Failed to create router with name {context.test_name}-{num}"
         assert len(context.collector.routers) == int(router_quantity), f"Failed to create the desired amount of routers"
+
+    @then("I should be able to create port for networks")
+    def create_port_for_network(context):
+        for network in context.client.network.networks():
+            if f"{context.test_name}-network" in network.name:
+                port = context.client.network.create_port(network_id=network.id)
+                assert port is not None, f"Port creation failed for port {port.id}"
+                context.collector.ports.append(port.id)
+                pprint(context.collector.ports)
+
 
     @when("A security group with name {security_group_name} exists")
     def security_group_with_name_exists(context, security_group_name: str):
@@ -164,6 +179,34 @@ class StepsDef:
                         context.collector.load_balancers.remove(lb.id)
         assert len(context.collector.load_balancers) == 0, f"Failed to delete LBs"
 
+    @then("I should be able to create {lb_quantity} loadbalancers for {subnet_name} in network {network_name}")
+    def create_a_lb(context, lb_quantity: str, subnet_name: str, network_name: str):
+        network = context.client.network.find_network(name_or_id=network_name)
+        assert network is not None, f"Network with name {network_name} does not exist"
+        subnet = context.client.network.find_subnet(name_or_id=subnet_name)
+        assert (
+                subnet is not None
+        ), f"Subnet with name {subnet_name} does not exist in network {network_name}"
+        for num in range(1, int(lb_quantity) + 1):
+            lb_name = f"{context.test_name}-loadbalancer-{num}"
+            assert context.client.load_balancer.create_load_balancer(
+                name=lb_name, vip_subnet_id=subnet.id).provisioning_status == "PENDING_CREATE", \
+                f"Expected LB {lb_name} not in creation"
+            lb_return = context.client.load_balancer.wait_for_load_balancer(
+                name_or_id=lb_name, status='ACTIVE', failures=['ERROR'], interval=2, wait=300)
+            context.collector.load_balancers.append(lb_return.id)
+            assert lb_return.provisioning_status == "ACTIVE", f"Expected LB {lb_name} not Active"
+            assert lb_return.operating_status == "ONLINE", f"Expected LB {lb_name} not Online"
+
+    @then("I should be able to delete a loadbalancer")
+    def delete_a_lb(context):
+        lb_list = list(context.client.load_balancer.load_balancers())
+        for lb in lb_list:
+            print(lb.name)
+            if f"{context.test_name}-loadbalancer" in lb.name:
+                assert context.client.load_balancer.delete_load_balancer(lb, cascade=True), \
+                    f"Expected LB {lb} could not be deleted"
+
     @then("I should be able to delete a networks")
     def delete_a_network(context):
         for network_id in context.collector.networks[:]:
@@ -196,6 +239,17 @@ class StepsDef:
     def list_subnets(context):
         subnets = context.client.network.subnets()
         assert subnets, "Failed to list subnets. No subnets found."
+
+    @then("I am able to delete all the ports")
+    def delete_network_ports(context):
+        for port in context.collector.ports:
+            context.client.network.delete_port(port.id)
+        for network in context.client.network.networks():
+            if f"{context.test_name}" in network.name:
+                remaining_ports = list(context.client.network.ports(network_id=network.id))
+                for port in remaining_ports:
+                    context.client.network.delete_port(port.id)
+        assert len(context.collector.ports) == 0, f"failed to delete all ports from all networks under test."
 
     @then('I should be able to create {subnet_quantity} subnets')
     def create_a_subnet(context, subnet_quantity: str):
@@ -349,7 +403,6 @@ class StepsDef:
             if zone.name == name:
                 context.compute.delete_availability_zone(name=zone.name)
 
-
     @then(
         "I should be able to create a floating ip on {subnet}, on {server}, with {fixed_address}, for {nat_destination}"
         "on {port}")
@@ -442,10 +495,4 @@ class StepsDef:
             assert filter(lambda alist: f"{context.test_name}" not in alist, list(context.client.block_store.volumes()))
         tools.verify_volumes_deleted(context.client, context.test_name)
         assert len(context.collector.volumes) == 0, f"Failed to delete volumes"
-
-
-
-
-
-
 

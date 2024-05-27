@@ -16,6 +16,8 @@ class Collector:
         self.virtual_machines: list = list()
         self.volumes: list = list()
         self.load_balancers: list = list()
+        self.ports: list = list()
+
 
 
 class Tools:
