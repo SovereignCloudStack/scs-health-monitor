@@ -186,10 +186,10 @@ class StepsDef:
             context.client.network.delete_port(port.id)
         if len(context.collector.ports) != 0:
             for network in context.client.network.networks():
-                remaining_ports = list(context.client.network.ports(network_id=context.network.id))
+                remaining_ports = list(context.client.network.ports(network_id=network.id))
                 for port in remaining_ports:
                     context.client.network.delete_port(port.id)
-        assert len(context.client.ports) != 0, f"failed to delete all ports from all networks under test."
+        assert len(context.collector.ports) != 0, f"failed to delete all ports from all networks under test."
 
     @then('I should be able to create {subnet_quantity} subnets')
     def create_a_subnet(context, subnet_quantity: str):
