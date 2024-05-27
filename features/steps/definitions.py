@@ -1,3 +1,5 @@
+from pprint import pprint
+
 from behave import given, when, then
 import openstack
 from openstack.cloud._floating_ip import FloatingIPCloudMixin
@@ -72,8 +74,8 @@ class StepsDef:
         for subnet in subnets:
             if f"{context.test_name}-subnet" in subnet.name:
                 port = context.client.network.create_port(subnet_id=subnet.id)
-                context.port_id = port.id
-            assert context.port_id, f"Port creation failed for port {context.port_id}"
+                pprint(port)
+            assert port is not None, f"Port creation failed for port {port.id}"
 
     @when("A security group with name {security_group_name} exists")
     def security_group_with_name_exists(context, security_group_name: str):
