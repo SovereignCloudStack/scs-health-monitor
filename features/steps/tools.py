@@ -17,7 +17,8 @@ class Collector:
         self.volumes: list = list()
         self.load_balancers: list = list()
         self.ports: list = list()
-
+        self.enabled_ports: list = ()
+        self.disabled_ports: list = list()
 
 
 class Tools:
