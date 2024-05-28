@@ -132,9 +132,23 @@ class Recover:
         for server in self.conn.compute.servers(all_projects=False):
             self.conn.compute.delete_server(server.id)
 
+    def delete_ports(self):
+        for network in self.conn.network.networks():
+            for port in network.ports(network_id=network.id):
+                if port.is_admin_state_up:
+                    self.conn.network.update_port(port.id, admin_state_up=False)
+                self.conn.network.delete_port(port.id)
+
+    def disable_ports(self):
+        for network in self.conn.network.networks():
+            for port in network.ports(network_id=network.id):
+                if port.is_admin_state_up:
+                    self.conn.network.update_port(port.id, admin_state_up=False)
+
 
 if __name__ == "__main__":
     recover = Recover()
+    recover.delete_ports()
     recover.delete_security_group_rules()
     recover.delete_security_groups()
     recover.delete_routers()
