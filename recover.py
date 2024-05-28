@@ -2,6 +2,7 @@ import openstack
 from libs.loggerClass import Logger
 from tkinter import messagebox
 
+
 class Recover:
     def __init__(self, cloud='gx', env_file_path="env.yaml"):
         self.conn = self._connect(cloud)
@@ -50,7 +51,8 @@ class Recover:
                 self.conn.network.delete_security_group(group.id)
                 self.logger_instance.info(f"Security group with ID {group.id} has been deleted.")
             except Exception as e:
-                self.logger_instance.info(f"security group {group.name} can't be deleted because exception {e} is raised.")
+                self.logger_instance.info(
+                    f"security group {group.name} can't be deleted because exception {e} is raised.")
 
     def delete_security_group_rules(self):
         for rule in self.conn.network.security_group_rules():
@@ -107,22 +109,6 @@ class Recover:
         except Exception as e:
             self.logger_instance.error(
                 f"availability zone {zone.name} can't be deleted because exception {e} is raised.")
-
-    def delete_availability_zone(self, zone):
-        try:
-            self.conn.compute.delete_availability_zone(name=zone.name)
-            self.logger_instance.info(f"Availability zone {zone.name} is deleted")
-        except Exception as e:
-            self.logger_instance.error(
-                f"availability zone {zone.name} can't be deleted because exception {e} is raised.")
-
-    def delete_availability_zones(self):
-        for zone in self.conn.compute.availability_zones():
-            self.delete_availability_zone(name=zone.name)
-
-    def delete_availability_zone(self, zone):
-        self.conn.compute.delete_availability_zone(name=zone.name)
-        self.logger_instance.info(f"Availability zone {zone.name} is deleted")
 
     def delete_availability_zones(self):
         for zone in self.conn.compute.availability_zones():
