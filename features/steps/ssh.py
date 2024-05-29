@@ -19,6 +19,7 @@ class SshStepsDef:
         # Create an instance of SshClient
         ssh_client = SshClient(context.vm_ip_address, username, context.vm_private_ssh_key_path)
         # Connect to the SSH server
+        print("connect _call")
         ssh_client.connect()
         context.ssh_client = ssh_client
 

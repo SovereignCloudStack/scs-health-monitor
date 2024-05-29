@@ -52,8 +52,9 @@ class SshClient:
             raise RuntimeError(f"Failed to execute command '{command}' on server {self.host}: {e}")
 
     def connect(self):
-
+        print("connect")
         def on_success(duration):
+
             self.connection_count.labels(SshClientResultStatusCodes.SUCCESS,
                                          self.host, CommandTypes.SSH).inc()
             self.connect_duration.labels(SshClientResultStatusCodes.SUCCESS,
@@ -65,12 +66,13 @@ class SshClient:
             self.connect_duration.labels(SshClientResultStatusCodes.FAILURE, self.host,
                                          CommandTypes.SSH).observe(
                 duration)
-
+            
         TimeRecorder.record_time(
             lambda: self.client.connect(self.host, username=self.username, pkey=self.private_key),
             on_success=on_success,
             on_fail=on_fail
         )
+        print(TimeRecorder)
 
     def close_conn(self):
         self.client.close()
@@ -78,9 +80,11 @@ class SshClient:
     def test_internet_connectivity(self, domain='google.com'):
         def test_connectivity():
             output = self.execute_command(f"ping -c 5 {domain}")
-
+            print(f"domain {domain}")
+            print(output)
             # Check for packet loss in the output
             packet_loss_percentage = self.parse_packet_loss(output)
+            print(f"packet_loss_percentage {packet_loss_percentage}")
             if packet_loss_percentage == 100:
                 raise Exception(f"100% packet loss detected to {domain}")
 

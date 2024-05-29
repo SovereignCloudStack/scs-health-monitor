@@ -4,9 +4,9 @@ Feature: Benchmark ping VMs
 
   Scenario Outline: Collecting IPs of VMs can be reached through Openstack, ping them from remote accesses and track retries and failures
     Given I connect to OpenStack
-    Then I sjhould be able to collect all 
-    and I have a private key at <vm_private_ssh_key_path>
-    Then I should be able to access <vms_quantity> VMs
+    and I have a private key at <vm_private_ssh_key_path> and a <username>
+    Then I should be able to collect all VM IPs
+    Then I should be able to access <jh_quantity> VMs
     Then all VMs should be able to ping each other
     # TODO: Connectivity through jump hosts isn't implemented.
     #  For this we need redirection rules on those jump hosts VMs which address our VMs.
