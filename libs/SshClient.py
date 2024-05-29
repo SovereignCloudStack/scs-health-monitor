@@ -80,7 +80,7 @@ class SshClient:
 
     def test_internet_connectivity(self, domain='google.com'):
         def test_connectivity():
-            script = self.create_script([domain])
+            script = self.create_script([domain],5,1,0,0)
             output = self.execute_command(script)
             #output = self.execute_command(f"ping -c 5 {domain}")
             print(f"domain {domain}")
@@ -108,7 +108,7 @@ class SshClient:
         )
 
 
-    def create_script(self,ips):
+    def create_script(self,ips,c=1,w=1,c_retry=1,w_retry=3):
         total= len(ips)
         ip_list_str = ' '.join(ips)
         print(f"SSH Connectivity Check ... ({ip_list_str})")
@@ -117,9 +117,9 @@ class SshClient:
 #!/bin/bash
 
 myping() {{
-    if ping -c1 -w1 $1 >/dev/null 2>&1; then echo -n "."; return 0; fi
+    if ping -c{c} -w{w} $1 >/dev/null 2>&1; then echo -n "."; return 0; fi
     sleep 1
-    if ping -c1 -w3 $1 >/dev/null 2>&1; then echo -n "o"; return 1; fi
+    if ping -c{c_retry} -w{w-w_retry} $1 >/dev/null 2>&1; then echo -n "o"; return 1; fi
     echo -n "X"; return 2
 }}
 
@@ -137,7 +137,7 @@ for ip in "${{ips[@]}}"; do
     fi
 done
 
-echo " retries: $retries fails: $fails total: {total}"
+echo " retries:$retries fails:$fails total:{total}"
 """
         return script_content
 
@@ -169,6 +169,7 @@ echo " retries: $retries fails: $fails total: {total}"
         lines = output.split('\n')
         for line in lines:
             if "packet loss" in line:
+                print(f"line ")
                 packet_loss_str = line.split(',')[2].strip().split()[0]
                 packet_loss_percentage = int(packet_loss_str[:-1])
                 return packet_loss_percentage
