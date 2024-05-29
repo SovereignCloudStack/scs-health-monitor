@@ -8,4 +8,4 @@ Feature: OpenStack Virtual Machine Creation
 
     Examples:
     |vms_quantity|
-    | 1          |
+    |      1     |

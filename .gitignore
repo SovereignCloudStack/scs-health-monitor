@@ -175,6 +175,12 @@ cython_debug/
 /sandbox.py
 sandbox/
 
+## SSH keys
+features/SSH/test_ssh
+features/SSH/test_ssh.pub
+features/SSH/sshKey
+features/SSH/sshKey.pub
+
 *.prom
 
 # Local .terraform directories
