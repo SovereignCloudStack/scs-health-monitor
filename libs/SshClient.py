@@ -80,17 +80,15 @@ class SshClient:
 
     def test_internet_connectivity(self, domain='google.com'):
         def test_connectivity():
-            script = self.create_script([domain],5,1,0,0)
+            script = self.create_script([domain],5,3)
             output = self.execute_command(script)
-            #output = self.execute_command(f"ping -c 5 {domain}")
             print(f"domain {domain}")
             print(output)
-            # Check for packet loss in the output
-            packet_loss_percentage = self.parse_packet_loss(output)
-            print(f"packet_loss_percentage {packet_loss_percentage}")
-            if packet_loss_percentage == 100:
-                raise Exception(f"100% packet loss detected to {domain}")
-
+            ping_success = self.parse_ping_output(output)
+            print(f"ping success {ping_success}")
+            if ping_success[1] > 0:
+                raise Exception(f"failed to ping to {domain}")
+    
         def on_success(duration):
             self.connectivity_test_count.labels(SshClientResultStatusCodes.SUCCESS, self.host, domain,
                                                 CommandTypes.SSH).inc()
@@ -108,10 +106,11 @@ class SshClient:
         )
 
 
-    def create_script(self,ips,c=1,w=1,c_retry=1,w_retry=3):
+    def create_script(self,ips,c=1,w=3,c_retry=1,w_retry=3):
         total= len(ips)
         ip_list_str = ' '.join(ips)
         print(f"SSH Connectivity Check ... ({ip_list_str})")
+        print(f"{c} {w} {c_retry} {w_retry}")
     
         script_content = f"""
 #!/bin/bash
@@ -119,7 +118,7 @@ class SshClient:
 myping() {{
     if ping -c{c} -w{w} $1 >/dev/null 2>&1; then echo -n "."; return 0; fi
     sleep 1
-    if ping -c{c_retry} -w{w-w_retry} $1 >/dev/null 2>&1; then echo -n "o"; return 1; fi
+    if ping -c{c_retry} -w{w_retry} $1 >/dev/null 2>&1; then echo -n "o"; return 1; fi
     echo -n "X"; return 2
 }}
 
@@ -130,6 +129,7 @@ fails=0
 for ip in "${{ips[@]}}"; do
     myping $ip
     result=$?
+    echo $result
     if [ $result -eq 1 ]; then
         ((retries+=1))
     elif [ $result -eq 2 ]; then
@@ -149,10 +149,10 @@ echo " retries:$retries fails:$fails total:{total}"
     def print_working_directory(self):
         directory = self.execute_command("pwd")
         print(f"Current working directory on server {self.host}: {directory}")
-
-    def parse_packet_loss(self, output):
+    
+    def parse_ping_output(self, output):
         """
-        Parses the output to find the packet loss percentage.
+        Parses the output to list fails and retries.
 
         Args:
             output (str): The output string to parse.
@@ -162,15 +162,25 @@ echo " retries:$retries fails:$fails total:{total}"
             otherwise returns None.
 
         Example:
-            >>> output = "64 bytes from 8.8.8.8: icmp_seq=1 ttl=116 time=12.5 ms, packet loss 0%"
-            >>> parse_packet_loss(output)
-            0
+            >>> output = "X retries:0 fails:1 total:1"
+            >>> parse_ping_output(output)
         """
-        lines = output.split('\n')
-        for line in lines:
-            if "packet loss" in line:
-                print(f"line ")
-                packet_loss_str = line.split(',')[2].strip().split()[0]
-                packet_loss_percentage = int(packet_loss_str[:-1])
-                return packet_loss_percentage
-        return None
+
+        # Split the string based on spaces and colons
+        parts = output.split()
+
+        # Extract the values after the colons
+        try: 
+            retries = int(parts[1].split(":")[1])
+            fails = int(parts[2].split(":")[1])
+            total = int(parts[3].split(":")[1])
+
+            # Put them in a list
+            result = [retries, fails, total]
+
+            print(f"Retries: {retries}, Fails: {fails}, Total: {total}")
+            print(f"Result list: {result}")
+
+            return result
+        except Exception as e:
+            raise RuntimeError(f"PING output in wrong format: {e}")
