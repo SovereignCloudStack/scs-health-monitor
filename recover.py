@@ -30,7 +30,6 @@ class Recover:
                 for port in self.conn.network.ports(network_id=network.id):
                     self.conn.network.delete_port(port.id)
                     self.logger_instance.info(f"Port {port.id} deleted.")
-
                 self.conn.network.delete_network(network.id)
                 self.logger_instance.info(f"Network with ID {network.id} has been deleted.")
         except Exception as e:
