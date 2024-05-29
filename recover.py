@@ -2,7 +2,6 @@ import openstack
 from libs.loggerClass import Logger
 from tkinter import messagebox
 
-
 class Recover:
     def __init__(self, cloud='gx', env_file_path="env.yaml"):
         self.conn = self._connect(cloud)
@@ -30,6 +29,7 @@ class Recover:
                 for port in self.conn.network.ports(network_id=network.id):
                     self.conn.network.delete_port(port.id)
                     self.logger_instance.info(f"Port {port.id} deleted.")
+
                 self.conn.network.delete_network(network.id)
                 self.logger_instance.info(f"Network with ID {network.id} has been deleted.")
         except Exception as e:
@@ -50,8 +50,7 @@ class Recover:
                 self.conn.network.delete_security_group(group.id)
                 self.logger_instance.info(f"Security group with ID {group.id} has been deleted.")
             except Exception as e:
-                self.logger_instance.info(
-                    f"security group {group.name} can't be deleted because exception {e} is raised.")
+                self.logger_instance.info(f"security group {group.name} can't be deleted because exception {e} is raised.")
 
     def delete_security_group_rules(self):
         for rule in self.conn.network.security_group_rules():
@@ -109,6 +108,22 @@ class Recover:
             self.logger_instance.error(
                 f"availability zone {zone.name} can't be deleted because exception {e} is raised.")
 
+    def delete_availability_zone(self, zone):
+        try:
+            self.conn.compute.delete_availability_zone(name=zone.name)
+            self.logger_instance.info(f"Availability zone {zone.name} is deleted")
+        except Exception as e:
+            self.logger_instance.error(
+                f"availability zone {zone.name} can't be deleted because exception {e} is raised.")
+
+    def delete_availability_zones(self):
+        for zone in self.conn.compute.availability_zones():
+            self.delete_availability_zone(name=zone.name)
+
+    def delete_availability_zone(self, zone):
+        self.conn.compute.delete_availability_zone(name=zone.name)
+        self.logger_instance.info(f"Availability zone {zone.name} is deleted")
+
     def delete_availability_zones(self):
         for zone in self.conn.compute.availability_zones():
             self.delete_availability_zone(name=zone.name)
@@ -117,23 +132,9 @@ class Recover:
         for server in self.conn.compute.servers(all_projects=False):
             self.conn.compute.delete_server(server.id)
 
-    def delete_ports(self):
-        for network in self.conn.network.networks():
-            for port in network.ports(network_id=network.id):
-                if port.is_admin_state_up:
-                    self.conn.network.update_port(port.id, admin_state_up=False)
-                self.conn.network.delete_port(port.id)
-
-    def disable_ports(self):
-        for network in self.conn.network.networks():
-            for port in network.ports(network_id=network.id):
-                if port.is_admin_state_up:
-                    self.conn.network.update_port(port.id, admin_state_up=False)
-
 
 if __name__ == "__main__":
     recover = Recover()
-    recover.delete_ports()
     recover.delete_security_group_rules()
     recover.delete_security_groups()
     recover.delete_routers()
