@@ -48,6 +48,7 @@ class SshClient:
                 raise Exception(err_output)
 
             return output
+
         except Exception as e:
             raise RuntimeError(f"Failed to execute command '{command}' on server {self.host}: {e}")
 
@@ -79,7 +80,9 @@ class SshClient:
 
     def test_internet_connectivity(self, domain='google.com'):
         def test_connectivity():
-            output = self.execute_command(f"ping -c 5 {domain}")
+            script = self.create_script([domain])
+            output = self.execute_command(script)
+            #output = self.execute_command(f"ping -c 5 {domain}")
             print(f"domain {domain}")
             print(output)
             # Check for packet loss in the output
@@ -104,10 +107,45 @@ class SshClient:
             on_fail=on_fail
         )
 
+
+    def create_script(self,ips):
+        total= len(ips)
+        ip_list_str = ' '.join(ips)
+        print(f"SSH Connectivity Check ... ({ip_list_str})")
+    
+        script_content = f"""
+#!/bin/bash
+
+myping() {{
+    if ping -c1 -w1 $1 >/dev/null 2>&1; then echo -n "."; return 0; fi
+    sleep 1
+    if ping -c1 -w3 $1 >/dev/null 2>&1; then echo -n "o"; return 1; fi
+    echo -n "X"; return 2
+}}
+
+ips=({ip_list_str})
+retries=0
+fails=0
+
+for ip in "${{ips[@]}}"; do
+    myping $ip
+    result=$?
+    if [ $result -eq 1 ]; then
+        ((retries+=1))
+    elif [ $result -eq 2 ]; then
+        ((fails+=1))
+    fi
+done
+
+echo " retries: $retries fails: $fails total: {total}"
+"""
+        return script_content
+
     def install_ping(self):
         command = "sudo apt-get update -y && sudo apt-get install -y iputils-ping"
-        self.execute_command(command, True)
-
+        response = self.execute_command(command, True)
+        return response
+    
     def print_working_directory(self):
         directory = self.execute_command("pwd")
         print(f"Current working directory on server {self.host}: {directory}")
