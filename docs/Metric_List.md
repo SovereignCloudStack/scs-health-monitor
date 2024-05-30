@@ -110,7 +110,7 @@ Finally the main loop is also analized, focussing on the relevant functions that
 |lbaas-healthmonitor-delete
 |lbaas-listener-create
 |lbaas-listener-delete
-|lbaas-loadbalancer-create
+|lbaas-loadbalancer-create| `createLBs()` | [L2432-L2442](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L2432-L2442) | The `createLBs()` function automates the creation of load balancers in an OpenStack environment using Neutron LBaaS. It checks if load balancer creation is needed based on the `LOADBALANCER` environment variable. The function calls `createResources` to handle the actual creation process, specifying parameters like the subnet ID, load balancer name, provider, and flavor. The exit status of the creation command is captured and used to increment an error counter and manage load balancer configurations. This approach ensures dynamic and conditional provisioning of load balancers, with built-in error handling and resource management.
 |lbaas-loadbalancer-delete
 |lbaas-loadbalancer-list
 |lbaas-loadbalancer-show
