@@ -65,7 +65,6 @@ class SshClient:
             on_success=on_success,
             on_fail=on_fail
         )
-        print(TimeRecorder)
 
     def close_conn(self):
         self.client.close()
