@@ -23,7 +23,6 @@ class StepsDef:
                 context.ssh_client.close_conn()
             end_time = time.time()
             duration = end_time - start_time
-            print(f"VM {ip}: {duration:.2f} s")
             results.append((ip, duration))
         context.log_results(results)
 
