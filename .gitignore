@@ -182,8 +182,6 @@ features/SSH/test_ssh.pub
 features/SSH/sshKey
 features/SSH/sshKey.pub
 features/SSH/ssh_check_connectivity_katha.feature
-
-
 *.prom
 
 # Local .terraform directories
