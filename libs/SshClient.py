@@ -163,3 +163,4 @@ class SshClient:
             return result
         except Exception as e:
             raise RuntimeError(f"PING output in wrong format: {e}")
+
