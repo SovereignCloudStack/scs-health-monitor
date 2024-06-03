@@ -75,8 +75,9 @@ class SshClient:
             output = self.execute_command(script)
             ping_respond = self.parse_ping_output(output)
             if ping_respond[1] > 0:
-                raise Exception(f"failed to ping to {domain},  failures: {ping_respond[1]}")
-    
+
+                raise Exception(f"failed to ping to {domain},  failures: {ping_respond[1]}") 
+            return ping_respond
         def on_success(duration):
             self.connectivity_test_count.labels(SshClientResultStatusCodes.SUCCESS, self.host, domain,
                                                 CommandTypes.SSH).inc()
