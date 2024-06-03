@@ -28,7 +28,10 @@ class SshStepsDef:
 
     @then("be able to communicate with {domain}")
     def test_domain_connectivity(context, domain: str):
-        context.ssh_client.test_internet_connectivity(domain)
+        print("---")
+        result=context.ssh_client.test_internet_connectivity(domain)
+        print(f"context {result}")
+        print("---")
 
     @then("close the connection")
     def close_connection(context):

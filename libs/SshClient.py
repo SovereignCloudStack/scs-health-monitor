@@ -98,34 +98,35 @@ class SshClient:
         total= len(ips)
         ip_list_str = ' '.join(ips)
         print(f"Connectivity Check ... ({ip_list_str})")
-    
+
         script_content = f"""
-#!/bin/bash
+            #!/bin/bash
 
-myping() {{
-    if ping -c{c} -w{w} $1 >/dev/null 2>&1; then echo -n "."; return 0; fi
-    sleep 1
-    if ping -c{c_retry} -w{w_retry} $1 >/dev/null 2>&1; then echo -n "o"; return 1; fi
-    echo -n "X"; return 2
-}}
+            myping() {{
+                if ping -c{c} -w{w} $1 >/dev/null 2>&1; then echo return 0; fi
+                sleep 1
+                if ping -c{c_retry} -w{w_retry} $1 >/dev/null 2>&1; then return 1; fi
+                return 2
+            }}
 
-ips=({ip_list_str})
-retries=0
-fails=0
+            ips=({ip_list_str})
+            retries=0
+            fails=0
 
-for ip in "${{ips[@]}}"; do
-    myping $ip
-    result=$?
-    echo $result
-    if [ $result -eq 1 ]; then
-        ((retries+=1))
-    elif [ $result -eq 2 ]; then
-        ((fails+=1))
-    fi
-done
+            for ip in "${{ips[@]}}"; do
+                myping $ip
+                result=$?
+                echo $result
+                if [ $result -eq 1 ]; then
+                    ((retries+=1))
+                elif [ $result -eq 2 ]; then
+                    ((fails+=1))
+                fi
+            done
 
-echo " retries:$retries fails:$fails total:{total}"
-"""
+            echo " retries:$retries fails:$fails total:{total}" 
+            """
+        # the last echo is necessary for the parsing function, but not visible for the user
         return script_content
 
     def install_ping(self):
@@ -160,7 +161,7 @@ echo " retries:$retries fails:$fails total:{total}"
             fails = int(parts[2].split(":")[1])
             total = int(parts[3].split(":")[1])
             result = [retries, fails, total]
-            print(f"Retries: {retries}, Fails: {fails}, Total: {total}")
+            #print(f"Retries: {retries}, Fails: {fails}, Total: {total}")
             return result
         except Exception as e:
             raise RuntimeError(f"PING output in wrong format: {e}")
