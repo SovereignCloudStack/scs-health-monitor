@@ -159,7 +159,6 @@ class SshClient:
             fails = int(parts[2].split(":")[1])
             total = int(parts[3].split(":")[1])
             result = [retries, fails, total]
-            print(f"Retries: {retries}, Fails: {fails}, Total: {total}")
             return result
         except Exception as e:
             raise RuntimeError(f"PING output in wrong format: {e}")
