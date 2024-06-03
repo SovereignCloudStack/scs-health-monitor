@@ -33,13 +33,6 @@ class SshStepsDef:
         print(f"connectivity result {result}")
         assert result[0][1] == 0, result[1]
 
-        # assert len(security_group_rules) > 0, (
-        #     f"No matching security group rule found for {security_group_name}"
-        #     f" with direction {direction}, protocol {protocol},"
-        #     f" and port range {port_range_min} to {port_range_max}"
-        # )
-
-        print("---")
 
     @then("close the connection")
     def close_connection(context):
