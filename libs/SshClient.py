@@ -90,9 +90,7 @@ class SshClient:
             test_connectivity,
             on_success=on_success,
             on_fail=on_fail
-        )
-        # if self.ping_respond[1] > 0:
-        #     raise Exception(f"failed to ping to {domain},  failures: {self.ping_respond[1]}")         
+            )        
         return self.ping_respond,self.assertline
 
 
