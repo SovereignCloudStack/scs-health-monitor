@@ -70,36 +70,35 @@ class SshClient:
         self.client.close()
 
     def test_internet_connectivity(self, domain='google.com'):
+        self.assertline=""
         def test_connectivity():
             script = self.create_script([domain],5,3)
             output = self.execute_command(script)
-            ping_respond = self.parse_ping_output(output)
-            if ping_respond[1] > 0:
+            self.ping_respond = self.parse_ping_output(output)
 
-                raise Exception(f"failed to ping to {domain},  failures: {ping_respond[1]}") 
-            return ping_respond
         def on_success(duration):
             self.connectivity_test_count.labels(SshClientResultStatusCodes.SUCCESS, self.host, domain,
                                                 CommandTypes.SSH).inc()
-            print(f"Internet connectivity test passed for server {self.host}, Domain: {domain}")
-
+            self.assertline=f"Internet connectivity test passed for server {self.host}, Domain: {domain}, Failures: {self.ping_respond[1]}, Retries: {self.ping_respond[0]}"
+            
         def on_fail(duration, exception):
             self.connectivity_test_count.labels(SshClientResultStatusCodes.FAILURE, self.host, domain,
                                                 CommandTypes.SSH).inc()
-            print(f"Failed to test internet connectivity for server {self.host}, Domain: {domain}\nError: {exception}")
+            self.assertline=f"Failed to test internet connectivity for server {self.host}, Domain: {domain}, Failures: {self.ping_respond[1]}, Retries: {self.ping_respond[0]}\nError: {exception}"
 
         TimeRecorder.record_time(
             test_connectivity,
             on_success=on_success,
             on_fail=on_fail
         )
+        # if self.ping_respond[1] > 0:
+        #     raise Exception(f"failed to ping to {domain},  failures: {self.ping_respond[1]}")         
+        return self.ping_respond,self.assertline
 
 
     def create_script(self,ips,c=1,w=3,c_retry=1,w_retry=3):
         total= len(ips)
         ip_list_str = ' '.join(ips)
-        print(f"Connectivity Check ... ({ip_list_str})")
-
         script_content = f"""
             #!/bin/bash
 
@@ -162,7 +161,7 @@ class SshClient:
             fails = int(parts[2].split(":")[1])
             total = int(parts[3].split(":")[1])
             result = [retries, fails, total]
-            #print(f"Retries: {retries}, Fails: {fails}, Total: {total}")
+            print(f"Retries: {retries}, Fails: {fails}, Total: {total}")
             return result
         except Exception as e:
             raise RuntimeError(f"PING output in wrong format: {e}")
