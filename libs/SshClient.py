@@ -75,6 +75,15 @@ class SshClient:
             script = self.create_script([domain],5,3)
             output = self.execute_command(script)
             self.ping_respond = self.parse_ping_output(output)
+            if self.ping_respond != 0:
+                self.connectivity_test_count.labels(SshClientResultStatusCodes.FAILURE, self.host, domain, CommandTypes.SSH).inc()
+                self.assertline=f"Failed to test internet connectivity for server {self.host}, Domain: {domain}, Failures: {self.ping_respond[1]}, Retries: {self.ping_respond[0]}"
+            else:
+                self.connectivity_test_count.labels(SshClientResultStatusCodes.SUCCESS, self.host, domain,
+                                                CommandTypes.SSH).inc()
+                self.assertline=f"Internet connectivity test passed for server {self.host}, Domain: {domain}, Failures: {self.ping_respond[1]}, Retries: {self.ping_respond[0]}"
+         
+
 
         def on_success(duration):
             self.connectivity_test_count.labels(SshClientResultStatusCodes.SUCCESS, self.host, domain,
@@ -82,8 +91,7 @@ class SshClient:
             self.assertline=f"Internet connectivity test passed for server {self.host}, Domain: {domain}, Failures: {self.ping_respond[1]}, Retries: {self.ping_respond[0]}"
             
         def on_fail(duration, exception):
-            self.connectivity_test_count.labels(SshClientResultStatusCodes.FAILURE, self.host, domain,
-                                                CommandTypes.SSH).inc()
+            self.connectivity_test_count.labels(SshClientResultStatusCodes.FAILURE, self.host, domain, CommandTypes.SSH).inc()
             self.assertline=f"Failed to test internet connectivity for server {self.host}, Domain: {domain}, Failures: {self.ping_respond[1]}, Retries: {self.ping_respond[0]}\nError: {exception}"
 
         TimeRecorder.record_time(

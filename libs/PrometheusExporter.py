@@ -7,6 +7,7 @@ class CommandTypes:
     API = "api-call"
     IPERF = "iperf"
     SSH = "ssh"
+    PING = "ping"
 
 class LabelNames:
     COMMAND_LABEL = "command"
