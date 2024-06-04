@@ -29,7 +29,6 @@ class SshStepsDef:
         result,assertline=context.ssh_client.test_internet_connectivity(domain)
         assert result[1] == 0, assertline
 
-
     @then("close the connection")
     def close_connection(context):
         context.ssh_client.close_conn()
