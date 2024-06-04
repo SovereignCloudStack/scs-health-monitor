@@ -15,4 +15,3 @@ Feature: Benchmark ping VMs
 	    | vm_ip_address    | vm_private_ssh_key_path     			| username 	| jh_quantity	|
 			| localhost		     | /home/katha/Dokumente/WORKLOAD_LOCAL/SCS/scs-health-monitor/features/SSH/sshKey	| katha			    | 3	|
 			| localhost		     | /home/katha/Dokumente/WORKLOAD_LOCAL/SCS/scs-health-monitor/features/SSH/sshKey	| katha			    | 3	|
-#			| 213.131.230.157	 | /home/katha/Dokumente/WORKLOAD_LOCAL/SCS/scs-health-monitor/terraform/private_key.pem | ubuntu		| 3	|
