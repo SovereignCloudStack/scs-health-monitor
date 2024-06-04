@@ -6,6 +6,7 @@ import random
 import string
 import os
 
+#from libs.ConnectivityTests import FullConn
 from openstack.exceptions import DuplicateResource
 
 import tools
@@ -522,3 +523,4 @@ class StepsDef:
         server = context.client.compute.find_server(name_or_id=server_name)
         assert server, f"Server with name {server_name} not found"
         ip = context.client.add_auto_ip(server=server, wait=True)
+
