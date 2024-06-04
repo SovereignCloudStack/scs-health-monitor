@@ -17,3 +17,4 @@ class TimeRecorder:
             if on_fail:
                 on_fail(duration, e)
             raise
+        
