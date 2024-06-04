@@ -1,5 +1,5 @@
 from behave import given, then
-from libs.SshClient import SshClient
+from libs.ConnectivityTests import SshClient
 import os
 
 

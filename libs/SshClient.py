@@ -81,7 +81,7 @@ class SshClient:
             else:
                 self.connectivity_test_count.labels(SshClientResultStatusCodes.SUCCESS, self.host, domain,
                                                 CommandTypes.SSH).inc()
-                self.assertline=f"Internet connectivity test passed for server {self.host}, Domain: {domain}, Failures: {self.ping_respond[1]}, Retries: {self.ping_respond[0]}"
+            self.assertline=f"Internet connectivity test passed for server {self.host}, Domain: {domain}, Failures: {self.ping_respond[1]}, Retries: {self.ping_respond[0]}"
          
 
 
