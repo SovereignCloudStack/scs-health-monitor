@@ -2,6 +2,7 @@ import ipaddress
 import time
 from functools import wraps
 import paramiko
+from libs.PrometheusExporter import CommandTypes, LabelNames
 
 import yaml
 
@@ -125,72 +126,4 @@ def check_volumes_created(client, test_name):
             volume = client.block_store.wait_for_status(volume, 'available', interval=2, wait=120)
             assert volume.status == 'available', f"Volume {volume.name} not available"
             return volume.status
-
-
-# Collect IPs from OpenStack
-def collect_ips(client):
-    print("collecting ips")
-    ports = client.network.ports()
-    ips = []
-    for port in ports:
-        for fixed_ip in port.fixed_ips:
-            ips.append(fixed_ip['ip_address'])
-    return ips
-
-# Remote command execution
-def execute_remote_command(host, port, username, private_key_path):
-    key = paramiko.RSAKey(filename=private_key_path)
-    print("key")
-    ssh = paramiko.SSHClient()
-    print("ssh-client")
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    print("set_missing_host_key_policy")
-    ssh.connect(hostname=host, port=port, username=username, pkey=key)
-    print("ssh connected")
-    stdin, stdout, stderr = ssh.exec_command(fullconntest())
-    #stdin, stdout, stderr = ssh.exec_command(f"python3 -c \"from __main__ import fullconntest; fullconntest()\"")
-
-    print("execution fullconn")
-    print(f"stdout channel {stdout}")
-    result = stdout.read().decode().strip()
-    print(f"result {result}")
-    ssh.close()
-    print("ssh closed")
-    return result
-
-# Main function to perform connectivity check
-def fullconntest():
-    ips = collect_ips()
-    total= len(ips)
-    #ips = ('8.8.8.8','10.8.3.210')
-    ip_list_str = ' '.join(ips)
-    print(f"VM2VM Connectivity Check ... ({ip_list_str})")
-    
-    script_content = f"""
-    #!/bin/bash
-
-    myping() {{
-        if ping -c1 -w1 $1 >/dev/null 2>&1; then echo -n "."; return 0; fi
-        sleep 1
-        if ping -c1 -w3 $1 >/dev/null 2>&1; then echo -n "o"; return 1; fi
-        echo -n "X"; return 2
-    }}
-
-    ips=({ip_list_str})
-    retries=0
-    fails=0
-
-    for ip in "${{ips[@]}}"; do
-        myping $ip
-        result=$?
-        if [ $result -eq 1 ]; then
-            ((retries+=1))
-        elif [ $result -eq 2 ]; then
-            ((fails+=1))
-        fi
-    done
-
-    echo " retries: $retries fails: $fails total: {total}"
-"""
-    return script_content
 
