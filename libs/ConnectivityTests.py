@@ -183,6 +183,7 @@ class FullConn:
     connect_duration = Histogram('connect_duration_seconds', 'Durations of connections',
                                  [MetricLabels.STATUS_CODE, MetricLabels.HOST,
                                   LabelNames.COMMAND_LABEL])
+    
     def __init__(self, host, username, key_path, client):
         self.host = host
         self.username = username
@@ -205,7 +206,7 @@ class FullConn:
                 ips.append(fixed_ip['ip_address'])
         return ips
 
-    def execute_remote_command(self,port,command="self.fullconntest()", ignore_error_output=False):
+    def execute_remote_command(self,port,command, ignore_error_output=False):
             try:
                 self.ssh.connect(hostname=self.host, port=port, username=self.username, pkey=self.private_key)
                 print("ssh connected")
@@ -228,13 +229,11 @@ class FullConn:
         self.assertline=""
         ips = self.collect_ips()
         total= len(ips)
-        #ips = ('8.8.8.8','10.8.3.210')
         ip_list_str = ' '.join(ips)
-        
-        self.assertline=""
+
         def test_connectivity():
             script = self.create_script([domain],5,3)
-            output = self.execute_command(script)
+            output = self.execute_remote_command(script)
             self.ping_respond = self.parse_ping_output(output)
             if self.ping_respond != 0:
                 self.connectivity_test_count.labels(ResultStatusCodes.FAILURE, self.host, domain, CommandTypes.PING).inc()
@@ -252,11 +251,11 @@ class FullConn:
         def on_fail(duration, exception):
             self.connectivity_test_count.labels(ResultStatusCodes.FAILURE, self.host, domain, CommandTypes.PING).inc()
             self.assertline=f"Failed to test internet connectivity for server {self.host}, Domain: {domain}, Failures: {self.ping_respond[1]}, Retries: {self.ping_respond[0]}\nError: {exception}"
+        
+        test_connectivity()
+        return self.ping_respond,self.assertline
 
-      
-            return self.ping_respond,self.assertline
-
-        def create_script(self,ips,c=1,w=3,c_retry=1,w_retry=3):
+    def create_script(self,ips,c=1,w=3,c_retry=1,w_retry=3):
             total= len(ips)
             ip_list_str = ' '.join(ips)
             print(f"VM2VM Connectivity Check ... ({ip_list_str})")
@@ -290,7 +289,7 @@ class FullConn:
             # the last echo is necessary for the parsing function, but not visible for the user
             return script_content
 
-        def parse_ping_output(self, output):
+    def parse_ping_output(self, output):
             """
             Parses the output to list fails and retries.
 
