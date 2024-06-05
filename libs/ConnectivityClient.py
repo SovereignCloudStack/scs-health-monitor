@@ -79,7 +79,7 @@ class SshClient:
         self.assertline=""
         self.ping_response=[0,0,0]
         def test_connectivity():
-            script = self.create_script([domain],5,3)
+            script = self.create_script(domain,5,3)
             output = self.execute_command(script)
             self.ping_response = self.parse_ping_output(output)
             if self.ping_response != 0:
@@ -111,7 +111,9 @@ class SshClient:
 
     def create_script(self,ips,c=1,w=3,c_retry=1,w_retry=3):
         total= len(ips)
+        print(total)
         ip_list_str = ' '.join(ips)
+        print(ip_list_str)
         script_content = f"""
             #!/bin/bash
 
@@ -167,13 +169,15 @@ class SshClient:
             >>> parse_ping_output(output)
         """
 
-
+        print(f"output {output}")
         parts = output.split()
+        print(f"parts {parts}")
         try: 
             retries = int(parts[1].split(":")[1])
             fails = int(parts[2].split(":")[1])
             total = int(parts[3].split(":")[1])
             result = [retries, fails, total]
+            print(f"result {result}")
             return result
         except Exception as e:
             raise RuntimeError(f"PING output in wrong format: {e}")
