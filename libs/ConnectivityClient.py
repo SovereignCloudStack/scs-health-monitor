@@ -81,7 +81,20 @@ class SshClient:
         def test_connectivity():
             script = self.create_script(domain,5,3)
             output = self.execute_command(script)
-            self.ping_response = self.parse_ping_output(output)
+
+            if output[0]=='0':
+                print("fine")
+            elif output[0]=='1':
+                print("retried")
+                self.ping_response[0]=self.ping_response[0]+1
+            elif output[0]=='2':
+                print("failed")
+                self.ping_response[1]=self.ping_response[1]+1
+
+            print(self.ping_response)
+            print(f"before parsing {output[0]}")  
+
+            self.ping_response = self.parse_ping_output(output)            
             if self.ping_response != 0:
                 self.connectivity_test_count.labels(ResultStatusCodes.FAILURE, self.host, domain, CommandTypes.SSH).inc()
                 self.assertline=f"Failed to test internet connectivity for server {self.host}, Domain: {domain}, Failures: {self.ping_response[1]}, Retries: {self.ping_response[0]}"
@@ -169,7 +182,7 @@ class SshClient:
             >>> parse_ping_output(output)
         """
 
-        print(f"output {output}")
+        print(f"output:{output}:")
         parts = output.split()
         print(f"parts {parts}")
         try: 
