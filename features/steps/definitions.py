@@ -1,5 +1,3 @@
-from pprint import pprint
-
 from behave import given, when, then
 import openstack
 from openstack.cloud._floating_ip import FloatingIPCloudMixin
