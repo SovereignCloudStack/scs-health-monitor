@@ -17,6 +17,7 @@ class LabelNames:
     STATUS_CODE = "status_code"
     METHOD = "method"
 
+
 # Class is intended to be used only internally for prometheus exporter
 class CustomCollector(Collector):
     url_resource_pattern = r"(?:https?://)?[^/]+/v[^/]+/([^/]+)"

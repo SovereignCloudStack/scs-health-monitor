@@ -8,7 +8,7 @@ import os
 
 #from libs.ConnectivityTests import FullConn
 from openstack.exceptions import DuplicateResource
-from libs.ConnectivityTests import SshClient
+from libs.ConnectivityClient import SshClient
 import os
 import tools
 
@@ -542,10 +542,14 @@ class StepsDef:
 
     @then("I should be able to collect all VM IPs")
     def collect_ips(context):
-        domains=tools.collect_ips(context)
-        print(domains)
+        context.domains=tools.collect_ips(context.client)
+        print(context.domains)
 
     @then("be able to ping all IPs") 
+    def ping_ips_test(context):
+        result,assertline=context.ssh_client.test_internet_connectivity(context.domains)
+        print(context.domains)
+        assert result[1] == 0, assertline
 
     @then("be able to communicate with {domain}")
     def test_domain_connectivity(context, domain: str):
