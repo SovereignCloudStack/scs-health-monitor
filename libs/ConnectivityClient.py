@@ -40,6 +40,7 @@ class SshClient:
         policy = paramiko.AutoAddPolicy()
         self.client.set_missing_host_key_policy(policy)
         self.private_key = paramiko.RSAKey.from_private_key_file(key_path)
+        self.ping_response=[0,0,0]
 
     def log(self, level, message):
         if self.logger and level >= self.min_log_level:
@@ -77,32 +78,39 @@ class SshClient:
 
     def test_internet_connectivity(self, domain='google.com'):
         self.assertline=""
-        self.ping_response=[0,0,0]
         def test_connectivity():
             script = self.create_script(domain,5,3)
             output = self.execute_command(script)
 
             if output[0]=='0':
                 print("fine")
+                self.connectivity_test_count.labels(ResultStatusCodes.SUCCESS, self.host, domain,
+                                            CommandTypes.SSH).inc()
+                self.assertline=f"Internet connectivity test passed for server {self.host}, Domain: {domain}, Failures: {self.ping_response[1]}, Retries: {self.ping_response[0]}"
             elif output[0]=='1':
                 print("retried")
                 self.ping_response[0]=self.ping_response[0]+1
+                self.connectivity_test_count.labels(ResultStatusCodes.SUCCESS, self.host, domain,
+                                            CommandTypes.SSH).inc()
+                self.assertline=f"Internet connectivity test passed for server {self.host}, Domain: {domain}, Failures: {self.ping_response[1]}, Retries: {self.ping_response[0]}"
             elif output[0]=='2':
                 print("failed")
                 self.ping_response[1]=self.ping_response[1]+1
+                self.connectivity_test_count.labels(ResultStatusCodes.FAILURE, self.host, domain, CommandTypes.SSH).inc()
+                self.assertline=f"Failed to test internet connectivity for server {self.host}, Domain: {domain}, Failures: {self.ping_response[1]}, Retries: {self.ping_response[0]}"
 
             print(self.ping_response)
             print(f"before parsing {output[0]}")  
 
-            self.ping_response = self.parse_ping_output(output)            
-            if self.ping_response != 0:
-                self.connectivity_test_count.labels(ResultStatusCodes.FAILURE, self.host, domain, CommandTypes.SSH).inc()
-                self.assertline=f"Failed to test internet connectivity for server {self.host}, Domain: {domain}, Failures: {self.ping_response[1]}, Retries: {self.ping_response[0]}"
-            else:
-                self.connectivity_test_count.labels(ResultStatusCodes.SUCCESS, self.host, domain,
-                                                CommandTypes.SSH).inc()
-                self.assertline=f"Internet connectivity test passed for server {self.host}, Domain: {domain}, Failures: {self.ping_response[1]}, Retries: {self.ping_response[0]}"
-         
+#            self.ping_response = self.parse_ping_output(output)            
+        # if self.ping_response != 0:
+        #     self.connectivity_test_count.labels(ResultStatusCodes.FAILURE, self.host, domain, CommandTypes.SSH).inc()
+        #     self.assertline=f"Failed to test internet connectivity for server {self.host}, Domain: {domain}, Failures: {self.ping_response[1]}, Retries: {self.ping_response[0]}"
+        # else:
+        #     self.connectivity_test_count.labels(ResultStatusCodes.SUCCESS, self.host, domain,
+        #                                     CommandTypes.SSH).inc()
+        #     self.assertline=f"Internet connectivity test passed for server {self.host}, Domain: {domain}, Failures: {self.ping_response[1]}, Retries: {self.ping_response[0]}"
+        
 
 
         def on_success(duration):
