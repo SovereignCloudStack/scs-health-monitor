@@ -26,6 +26,7 @@ class MetricDescription:
     PING_TOT= 'Total number of connectivity tests'
 
 class SshClient:
+    #TODO: generic Metrics
     connection_count = Counter(MetricName.SSH_TOT, MetricDescription.SSH_TOT,
                                [MetricLabels.STATUS_CODE, MetricLabels.HOST,
                                 LabelNames.COMMAND_LABEL])
@@ -43,7 +44,7 @@ class SshClient:
         policy = paramiko.AutoAddPolicy()
         self.client.set_missing_host_key_policy(policy)
         self.private_key = paramiko.RSAKey.from_private_key_file(key_path)
-        self.ping_stat=[0,0,0]
+        self.ping_stat=[0,0,0] # retries, fairure, total
 
     def log(self, level, message):
         if self.logger and level >= self.min_log_level:
@@ -79,37 +80,33 @@ class SshClient:
     def close_conn(self):
         self.client.close()
 
-    def test_internet_connectivity(self, domain=['8.8.8.8']):
+    def test_internet_connectivity(self, ip='8.8.8.8', tot_ips=1):
         self.assertline=""
         def test_connectivity():
-            script = self.create_script(domain,5,3)
+            script = self.create_script(ip,5,3)
             output = self.execute_command(script)
-            print(f"output {output}")  
-
-
+            print(f"output {output}")
+            self.ping_stat[2]=tot_ips  
             if output!='2':
-                print("success")
-                self.connectivity_test_count.labels(ResultStatusCodes.SUCCESS, self.host, domain, CommandTypes.PING).inc()
-                self.assertline=f"Internet connectivity test passed for server {self.host}, Failures: {self.ping_stat[1]}, Retries: {self.ping_stat[0]}"
-            
-            
+                self.connectivity_test_count.labels(ResultStatusCodes.SUCCESS, self.host, ip, CommandTypes.PING).inc()
+                self.assertline=f"Internet connectivity test passed for server {self.host}, Failures: {self.ping_stat[1]}/{self.ping_stat[2]}, Retries: {self.ping_stat[0]}"
+                    
             elif output=='2':
-                print("failed")
                 self.ping_stat[1]=self.ping_stat[1]+1
-                self.connectivity_test_count.labels(ResultStatusCodes.FAILURE, self.host, domain, CommandTypes.PING).inc()
-                self.assertline=f"Failed to test internet connectivity for server {self.host}, Failures: {self.ping_stat[1]}, Retries: {self.ping_stat[0]}"
+                self.connectivity_test_count.labels(ResultStatusCodes.FAILURE, self.host, ip, CommandTypes.PING).inc()
+                self.assertline=f"Failed to test internet connectivity for server {self.host}, Failures: {self.ping_stat[1]}/{self.ping_stat[2]}, Retries: {self.ping_stat[0]}"
 
             print(self.ping_stat)
 
 
 
         # def on_success(duration):
-        #     #self.connectivity_test_count.labels(ResultStatusCodes.SUCCESS, self.host, domain, CommandTypes.SSH).inc()
-        #     self.assertline=f"Internet connectivity test passed for server {self.host}, Domain: {domain}, Failures: {self.ping_stat[1]}, Retries: {self.ping_stat[0]}"
+        #     #self.connectivity_test_count.labels(ResultStatusCodes.SUCCESS, self.host, ip, CommandTypes.SSH).inc()
+        #     self.assertline=f"Internet connectivity test passed for server {self.host}, Domain: {ip}, Failures: {self.ping_stat[1]}, Retries: {self.ping_stat[0]}"
             
         # def on_fail(duration, exception):
-        #     #self.connectivity_test_count.labels(ResultStatusCodes.FAILURE, self.host, domain, CommandTypes.SSH).inc()
-        #     self.assertline=f"Failed to test internet connectivity for server {self.host}, Domain: {domain}, Failures: {self.ping_stat[1]}, Retries: {self.ping_stat[0]}\nError: {exception}"
+        #     #self.connectivity_test_count.labels(ResultStatusCodes.FAILURE, self.host, ip, CommandTypes.SSH).inc()
+        #     self.assertline=f"Failed to test internet connectivity for server {self.host}, Domain: {ip}, Failures: {self.ping_stat[1]}, Retries: {self.ping_stat[0]}\nError: {exception}"
 
         # TimeRecorder.record_time(
         #     test_connectivity,
@@ -121,9 +118,10 @@ class SshClient:
 
 
     def create_script(self,ips,c=1,w=3,c_retry=1,w_retry=3):
-        total= len(ips)
-        print(f"{ips} {total}")
-        ip_list_str = ' '.join(ips)
+        #total= len(ips)
+        #print(f"{ips} {total}")
+        #ip_list_str = ' '.join(ips)
+        ip_list_str = ips
         print(ip_list_str)
         script_content = f"""
             #!/bin/bash
