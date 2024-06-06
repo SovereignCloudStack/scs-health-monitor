@@ -542,23 +542,17 @@ class StepsDef:
 
     @then("I should be able to collect all VM IPs")
     def collect_ips(context):
-        context.domains=tools.collect_ips(context.client)
-        print(f"context {context.domains}")
+        context.ips=tools.collect_ips(context.client)
+        print(f"context {context.ips}")
         print("----")
 
-    # @then("be able to ping all IPs") 
-    # def ping_ips_test(context):
-    #     print(f"again {context.domains}")
-    #     result,assertline=context.ssh_client.test_internet_connectivity(context.domains)
-    #     if result[0] == 0:
-    #          print(assertline)
-    #     #assert result[1] == 0, assertline
     
     @then("be able to ping all IPs") 
     def ping_ips_test(context):
-        print(f"number {len(context.domains)}")
-        for domain in context.domains:
-            result,assertline=context.ssh_client.test_internet_connectivity([domain])
+        tot_ips=len(context.ips)
+        print(f"number {tot_ips}")
+        for ip in context.ips:
+            result,assertline=context.ssh_client.test_internet_connectivity([ip])
             #if result[0] == 0:
             #    print(assertline)
         assert result[1] == 0, assertline
@@ -571,7 +565,7 @@ class StepsDef:
     @then("close the connection")
     def close_connection(context):
         context.ssh_client.close_conn()
-    
+
     @then('I attach a floating ip to server {server_name}')
     def attach_floating_ip_to_server(context, server_name):
         server = context.client.compute.find_server(name_or_id=server_name)
