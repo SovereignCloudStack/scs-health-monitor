@@ -516,23 +516,21 @@ class StepsDef:
     @then("I should be able to collect all VM IPs")
     def collect_ips(context):
         context.ips=tools.collect_ips(context.client)
-        print(f"context {context.ips}")
+        print(f"collected ips {context.ips}")
         print("----")
 
     
     @then("be able to ping all IPs") 
     def ping_ips_test(context):
         tot_ips=len(context.ips)
-        print(f"number {tot_ips}")
         for ip in context.ips:
-            result,assertline=context.ssh_client.test_internet_connectivity([ip])
-            #if result[0] == 0:
-            #    print(assertline)
+            result,assertline=context.ssh_client.test_internet_connectivity(ip,tot_ips)
+        print (result)
         assert result[1] == 0, assertline
 
     @then("be able to communicate with {ip}")
     def test_domain_connectivity(context, ip: str):
-        result,assertline=context.ssh_client.test_internet_connectivity([ip])
+        result,assertline=context.ssh_client.test_internet_connectivity(ip)
         assert result[1] == 0, assertline
 
     @then("close the connection")
