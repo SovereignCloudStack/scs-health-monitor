@@ -9,7 +9,6 @@ class MetricLabels:
     HOST = 'host'
     ENDPOINT = 'endpoint'
 
-
 class ResultStatusCodes:
     SUCCESS = '200'
     FAILURE = '400'
@@ -18,15 +17,19 @@ class MetricName:
     SSH_TOT = 'ssh_connections_total'
     SSH_CONN_TEST_TOT = 'ssh_connectivity_tests_total'
     SSH_CONN_DUR = 'ssh_connect_duration_seconds'
+    PING_TOT='connectivity_tests_total'
+
 class MetricDescription:
     SSH_TOT = 'Total number of SSH connections'
     SSH_CONN_TEST_TOT = 'Total number of SSH connectivity tests'
     SSH_CONN_DUR = 'Durations of SSH connections'
+    PING_TOT= 'Total number of connectivity tests'
+
 class SshClient:
     connection_count = Counter(MetricName.SSH_TOT, MetricDescription.SSH_TOT,
                                [MetricLabels.STATUS_CODE, MetricLabels.HOST,
                                 LabelNames.COMMAND_LABEL])
-    connectivity_test_count = Counter(MetricName.SSH_CONN_TEST_TOT, MetricDescription.SSH_CONN_TEST_TOT,
+    connectivity_test_count = Counter(MetricName.PING_TOT, MetricDescription.PING_TOT,
                                       [MetricLabels.STATUS_CODE, MetricLabels.HOST,
                                        MetricLabels.ENDPOINT, LabelNames.COMMAND_LABEL])
     connect_duration = Histogram(MetricName.SSH_CONN_DUR, MetricDescription.SSH_CONN_DUR,
@@ -40,7 +43,7 @@ class SshClient:
         policy = paramiko.AutoAddPolicy()
         self.client.set_missing_host_key_policy(policy)
         self.private_key = paramiko.RSAKey.from_private_key_file(key_path)
-        self.ping_response=[0,0,0]
+        self.ping_stat=[0,0,0]
 
     def log(self, level, message):
         if self.logger and level >= self.min_log_level:
@@ -76,63 +79,50 @@ class SshClient:
     def close_conn(self):
         self.client.close()
 
-    def test_internet_connectivity(self, domain='google.com'):
+    def test_internet_connectivity(self, domain=['8.8.8.8']):
         self.assertline=""
         def test_connectivity():
             script = self.create_script(domain,5,3)
             output = self.execute_command(script)
-
-            if output[0]=='0':
-                print("fine")
-                self.connectivity_test_count.labels(ResultStatusCodes.SUCCESS, self.host, domain,
-                                            CommandTypes.SSH).inc()
-                self.assertline=f"Internet connectivity test passed for server {self.host}, Domain: {domain}, Failures: {self.ping_response[1]}, Retries: {self.ping_response[0]}"
-            elif output[0]=='1':
-                print("retried")
-                self.ping_response[0]=self.ping_response[0]+1
-                self.connectivity_test_count.labels(ResultStatusCodes.SUCCESS, self.host, domain,
-                                            CommandTypes.SSH).inc()
-                self.assertline=f"Internet connectivity test passed for server {self.host}, Domain: {domain}, Failures: {self.ping_response[1]}, Retries: {self.ping_response[0]}"
-            elif output[0]=='2':
-                print("failed")
-                self.ping_response[1]=self.ping_response[1]+1
-                self.connectivity_test_count.labels(ResultStatusCodes.FAILURE, self.host, domain, CommandTypes.SSH).inc()
-                self.assertline=f"Failed to test internet connectivity for server {self.host}, Domain: {domain}, Failures: {self.ping_response[1]}, Retries: {self.ping_response[0]}"
-
-            print(self.ping_response)
-            print(f"before parsing {output[0]}")  
-
-#            self.ping_response = self.parse_ping_output(output)            
-        # if self.ping_response != 0:
-        #     self.connectivity_test_count.labels(ResultStatusCodes.FAILURE, self.host, domain, CommandTypes.SSH).inc()
-        #     self.assertline=f"Failed to test internet connectivity for server {self.host}, Domain: {domain}, Failures: {self.ping_response[1]}, Retries: {self.ping_response[0]}"
-        # else:
-        #     self.connectivity_test_count.labels(ResultStatusCodes.SUCCESS, self.host, domain,
-        #                                     CommandTypes.SSH).inc()
-        #     self.assertline=f"Internet connectivity test passed for server {self.host}, Domain: {domain}, Failures: {self.ping_response[1]}, Retries: {self.ping_response[0]}"
-        
+            print(f"output {output}")  
 
 
-        def on_success(duration):
-            self.connectivity_test_count.labels(ResultStatusCodes.SUCCESS, self.host, domain,
-                                                CommandTypes.SSH).inc()
-            self.assertline=f"Internet connectivity test passed for server {self.host}, Domain: {domain}, Failures: {self.ping_response[1]}, Retries: {self.ping_response[0]}"
+            if output!='2':
+                print("success")
+                self.connectivity_test_count.labels(ResultStatusCodes.SUCCESS, self.host, domain, CommandTypes.PING).inc()
+                self.assertline=f"Internet connectivity test passed for server {self.host}, Failures: {self.ping_stat[1]}, Retries: {self.ping_stat[0]}"
             
-        def on_fail(duration, exception):
-            self.connectivity_test_count.labels(ResultStatusCodes.FAILURE, self.host, domain, CommandTypes.SSH).inc()
-            self.assertline=f"Failed to test internet connectivity for server {self.host}, Domain: {domain}, Failures: {self.ping_response[1]}, Retries: {self.ping_response[0]}\nError: {exception}"
+            
+            elif output=='2':
+                print("failed")
+                self.ping_stat[1]=self.ping_stat[1]+1
+                self.connectivity_test_count.labels(ResultStatusCodes.FAILURE, self.host, domain, CommandTypes.PING).inc()
+                self.assertline=f"Failed to test internet connectivity for server {self.host}, Failures: {self.ping_stat[1]}, Retries: {self.ping_stat[0]}"
 
-        TimeRecorder.record_time(
-            test_connectivity,
-            on_success=on_success,
-            on_fail=on_fail
-            )        
-        return self.ping_response,self.assertline
+            print(self.ping_stat)
+
+
+
+        # def on_success(duration):
+        #     #self.connectivity_test_count.labels(ResultStatusCodes.SUCCESS, self.host, domain, CommandTypes.SSH).inc()
+        #     self.assertline=f"Internet connectivity test passed for server {self.host}, Domain: {domain}, Failures: {self.ping_stat[1]}, Retries: {self.ping_stat[0]}"
+            
+        # def on_fail(duration, exception):
+        #     #self.connectivity_test_count.labels(ResultStatusCodes.FAILURE, self.host, domain, CommandTypes.SSH).inc()
+        #     self.assertline=f"Failed to test internet connectivity for server {self.host}, Domain: {domain}, Failures: {self.ping_stat[1]}, Retries: {self.ping_stat[0]}\nError: {exception}"
+
+        # TimeRecorder.record_time(
+        #     test_connectivity,
+        #     on_success=on_success,
+        #     on_fail=on_fail
+        #     ) 
+        test_connectivity()    
+        return self.ping_stat,self.assertline
 
 
     def create_script(self,ips,c=1,w=3,c_retry=1,w_retry=3):
         total= len(ips)
-        print(total)
+        print(f"{ips} {total}")
         ip_list_str = ' '.join(ips)
         print(ip_list_str)
         script_content = f"""
@@ -146,23 +136,12 @@ class SshClient:
             }}
 
             ips=({ip_list_str})
-            retries=0
-            fails=0
-
             for ip in "${{ips[@]}}"; do
                 myping $ip
                 result=$?
                 echo $result
-                if [ $result -eq 1 ]; then
-                    ((retries+=1))
-                elif [ $result -eq 2 ]; then
-                    ((fails+=1))
-                fi
             done
-
-            echo " retries:$retries fails:$fails total:{total}" 
             """
-        # the last echo is necessary for the parsing function, but not visible for the user
         return script_content
 
     def install_ping(self):
@@ -174,44 +153,3 @@ class SshClient:
         directory = self.execute_command("pwd")
         print(f"Current working directory on server {self.host}: {directory}")
     
-    def parse_ping_output(self, output):
-        """
-        Parses the output to list fails and retries.
-
-        Args:
-            output (str): The output string to parse.
-
-        Returns:
-            int or None: The packet loss percentage if found in the output,
-            otherwise returns None.
-
-        Example:
-            >>> output = "X retries:0 fails:1 total:1"
-            >>> parse_ping_output(output)
-        """
-
-        print(f"output:{output}:")
-        parts = output.split()
-        print(f"parts {parts}")
-        try: 
-            retries = int(parts[1].split(":")[1])
-            fails = int(parts[2].split(":")[1])
-            total = int(parts[3].split(":")[1])
-            result = [retries, fails, total]
-            print(f"result {result}")
-            return result
-        except Exception as e:
-            raise RuntimeError(f"PING output in wrong format: {e}")
-
-
-
-class FullConn:
-    connection_count = Counter('connections_total', 'Total number of connections',
-                               [MetricLabels.STATUS_CODE, MetricLabels.HOST,
-                                LabelNames.COMMAND_LABEL])
-    connectivity_test_count = Counter('vm2vm_connectivity_tests_total', 'Total number of connectivity tests',
-                                      [MetricLabels.STATUS_CODE, MetricLabels.HOST,
-                                       MetricLabels.ENDPOINT, LabelNames.COMMAND_LABEL])
-    connect_duration = Histogram('connect_duration_seconds', 'Durations of connections',
-                                 [MetricLabels.STATUS_CODE, MetricLabels.HOST,
-                                  LabelNames.COMMAND_LABEL])

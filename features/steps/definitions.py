@@ -515,23 +515,17 @@ class StepsDef:
 
     @then("I should be able to collect all VM IPs")
     def collect_ips(context):
-        context.domains=tools.collect_ips(context.client)
-        print(f"context {context.domains}")
+        context.ips=tools.collect_ips(context.client)
+        print(f"context {context.ips}")
         print("----")
 
-    # @then("be able to ping all IPs") 
-    # def ping_ips_test(context):
-    #     print(f"again {context.domains}")
-    #     result,assertline=context.ssh_client.test_internet_connectivity(context.domains)
-    #     if result[0] == 0:
-    #          print(assertline)
-    #     #assert result[1] == 0, assertline
     
     @then("be able to ping all IPs") 
     def ping_ips_test(context):
-        print(f"number {len(context.domains)}")
-        for domain in context.domains:
-            result,assertline=context.ssh_client.test_internet_connectivity([domain])
+        tot_ips=len(context.ips)
+        print(f"number {tot_ips}")
+        for ip in context.ips:
+            result,assertline=context.ssh_client.test_internet_connectivity([ip])
             #if result[0] == 0:
             #    print(assertline)
         assert result[1] == 0, assertline
@@ -544,24 +538,3 @@ class StepsDef:
     @then("close the connection")
     def close_connection(context):
         context.ssh_client.close_conn()
-
-################
-
-
-        #  if __name__ == "__main__":
-        # # Configure your SSH parameters
-        # FLOATS = ['localhost','localhost','localhost'] #'213.131.230.89'
-        # JHNO = 1 # TODO: generic read jump host quantity
-        # DEFLTUSER = context['DEFLTUSER']
-        # DATADIR = context['DATADIR']
-        # KEYPAIRS = [context['KEYPAIRS']]
-        # REDIRS = [['tcp,22'],['tcp,22'],['tcp,22']] # TODO: generic 
-
-        # for jhno in range(JHNO):
-        #         print(f"iteration {jhno}")
-        #         for red in REDIRS[jhno]:
-        #             port = int(red.split(',')[1])
-        #             print(f"port {port}")
-        #             command = f"python3 -c \"from __main__ import fullconntest; fullconntest()\""
-        #             result = execute_remote_command(FLOATS[jhno], port, DEFLTUSER, os.path.join(DATADIR, KEYPAIRS[jhno]))
-                
