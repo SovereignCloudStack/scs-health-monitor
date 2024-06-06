@@ -83,36 +83,20 @@ class SshClient:
             output = self.execute_command(script)
 
             if output[0]=='0':
-                print("fine")
                 self.connectivity_test_count.labels(ResultStatusCodes.SUCCESS, self.host, domain,
                                             CommandTypes.SSH).inc()
                 self.assertline=f"Internet connectivity test passed for server {self.host}, Domain: {domain}, Failures: {self.ping_response[1]}, Retries: {self.ping_response[0]}"
             elif output[0]=='1':
-                print("retried")
                 self.ping_response[0]=self.ping_response[0]+1
                 self.connectivity_test_count.labels(ResultStatusCodes.SUCCESS, self.host, domain,
                                             CommandTypes.SSH).inc()
                 self.assertline=f"Internet connectivity test passed for server {self.host}, Domain: {domain}, Failures: {self.ping_response[1]}, Retries: {self.ping_response[0]}"
             elif output[0]=='2':
-                print("failed")
                 self.ping_response[1]=self.ping_response[1]+1
                 self.connectivity_test_count.labels(ResultStatusCodes.FAILURE, self.host, domain, CommandTypes.SSH).inc()
                 self.assertline=f"Failed to test internet connectivity for server {self.host}, Domain: {domain}, Failures: {self.ping_response[1]}, Retries: {self.ping_response[0]}"
 
-            print(self.ping_response)
-            print(f"before parsing {output[0]}")  
-
-#            self.ping_response = self.parse_ping_output(output)            
-        # if self.ping_response != 0:
-        #     self.connectivity_test_count.labels(ResultStatusCodes.FAILURE, self.host, domain, CommandTypes.SSH).inc()
-        #     self.assertline=f"Failed to test internet connectivity for server {self.host}, Domain: {domain}, Failures: {self.ping_response[1]}, Retries: {self.ping_response[0]}"
-        # else:
-        #     self.connectivity_test_count.labels(ResultStatusCodes.SUCCESS, self.host, domain,
-        #                                     CommandTypes.SSH).inc()
-        #     self.assertline=f"Internet connectivity test passed for server {self.host}, Domain: {domain}, Failures: {self.ping_response[1]}, Retries: {self.ping_response[0]}"
         
-
-
         def on_success(duration):
             self.connectivity_test_count.labels(ResultStatusCodes.SUCCESS, self.host, domain,
                                                 CommandTypes.SSH).inc()
@@ -132,9 +116,7 @@ class SshClient:
 
     def create_script(self,ips,c=1,w=3,c_retry=1,w_retry=3):
         total= len(ips)
-        print(total)
         ip_list_str = ' '.join(ips)
-        print(ip_list_str)
         script_content = f"""
             #!/bin/bash
 
