@@ -16,9 +16,7 @@ class SshStepsDef:
 
     @then("I should be able to SSH into the VM as user {username}")
     def test_ssh_connection(context, username):
-        # Create an instance of SshClient
         ssh_client = SshClient(context.vm_ip_address, username, context.vm_private_ssh_key_path)
-        # Connect to the SSH server
         ssh_client.connect()
         context.ssh_client = ssh_client
 
@@ -28,7 +26,9 @@ class SshStepsDef:
 
     @then("be able to communicate with {domain}")
     def test_domain_connectivity(context, domain: str):
-        context.ssh_client.test_internet_connectivity(domain)
+        result,assertline=context.ssh_client.test_internet_connectivity(domain)
+        assert result[1] == 0, assertline
+
 
     @then("close the connection")
     def close_connection(context):
