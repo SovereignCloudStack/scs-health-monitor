@@ -21,6 +21,7 @@ class Collector:
         self.ports: list = list()
         self.enabled_ports: list = ()
         self.disabled_ports: list = list()
+        self.virtual_machines_ip: list = list()
 
 
 class Tools:
