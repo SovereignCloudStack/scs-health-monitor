@@ -133,7 +133,6 @@ class StepsDef:
         for num in range(1, int(network_quantity) + 1):
             network = context.client.network.create_network(name=f"{context.test_name}-network-{num}")
             context.collector.networks.append(network.id)
-            print(network.id)
             assert not context.client.network.find_network(
                 name_or_id=network), f"Network called {network} created"
         assert len(context.collector.networks) == int(network_quantity), \
@@ -457,7 +456,6 @@ class StepsDef:
             volume_name = f"{context.test_name}-volume-{num}"
             volume = context.client.block_store.create_volume(size=10, name=volume_name)
             context.collector.volumes.append(volume.id)
-            print(volume.id)
             context.volumes.append(volume)
             tools.ensure_volume_exist(client=context.client, volume_name=volume_name, test_name=context.test_name)
         assert len(context.collector.volumes) == int(quantity_volumes), f"Failed to create the desired amount of volumes"
