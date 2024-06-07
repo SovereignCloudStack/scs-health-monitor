@@ -1,5 +1,3 @@
-from pprint import pprint
-
 from behave import given, when, then
 import openstack
 from openstack.cloud._floating_ip import FloatingIPCloudMixin
@@ -442,6 +440,7 @@ class StepsDef:
                     time.sleep(5)
                     created_server = context.client.compute.find_server(name_or_id=vm_name)
                     context.collector.virtual_machines.append(created_server.id)
+                    # context.collector.virtual_machines.append(created_server.ip)
                     assert created_server, f"VM with name {vm_name} was not created successfully"
         assert len(context.collector.virtual_machines) == int(vms_quantity),\
             f"Failed to create the desired amount of VMs"

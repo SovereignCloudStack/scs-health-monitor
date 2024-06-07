@@ -1,5 +1,6 @@
 import time
 
+
 class TimeRecorder:
     @staticmethod
     def record_time(func, on_success=None, on_fail=None, *args, **kwargs):
@@ -17,4 +18,3 @@ class TimeRecorder:
             if on_fail:
                 on_fail(duration, e)
             raise
-        
