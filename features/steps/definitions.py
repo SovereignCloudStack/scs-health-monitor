@@ -4,6 +4,8 @@ from openstack.cloud._floating_ip import FloatingIPCloudMixin
 import time
 import random
 import string
+import re
+import os
 
 from openstack.exceptions import DuplicateResource
 
@@ -132,6 +134,7 @@ class StepsDef:
         for num in range(1, int(network_quantity) + 1):
             network = context.client.network.create_network(name=f"{context.test_name}-network-{num}")
             context.collector.networks.append(network.id)
+            print(network.id)
             assert not context.client.network.find_network(
                 name_or_id=network), f"Network called {network} created"
         assert len(context.collector.networks) == int(network_quantity), \
@@ -465,6 +468,7 @@ class StepsDef:
             volume_name = f"{context.test_name}-volume-{num}"
             volume = context.client.block_store.create_volume(size=10, name=volume_name)
             context.collector.volumes.append(volume.id)
+            print(volume.id)
             context.volumes.append(volume)
             tools.ensure_volume_exist(client=context.client, volume_name=volume_name, test_name=context.test_name)
         assert len(context.collector.volumes) == int(quantity_volumes), f"Failed to create the desired amount of volumes"
@@ -489,3 +493,53 @@ class StepsDef:
                           list(context.client.block_store.volumes()))
         tools.verify_volumes_deleted(context.client, context.test_name)
         assert len(context.collector.volumes) == 0, f"Failed to delete volumes"
+
+    @then('I create an access jumphost with name {jumphost_name} on network {network_name} with keypair {keypair_name}')
+    def create_access_jumphost(context, jumphost_name, network_name, keypair_name):
+            
+            # config
+            security_groups = [{"name": "ssh"}, {"name": "default"}]
+            keypair_filename = f"{keypair_name}-private"
+            ip_pool = 'ext01'
+            floating_ip = '213.131.230.205'
+            # external_network_name = "ext01"
+ 
+            image = context.client.compute.find_image(name_or_id=context.vm_image)
+            assert image, f"Image with name {context.vm_image} doesn't exist"
+            flavor = context.client.compute.find_flavor(name_or_id=context.flavor_name)
+            assert flavor, f"Flavor with name {context.flavor_name} doesn't exist"
+            network = context.client.network.find_network(network_name)
+            assert network, f"Network with name {network_name} doesn't exist"
+            # external_network = context.client.network.find_network(external_network_name)
+            # assert external_network, f"Network with name {external_network_name} doesn't exist"
+            keypair = context.client.compute.create_keypair(name=keypair_name)
+            with open(keypair_filename, 'w') as f:
+                f.write("%s" % keypair.private_key)
+            os.chmod(keypair_filename, 0o400)
+            keypair = context.client.compute.find_keypair(keypair_name)
+            assert keypair, f"Keypair with name {keypair_name} doesn't exist"
+            for security_group in security_groups:
+                security_group = context.client.network.find_security_group(security_group['name'])
+                assert security_group, f"Security Group with name {security_group['name']} doesn't exist"
+
+            server = context.client.compute.create_server(
+                name=jumphost_name,
+                image_id=image.id,
+                flavor_id=flavor.id,
+                networks=[{"uuid": network.id}],
+                key_name=keypair.name,
+                security_groups=security_groups,
+                # ip_pool = ip_pool
+                # ips = floating_ip
+            )
+            server = context.client.compute.wait_for_server(server)
+            # time.sleep(60)
+            # context.client.compute.add_floating_ip_to_server(server.id, floating_ip)
+            print(f"Jumphost VM '{jumphost_name}' created successfully.")
+            return server
+    
+    @then('I attach a floating ip {floating_ip} to server {server_name}')
+    def attach_floating_ip_to_server(context, floating_ip, server_name):
+        server = context.client.compute.find_server(name_or_id=server_name)
+        assert server, f"Server with name {server_name} not found"
+        context.client.compute.add_floating_ip_to_server(server.id, floating_ip)
