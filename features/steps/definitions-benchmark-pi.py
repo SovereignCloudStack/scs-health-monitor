@@ -9,8 +9,8 @@ class StepsDef:
     @then("I should be able to calculate 4000 digits of Pi on each VM and measure time")
     def benchmark_pi_on_vms(context):
         results = []
-        for ip in context.vm_ips[:context.jh_quantity]:
-            command = 'python3 -c "from mpmath import mp; mp.dps = 4000; print(mp.pi)"'
+        for ip in context.ips:
+            command = "{ TIMEFORMAT='%2U'; time echo 'scale=4000; 4*a(1)' | bc -l; } 2>&1"
             start_time = time.time()
             context.ssh_client.connect()
             try:
