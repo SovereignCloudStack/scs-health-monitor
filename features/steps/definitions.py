@@ -216,16 +216,6 @@ class StepsDef:
                         context.collector.networks.remove(network.id)
         assert len(context.collector.networks) == 0, f"Failed to delete networks"
 
-    @then("I should be able to create a jumphost with name {jumphost_name}")
-    def create_jumphost(context, jumphost_name: str):
-        server = context.client.network.find_network(name_or_id=jumphost_name)
-        assert server is None, f"Jumphost with {jumphost_name} already exists"
-        jumphost = context.client.compute.create_server(name=jumphost_name)
-        context.collector.jumphosts.append(jumphost.id)
-        context.client.network.delete_network(server)
-        assert context.client.network.find_network(name_or_id=server),\
-            f"Jumphost called {jumphost_name} created"
-
     @then("I should be able to list subnets")
     def list_subnets(context):
         subnets = context.client.network.subnets()
@@ -494,15 +484,12 @@ class StepsDef:
         tools.verify_volumes_deleted(context.client, context.test_name)
         assert len(context.collector.volumes) == 0, f"Failed to delete volumes"
 
-    @then('I create an access jumphost with name {jumphost_name} on network {network_name} with keypair {keypair_name}')
-    def create_access_jumphost(context, jumphost_name, network_name, keypair_name):
+    @then('I create a jumphost with name {jumphost_name} on network {network_name} with keypair {keypair_name}')
+    def create_a_jumphost(context, jumphost_name, network_name, keypair_name):
             
             # config
             security_groups = [{"name": "ssh"}, {"name": "default"}]
             keypair_filename = f"{keypair_name}-private"
-            ip_pool = 'ext01'
-            floating_ip = '213.131.230.205'
-            # external_network_name = "ext01"
  
             image = context.client.compute.find_image(name_or_id=context.vm_image)
             assert image, f"Image with name {context.vm_image} doesn't exist"
@@ -510,8 +497,6 @@ class StepsDef:
             assert flavor, f"Flavor with name {context.flavor_name} doesn't exist"
             network = context.client.network.find_network(network_name)
             assert network, f"Network with name {network_name} doesn't exist"
-            # external_network = context.client.network.find_network(external_network_name)
-            # assert external_network, f"Network with name {external_network_name} doesn't exist"
             keypair = context.client.compute.create_keypair(name=keypair_name)
             with open(keypair_filename, 'w') as f:
                 f.write("%s" % keypair.private_key)
@@ -529,17 +514,14 @@ class StepsDef:
                 networks=[{"uuid": network.id}],
                 key_name=keypair.name,
                 security_groups=security_groups,
-                # ip_pool = ip_pool
-                # ips = floating_ip
             )
             server = context.client.compute.wait_for_server(server)
-            # time.sleep(60)
-            # context.client.compute.add_floating_ip_to_server(server.id, floating_ip)
-            print(f"Jumphost VM '{jumphost_name}' created successfully.")
-            return server
+            created_jumphost = context.client.compute.find_server(name_or_id=jumphost_name)
+            assert created_jumphost, f"Jumphost with name {jumphost_name} was not created successfully"
+            context.collector.jumphosts.append(server.id)
     
-    @then('I attach a floating ip {floating_ip} to server {server_name}')
-    def attach_floating_ip_to_server(context, floating_ip, server_name):
+    @then('I attach a floating ip to server {server_name}')
+    def attach_floating_ip_to_server(context, server_name):
         server = context.client.compute.find_server(name_or_id=server_name)
         assert server, f"Server with name {server_name} not found"
-        context.client.compute.add_floating_ip_to_server(server.id, floating_ip)
+        ip = context.client.add_auto_ip(server=server, wait=True)
