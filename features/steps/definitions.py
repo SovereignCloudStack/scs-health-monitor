@@ -4,7 +4,6 @@ from openstack.cloud._floating_ip import FloatingIPCloudMixin
 import time
 import random
 import string
-import re
 import os
 
 from openstack.exceptions import DuplicateResource
