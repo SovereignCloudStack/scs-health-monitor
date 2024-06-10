@@ -4,6 +4,7 @@ from openstack.cloud._floating_ip import FloatingIPCloudMixin
 import time
 import random
 import string
+import os
 
 from openstack.exceptions import DuplicateResource
 
@@ -212,16 +213,6 @@ class StepsDef:
                     if network.id in context.collector.networks:
                         context.collector.networks.remove(network.id)
         assert len(context.collector.networks) == 0, f"Failed to delete networks"
-
-    @then("I should be able to create a jumphost with name {jumphost_name}")
-    def create_jumphost(context, jumphost_name: str):
-        server = context.client.network.find_network(name_or_id=jumphost_name)
-        assert server is None, f"Jumphost with {jumphost_name} already exists"
-        jumphost = context.client.compute.create_server(name=jumphost_name)
-        context.collector.jumphosts.append(jumphost.id)
-        context.client.network.delete_network(server)
-        assert context.client.network.find_network(name_or_id=server),\
-            f"Jumphost called {jumphost_name} created"
 
     @then("I should be able to list subnets")
     def list_subnets(context):
@@ -489,3 +480,45 @@ class StepsDef:
                           list(context.client.block_store.volumes()))
         tools.verify_volumes_deleted(context.client, context.test_name)
         assert len(context.collector.volumes) == 0, f"Failed to delete volumes"
+
+    @then('I create a jumphost with name {jumphost_name} on network {network_name} with keypair {keypair_name}')
+    def create_a_jumphost(context, jumphost_name, network_name, keypair_name):
+            
+            # config
+            security_groups = [{"name": "ssh"}, {"name": "default"}]
+            keypair_filename = f"{keypair_name}-private"
+ 
+            image = context.client.compute.find_image(name_or_id=context.vm_image)
+            assert image, f"Image with name {context.vm_image} doesn't exist"
+            flavor = context.client.compute.find_flavor(name_or_id=context.flavor_name)
+            assert flavor, f"Flavor with name {context.flavor_name} doesn't exist"
+            network = context.client.network.find_network(network_name)
+            assert network, f"Network with name {network_name} doesn't exist"
+            keypair = context.client.compute.create_keypair(name=keypair_name)
+            with open(keypair_filename, 'w') as f:
+                f.write("%s" % keypair.private_key)
+            os.chmod(keypair_filename, 0o400)
+            keypair = context.client.compute.find_keypair(keypair_name)
+            assert keypair, f"Keypair with name {keypair_name} doesn't exist"
+            for security_group in security_groups:
+                security_group = context.client.network.find_security_group(security_group['name'])
+                assert security_group, f"Security Group with name {security_group['name']} doesn't exist"
+
+            server = context.client.compute.create_server(
+                name=jumphost_name,
+                image_id=image.id,
+                flavor_id=flavor.id,
+                networks=[{"uuid": network.id}],
+                key_name=keypair.name,
+                security_groups=security_groups,
+            )
+            server = context.client.compute.wait_for_server(server)
+            created_jumphost = context.client.compute.find_server(name_or_id=jumphost_name)
+            assert created_jumphost, f"Jumphost with name {jumphost_name} was not created successfully"
+            context.collector.jumphosts.append(server.id)
+    
+    @then('I attach a floating ip to server {server_name}')
+    def attach_floating_ip_to_server(context, server_name):
+        server = context.client.compute.find_server(name_or_id=server_name)
+        assert server, f"Server with name {server_name} not found"
+        ip = context.client.add_auto_ip(server=server, wait=True)
