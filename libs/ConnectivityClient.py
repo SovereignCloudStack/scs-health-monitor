@@ -94,6 +94,7 @@ class SshClient:
                 self.assertline=f"Failed to test internet connectivity for server {self.host}, Failures: {self.ping_stat[1]}/{self.ping_stat[2]}, Retries: {self.ping_stat[0]}"
 
             print(self.ping_stat)
+            print("-----")
 
 
 
