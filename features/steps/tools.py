@@ -1,6 +1,8 @@
 import ipaddress
 import time
 from functools import wraps
+import paramiko
+from libs.PrometheusExporter import CommandTypes, LabelNames
 
 import yaml
 
@@ -123,3 +125,14 @@ def check_volumes_created(client, test_name):
         if test_name in volume.name:
             volume = client.block_store.wait_for_status(volume, 'available', interval=2, wait=120)
             assert volume.status == 'available', f"Volume {volume.name} not available"
+            return volume.status
+
+def collect_ips(client):
+    print("collecting ips")
+    ports = client.network.ports()
+    ips = []
+    for port in ports:
+        for fixed_ip in port.fixed_ips:
+            ips.append(fixed_ip['ip_address'])
+    return ips
+
