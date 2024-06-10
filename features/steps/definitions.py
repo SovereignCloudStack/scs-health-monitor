@@ -516,9 +516,6 @@ class StepsDef:
     @then("I should be able to collect all VM IPs")
     def collect_ips(context):
         context.ips=tools.collect_ips(context.client)
-        print(f"collected ips {context.ips}")
-        print("----")
-
     
     @then("be able to ping all IPs") 
     def ping_ips_test(context):

@@ -28,15 +28,15 @@ class MetricDescription:
 class SshClient:
     #TODO: generic Metrics
     connection_count = Counter(MetricName.SSH_TOT, MetricDescription.SSH_TOT,
-                               [MetricLabels.STATUS_CODE, MetricLabels.HOST,
-                                LabelNames.COMMAND_LABEL])
-    connectivity_test_count = Counter(MetricName.PING_TOT, MetricDescription.PING_TOT,
-                                      [MetricLabels.STATUS_CODE, MetricLabels.HOST,
-                                       MetricLabels.ENDPOINT, LabelNames.COMMAND_LABEL])
+                            [MetricLabels.STATUS_CODE, MetricLabels.HOST,
+                            LabelNames.COMMAND_LABEL])
     connect_duration = Histogram(MetricName.SSH_CONN_DUR, MetricDescription.SSH_CONN_DUR,
-                                 [MetricLabels.STATUS_CODE, MetricLabels.HOST,
-                                  LabelNames.COMMAND_LABEL])
-
+                            [MetricLabels.STATUS_CODE, MetricLabels.HOST,
+                            LabelNames.COMMAND_LABEL])
+    connectivity_test_count = Counter(MetricName.PING_TOT, MetricDescription.PING_TOT,
+                                [MetricLabels.STATUS_CODE, MetricLabels.HOST,
+                                MetricLabels.ENDPOINT, LabelNames.COMMAND_LABEL])
+    
     def __init__(self, host, username, key_path):
         self.host = host
         self.username = username
@@ -55,7 +55,6 @@ class SshClient:
             _stdin, stdout, stderr = self.client.exec_command(command)
             output = stdout.read().decode().strip()
             err_output = stderr.read().decode().strip()
-
             if err_output and not ignore_error_output:
                 raise Exception(err_output)
             return output
@@ -64,10 +63,10 @@ class SshClient:
             raise RuntimeError(f"Failed to execute command '{command}' on server {self.host}: {e}")
 
     def connect(self):
+
         def on_success(duration):
             self.connection_count.labels(ResultStatusCodes.SUCCESS, self.host, CommandTypes.SSH).inc()
             self.connect_duration.labels(ResultStatusCodes.SUCCESS, self.host, CommandTypes.SSH).observe(duration)
-
         def on_fail(duration, exception):
             self.connection_count.labels(ResultStatusCodes.FAILURE, self.host, CommandTypes.SSH).inc()
             self.connect_duration.labels(ResultStatusCodes.FAILURE, self.host, CommandTypes.SSH).observe(duration)            
@@ -85,12 +84,10 @@ class SshClient:
         def test_connectivity():
             script = self.create_script(ip,5,3)
             output = self.execute_command(script)
-            print(f"output {output}")
             self.ping_stat[2]=tot_ips  
             if output!='2':
                 self.connectivity_test_count.labels(ResultStatusCodes.SUCCESS, self.host, ip, CommandTypes.PING).inc()
-                self.assertline=f"Internet connectivity test passed for server {self.host}, Failures: {self.ping_stat[1]}/{self.ping_stat[2]}, Retries: {self.ping_stat[0]}"
-                    
+                self.assertline=f"Internet connectivity test passed for server {self.host}, Failures: {self.ping_stat[1]}/{self.ping_stat[2]}, Retries: {self.ping_stat[0]}"                 
             elif output=='2':
                 self.ping_stat[1]=self.ping_stat[1]+1
                 self.connectivity_test_count.labels(ResultStatusCodes.FAILURE, self.host, ip, CommandTypes.PING).inc()
