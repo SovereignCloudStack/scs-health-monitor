@@ -529,8 +529,6 @@ class StepsDef:
         assert created_jumphost, f"Jumphost with name {jumphost_name} was not created successfully"
         context.collector.jumphosts.append(server.id)
 
-    ###### from SshSteps:
-
     @given("I have deployed a VM with IP {vm_ip_address}")
     def initialize(context, vm_ip_address: str):
         context.vm_ip_address = vm_ip_address
@@ -552,19 +550,19 @@ class StepsDef:
 
     @then("I should be able to collect all VM IPs")
     def collect_ips(context):
-        context.ips = tools.collect_ips(context.client)
-
-    @then("be able to ping all IPs")
-    def ping_ips_test(context):
-        tot_ips = len(context.ips)
+        context.ips=tools.collect_ips(context.client)
+    
+    @then("be able to ping all IPs to test {conn_test} connectivity") 
+    def ping_ips_test(context, conn_test: str):
+        tot_ips=len(context.ips)
         for ip in context.ips:
-            result, assertline = context.ssh_client.test_internet_connectivity(ip, tot_ips)
-        print(result)
+            result,assertline=context.ssh_client.test_internet_connectivity(conn_test, ip,tot_ips)
+        print (result)
         assert result[1] == 0, assertline
 
-    @then("be able to communicate with {ip}")
-    def test_domain_connectivity(context, ip: str):
-        result, assertline = context.ssh_client.test_internet_connectivity(ip)
+    @then("be able to communicate with {ip} to test {conn_test} connectivity")
+    def test_domain_connectivity(context, ip: str, conn_test: str):
+        result,assertline=context.ssh_client.test_internet_connectivity(conn_test, ip)
         assert result[1] == 0, assertline
 
     @then("close the connection")
