@@ -15,13 +15,11 @@ class ResultStatusCodes:
 
 class MetricName:
     SSH_TOT = 'ssh_connections_total'
-    SSH_CONN_TEST_TOT = 'ssh_connectivity_tests_total'
     SSH_CONN_DUR = 'ssh_connect_duration_seconds'
     PING_TOT='connectivity_tests_total'
 
 class MetricDescription:
     SSH_TOT = 'Total number of SSH connections'
-    SSH_CONN_TEST_TOT = 'Total number of SSH connectivity tests'
     SSH_CONN_DUR = 'Durations of SSH connections'
     PING_TOT= 'Total number of connectivity tests'
 
@@ -85,44 +83,20 @@ class SshClient:
         def test_connectivity():
             script = self.create_script(ip,5,3)
             output = self.execute_command(script)
-            self.ping_stat[2]=tot_ips  
-            cmd_type = f"CommandTypes.{conn_test.upper()}"
-
-            print(f"command {cmd_type}")
-
+            self.ping_stat[2]=tot_ips
             if output !='2':
-                self.conn_test_count.labels(ResultStatusCodes.SUCCESS, self.host, ip, cmd_type ).inc()
+                self.conn_test_count.labels(ResultStatusCodes.SUCCESS, self.host, ip, conn_test).inc()
                 self.assertline=f"Internet connectivity test passed for server {self.host}, Failures: {self.ping_stat[1]}/{self.ping_stat[2]}, Retries: {self.ping_stat[0]}"                 
             elif output=='2':
                 self.ping_stat[1]=self.ping_stat[1]+1
-                self.conn_test_count.labels(ResultStatusCodes.FAILURE, self.host, ip, cmd_type).inc()
+                self.conn_test_count.labels(ResultStatusCodes.FAILURE, self.host, ip, conn_test).inc()
                 self.assertline=f"Failed to test internet connectivity for server {self.host}, Failures: {self.ping_stat[1]}/{self.ping_stat[2]}, Retries: {self.ping_stat[0]}"
             print(self.ping_stat)
-            print("-----")
-
-
-
-        # def on_success(duration):
-        #     #self.connectivity_test_count.labels(ResultStatusCodes.SUCCESS, self.host, ip, CommandTypes.SSH).inc()
-        #     self.assertline=f"Internet connectivity test passed for server {self.host}, Domain: {ip}, Failures: {self.ping_stat[1]}, Retries: {self.ping_stat[0]}"
-            
-        # def on_fail(duration, exception):
-        #     #self.connectivity_test_count.labels(ResultStatusCodes.FAILURE, self.host, ip, CommandTypes.SSH).inc()
-        #     self.assertline=f"Failed to test internet connectivity for server {self.host}, Domain: {ip}, Failures: {self.ping_stat[1]}, Retries: {self.ping_stat[0]}\nError: {exception}"
-
-        # TimeRecorder.record_time(
-        #     test_connectivity,
-        #     on_success=on_success,
-        #     on_fail=on_fail
-        #     ) 
         test_connectivity()    
         return self.ping_stat,self.assertline
 
 
     def create_script(self,ips,c=1,w=3,c_retry=1,w_retry=3):
-        #total= len(ips)
-        #print(f"{ips} {total}")
-        #ip_list_str = ' '.join(ips)
         ip_list_str = ips
         print(ip_list_str)
         script_content = f"""
