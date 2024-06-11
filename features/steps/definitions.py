@@ -529,6 +529,12 @@ class StepsDef:
         assert created_jumphost, f"Jumphost with name {jumphost_name} was not created successfully"
         context.collector.jumphosts.append(server.id)
 
+    @then('I attach a floating ip to server {server_name}')
+    def attach_floating_ip_to_server(context, server_name):
+        server = context.client.compute.find_server(name_or_id=server_name)
+        assert server, f"Server with name {server_name} not found"
+        ip = context.client.add_auto_ip(server=server, wait=True)
+
     @given("I have deployed a VM with IP {vm_ip_address}")
     def initialize(context, vm_ip_address: str):
         context.vm_ip_address = vm_ip_address
@@ -574,3 +580,4 @@ class StepsDef:
         server = context.client.compute.find_server(name_or_id=server_name)
         assert server, f"Server with name {server_name} not found"
         ip = context.client.add_auto_ip(server=server, wait=True)
+

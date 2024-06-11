@@ -61,11 +61,9 @@ class SshClient:
             raise RuntimeError(f"Failed to execute command '{command}' on server {self.host}: {e}")
 
     def connect(self):
-
         def on_success(duration):
             self.conn_total_count.labels(ResultStatusCodes.SUCCESS, self.host, CommandTypes.SSH).inc()
             self.conn_duration.labels(ResultStatusCodes.SUCCESS, self.host, CommandTypes.SSH).observe(duration)
-
         def on_fail(duration, exception):
             self.conn_total_count.labels(ResultStatusCodes.FAILURE, self.host, CommandTypes.SSH).inc()
             self.conn_duration.labels(ResultStatusCodes.FAILURE, self.host, CommandTypes.SSH).observe(duration)            
