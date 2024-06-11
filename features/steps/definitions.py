@@ -86,7 +86,7 @@ class StepsDef:
     @when(
         "A security group rule for {security_group_name} with direction {direction} protocol {protocol} and port "
         "range {port_range_min} to {port_range_max} exists")
-    def create_security_group_rule(context, security_group_name: str, direction: str, protocol: str,
+    def security_group_rule_exists(context, security_group_name: str, direction: str, protocol: str,
                                    port_range_min: int, port_range_max: int):
         security_group = context.client.network.find_security_group(name_or_id=security_group_name)
         assert security_group, f"Security group with name {security_group_name} does not exist"
@@ -411,6 +411,7 @@ class StepsDef:
 
     @then("I should be able to create {vms_quantity} VMs")
     def create_vm(context, vms_quantity: str):
+        security_groups = [{"name": "default"}, {"name": "ping-sg"}]
         for network in context.client.network.networks():
             if context.test_name in network.name:
                 for num in range(1, int(vms_quantity) + 1):
@@ -426,6 +427,7 @@ class StepsDef:
                             image_id=image.id,
                             flavor_id=flavor.id,
                             networks=[{"uuid": network.id}],
+                            security_groups=security_groups
                         )
                         context.client.compute.wait_for_server(server)
                     except DuplicateResource as e:
@@ -487,7 +489,7 @@ class StepsDef:
     def create_a_jumphost(context, jumphost_name, network_name, keypair_name):
             
             # config
-            security_groups = [{"name": "ssh"}, {"name": "default"}]
+            security_groups = [{"name": "ssh"}, {"name": "default"}, {"name": "ping-sg"}]
             keypair_filename = f"{keypair_name}-private"
  
             image = context.client.compute.find_image(name_or_id=context.vm_image)

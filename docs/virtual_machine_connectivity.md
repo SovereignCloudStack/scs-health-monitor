@@ -11,3 +11,9 @@
 4) Finally, you can connect to the jumphost with command:
 
     `ssh -i <private_key_filename> ubuntu@<jumphost_ip_address>`
+
+# Floating ip
+
+We are currently unable to create our own floating IPs. The working solution for now is to take the IP for jumphost from the list of available floating IPs. We used `add_auto_ip` [function][function_link], which automatically assigns available floating IP from the pool.
+
+[function_link]: https://docs.openstack.org/openstacksdk/latest/user/connection.html#openstack.connection.Connection.add_auto_ip
