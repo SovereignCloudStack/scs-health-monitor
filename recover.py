@@ -119,9 +119,9 @@ class Recover:
 
     def delete_ports(self):
         for network in self.conn.network.networks():
-            for port in network.ports(network_id=network.id):
-                if port.is_admin_state_up:
-                    self.conn.network.update_port(port.id, admin_state_up=False)
+            for port in self.conn.network.ports(network_id=network.id):
+                # if port.is_admin_state_up:
+                    # self.conn.network.update_port(port.id, admin_state_up=False)
                 self.conn.network.delete_port(port.id)
 
     def disable_ports(self):
