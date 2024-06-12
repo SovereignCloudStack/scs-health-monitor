@@ -415,7 +415,8 @@ class StepsDef:
         for network in context.client.network.networks():
             if context.test_name in network.name:
                 for num in range(1, vms_quantity + 1):
-                    vm_name = f"{context.test_name}-vm-{''.join(random.choices(string.ascii_letters + string.digits, k=10))}"
+                    vm_name = f"{context.test_name}-vm-{num}"
+                  #  vm_name = f"{context.test_name}-vm-{''.join(random.choices(string.ascii_letters + string.digits, k=10))}"
                     image = context.client.compute.find_image(name_or_id=context.vm_image)
                     assert image, f"Image with name {context.vm_image} doesn't exist"
                     flavor = context.client.compute.find_flavor(name_or_id=context.flavor_name)
