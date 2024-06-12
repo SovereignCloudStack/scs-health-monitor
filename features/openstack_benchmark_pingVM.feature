@@ -15,6 +15,7 @@ Feature: Benchmark ping VMs
     #  For this we need redirection rules on those jump hosts VMs which address our VMs.
 
     Examples:
-	    | vm_ip_address    | vm_private_ssh_key_path     			                                            | username 	| jh_quantity	| conn_test |
-			| localhost		     | /home/katha/Dokumente/WORKLOAD_LOCAL/SCS/scs-health-monitor/features/sshKey	| katha			| 3	          | ping			|
+	  |jh-name      | vm_ip_address    | vm_private_ssh_key_path     			                                            | username 	| jh_quantity	| conn_test |
+	 # |test-jh-katha| 213.131.230.205	 | /home/katha/Dokumente/WORKLOAD_LOCAL/SCS/scs-health-monitor/features/sshKey	| katha			| 3	          | ping			|
+    |test-jh-katha| localhost		     | /home/katha/Dokumente/WORKLOAD_LOCAL/SCS/scs-health-monitor/features/sshKey	| katha			| 3	          | ping			|
 

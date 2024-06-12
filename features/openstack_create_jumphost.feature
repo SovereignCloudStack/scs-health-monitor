@@ -10,3 +10,5 @@ Feature: OpenStack Jumphost Creation
   Examples:
     |jumphost_name|   network_name    |keypair_name|
     | default-jh  | scs-hm-jh-default |test-keypair|
+    |   test-jh   |  scs-hm-jh-network-1 |sshKey|
+
