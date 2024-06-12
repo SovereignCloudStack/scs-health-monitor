@@ -539,6 +539,10 @@ class StepsDef:
     def initialize(context, vm_ip_address: str):
         context.vm_ip_address = vm_ip_address
 
+    @given("I have deployed a JH with the name {jh_name}")
+    def initialize(context, jh_name: str):
+        context.jh_name = jh_name
+
     @given("I have a private key at {vm_private_ssh_key_path}")
     def check_private_key_exists(context, vm_private_ssh_key_path: str):
         context.vm_private_ssh_key_path = vm_private_ssh_key_path
@@ -546,7 +550,11 @@ class StepsDef:
 
     @then("I should be able to SSH into the VM as user {username}")
     def test_ssh_connection(context, username):
-        ssh_client = SshClient(context.vm_ip_address, username, context.vm_private_ssh_key_path)
+        jh = context.client.compute.find_server(name_or_id=context.jh_name)
+        print(f"___________________adresses: {jh.addresses['scs-hm-network-1'][1]['addr']}")
+        print("____")
+        ssh_client = SshClient(jh.addresses['scs-hm-network-1'][1]['addr'], username, context.vm_private_ssh_key_path)
+#        ssh_client = SshClient(context.vm_ip_address, username, context.vm_private_ssh_key_path)
         ssh_client.connect()
         context.ssh_client = ssh_client
 
