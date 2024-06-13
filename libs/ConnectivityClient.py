@@ -76,6 +76,19 @@ class SshClient:
         self.client.close()
 
     def test_internet_connectivity(self, conn_test, ip='8.8.8.8', tot_ips=1):
+        """
+            Tests connectivity provided IP address by executing bashscript on vm and tracks failures and retries
+
+            Args:
+                conn_test: metric type (string, filter key is command)
+                ip: ip address (string)
+                tot_ips: total number of ip adresses (int)
+            Returns:
+                the status of success failures and retries as a list of strings [retries,fairure,total] and the assertionline in case of failures 
+
+            Raises:
+                Assertion Failed: Failed to test internet connectivity for endpoint, if IP address is in wrong format or unreachable
+        """
         self.assertline=""
         def test_connectivity():
             script = self.create_script(ip,5,3)
@@ -104,7 +117,7 @@ class SshClient:
                 c_retry: count of pings for second try (int)
                 w_retry: wait for ping result of second try (int)
             Returns:
-                bashcript but also the result of the script 
+                executable bashcript 
 
             Raises:
                 Assertion Failed: Failed to test internet connectivity for endpoint, if IP address is in wrong format or unreachable
