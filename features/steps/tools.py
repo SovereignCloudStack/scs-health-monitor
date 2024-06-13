@@ -127,6 +127,7 @@ def check_volumes_created(client, test_name):
             assert volume.status == 'available', f"Volume {volume.name} not available"
             return volume.status
 
+
 def collect_ips(client):
     print("collecting ips")
     ports = client.network.ports()

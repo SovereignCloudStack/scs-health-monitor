@@ -10,4 +10,4 @@ Feature: OpenStack Jumphost Creation
 
   Examples:
     |jumphost_name|network_name    |keypair_name|security_group_name|
-    |    test-jh  |scs-hm-network-1|test-keypair|ping-sg|
+    |    test-scs-3  |scs-hm-network-1|test-keypair-3|ping-sg|

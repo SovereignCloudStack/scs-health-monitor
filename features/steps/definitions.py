@@ -484,7 +484,6 @@ class StepsDef:
     @then('I create a jumphost with name {jumphost_name} on network {network_name} with keypair {keypair_name}')
     def create_a_jumphost(context, jumphost_name, network_name, keypair_name):
 
-        # config
         security_groups = [{"name": "ssh"}, {"name": "default"}, {"name": "ping-sg"}]
         keypair_filename = f"{keypair_name}-private"
 
