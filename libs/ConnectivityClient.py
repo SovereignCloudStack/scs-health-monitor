@@ -25,7 +25,6 @@ class MetricDescription:
 
 
 class SshClient:
-    #TODO: generic Metrics
     conn_total_count = Counter(MetricName.SSH_TOT, MetricDescription.SSH_TOT,
                                 [MetricLabels.STATUS_CODE, MetricLabels.HOST,
                                 LabelNames.COMMAND_LABEL])
@@ -94,9 +93,23 @@ class SshClient:
         return self.ping_stat,self.assertline
 
 
-    def create_script(self,ips,c=1,w=3,c_retry=1,w_retry=3):
-        ip_list_str = ips
-        print(ip_list_str)
+    def create_script(self,ip_str,c=1,w=3,c_retry=1,w_retry=3):
+        """
+            Creates a bash script to ping the provided IP address
+
+            Args:
+                ip_str: ip address (string)
+                c: count of pings for first try (int)
+                w: wait for ping result of first try (int)
+                c_retry: count of pings for second try (int)
+                w_retry: wait for ping result of second try (int)
+            Returns:
+                bashcript but also the result of the script 
+
+            Raises:
+                Assertion Failed: Failed to test internet connectivity for endpoint, if IP address is in wrong format or unreachable
+        """
+        print(ip_str)
         script_content = f"""
             #!/bin/bash
 
@@ -107,7 +120,7 @@ class SshClient:
                 return 2
             }}
 
-            ips=({ip_list_str})
+            ips=({ip_str})
             for ip in "${{ips[@]}}"; do
                 myping $ip
                 result=$?
