@@ -48,6 +48,18 @@ class SshClient:
             self.logger.log(level, message)
 
     def execute_command(self, command, ignore_error_output=False):
+        """
+            Executs provided bashscript on vm and returns the commands response code
+
+            Args:
+                command: bashscript (string)
+                ignore_error_output: raises exception (string)
+            Returns:
+                the status of success failures and retries as a list of strings [retries,fairure,total] and the assertionline in case of failures 
+
+            Raises:
+                Assertion Failed: Failed to test internet connectivity for endpoint, if IP address is in wrong format or unreachable
+        """
         try:
             _stdin, stdout, stderr = self.client.exec_command(command)
             output = stdout.read().decode().strip()
