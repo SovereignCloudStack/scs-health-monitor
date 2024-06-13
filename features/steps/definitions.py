@@ -551,7 +551,7 @@ class StepsDef:
     @then("I should be able to SSH into the VM as user {username}")
     def test_ssh_connection(context, username):
         jh = context.client.compute.find_server(name_or_id=context.jh_name)
-        print(f"___________________adresses: {jh.addresses['scs-hm-network-1'][1]['addr']}")
+        print(f"_________adresses: {jh.addresses['scs-hm-network-1'][1]['addr']}")
         print("____")
         ssh_client = SshClient(jh.addresses['scs-hm-network-1'][1]['addr'], username, context.vm_private_ssh_key_path)
 #        ssh_client = SshClient(context.vm_ip_address, username, context.vm_private_ssh_key_path)

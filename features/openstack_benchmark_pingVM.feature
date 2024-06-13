@@ -17,7 +17,7 @@ Feature: Benchmark ping VMs
 
     Examples:
 	  |jh_name      | vm_ip_address    | vm_private_ssh_key_path     			                                            | username 	| jh_quantity	| conn_test |
-	#  |test-jh-katha| 213.131.230.205	 | /home/katha/Dokumente/WORKLOAD_LOCAL/SCS/scs-health-monitor/features/sshKey	| ubuntu	| 3	          | ping			|
-   # |test-jh-katha| localhost | /home/katha/Dokumente/WORKLOAD_LOCAL/SCS/scs-health-monitor/features/sshKey	| katha			| 3	          | ping			|
-    | test-jh     | 213.131.230.247 | /home/katha/Dokumente/WORKLOAD_LOCAL/SCS/scs-health-monitor/features/test-keypair-private| ubuntu|3|ping|
+	  |test-jh-katha| 213.131.230.205 | jhSshKey-private	| ubuntu	| 3	          | ping			|
+  #  |test-jh-katha| localhost | /home/katha/Dokumente/WORKLOAD_LOCAL/SCS/scs-health-monitor/features/sshKey	| katha			| 3	          | ping			|
+  #  | test-jh     | 213.131.230.247 | /home/katha/Dokumente/WORKLOAD_LOCAL/SCS/scs-health-monitor/features/test-keypair-private| ubuntu|3|ping|
 
