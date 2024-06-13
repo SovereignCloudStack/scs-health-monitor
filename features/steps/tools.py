@@ -1,4 +1,8 @@
 import ipaddress
+import time
+from functools import wraps
+import paramiko
+from libs.PrometheusExporter import CommandTypes, LabelNames
 
 import yaml
 
@@ -19,6 +23,7 @@ class Collector:
         self.ports: list = list()
         self.enabled_ports: list = ()
         self.disabled_ports: list = list()
+        self.virtual_machines_ip: list = list()
 
 
 class Tools:
@@ -42,6 +47,17 @@ class Tools:
         # Otherwise, default to False
         else:
             return False
+
+
+def time_it(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = func(*args, **kwargs)
+        end = time.perf_counter()
+        print(f'time taken by {func.__name__} is {end - start}')
+        return result, end - start
+    return wrapper
 
 
 def create_subnets(num):
@@ -95,11 +111,14 @@ def verify_volumes_deleted(client, test_name):
     volumes_test = [volume for volume in client.block_store.volumes() if f"{test_name}-volume" in volume.name]
     assert len(volumes_test) == 0, "Some volumes still exist"
 
+
 def verify_volume_deleted(client, volume_id):
     assert not client.block_store.find_volume(name_or_id=volume_id), f"Volume with ID {volume_id} was not deleted"
 
+
 def verify_router_deleted(client, router_id):
     assert not client.network.find_router(name_or_id=router_id), f"Router with ID {router_id} was not deleted"
+
 
 def check_volumes_created(client, test_name):
     for volume in client.volume.volumes():
@@ -107,3 +126,13 @@ def check_volumes_created(client, test_name):
             volume = client.block_store.wait_for_status(volume, 'available', interval=2, wait=120)
             assert volume.status == 'available', f"Volume {volume.name} not available"
             return volume.status
+
+def collect_ips(client):
+    print("collecting ips")
+    ports = client.network.ports()
+    ips = []
+    for port in ports:
+        for fixed_ip in port.fixed_ips:
+            ips.append(fixed_ip['ip_address'])
+    return ips
+
