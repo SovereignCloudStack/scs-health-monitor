@@ -11,5 +11,5 @@ Feature: Benchmark 4000 Pi calculation on VMs
     Then I should be able to calculate 4000 digits of Pi on each VM and measure time
 
     Examples:
-      | vm_ip_address   | vm_private_ssh_key_path                                                               | username | jh_quantity |
-      | 213.131.230.157 | /home/katha/Dokumente/WORKLOAD_LOCAL/SCS/scs-health-monitor/terraform/private_key.pem | ubuntu   | 3           |
+      | vm_ip_address   | vm_private_ssh_key_path     | username |
+      | 213.131.230.157 | ./terraform/private_key.pem | ubuntu   |
