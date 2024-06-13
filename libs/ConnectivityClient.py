@@ -44,6 +44,13 @@ class SshClient:
         self.ping_stat=[0,0,0] # retries, fairure, total
 
     def log(self, level, message):
+        """
+            Takes an instance of the Logger Class to log if level is greater than min log level 
+
+            Args:
+                level: (string)
+                message: (string)
+        """
         if self.logger and level >= self.min_log_level:
             self.logger.log(level, message)
 
@@ -72,6 +79,18 @@ class SshClient:
             raise RuntimeError(f"Failed to execute command '{command}' on server {self.host}: {e}")
 
     def connect(self):
+        """
+            establishes connection via ssh by calling the TimeRecorder Class 
+
+            Args:
+                class
+            Returns:
+                the status of success failures and retries as a list of strings [retries,fairure,total] and the assertionline in case of failures 
+            Raises:
+                Exception: exceptions.ConnectFailure(msg)
+                Assertion Failed: Failed to connect
+        """
+
         def on_success(duration):
             self.conn_total_count.labels(ResultStatusCodes.SUCCESS, self.host, CommandTypes.SSH).inc()
             self.conn_duration.labels(ResultStatusCodes.SUCCESS, self.host, CommandTypes.SSH).observe(duration)
@@ -155,11 +174,33 @@ class SshClient:
         return script_content
 
     def install_ping(self):
+        """
+            installs ping on vm 
+
+            Args:
+                class
+            Returns:
+                response from command execution
+            Raises:
+                Exception: exceptions.ConnectFailure(msg)
+                Assertion Failed: Failed to connect
+        """
+    
         command = "sudo apt-get update -y && sudo apt-get install -y iputils-ping"
         response = self.execute_command(command, True)
         return response
     
     def print_working_directory(self):
+        """
+            prints current working dir on vm 
+
+            Args:
+                class
+            Returns:
+                prints current working dir 
+            Raises:
+                Exception:
+        """
         directory = self.execute_command("pwd")
         print(f"Current working directory on server {self.host}: {directory}")
     
