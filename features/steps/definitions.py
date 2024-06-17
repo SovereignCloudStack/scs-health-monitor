@@ -487,26 +487,34 @@ class StepsDef:
         assert len(context.collector.volumes) == 0, f"Failed to delete volumes"
 
     @then('I create a jumphost with name {jumphost_name} on network {network_name} with keypair {keypair_name}')
-    def create_a_jumphost(context, jumphost_name, network_name, keypair_name):
-            
+    def create_a_jumphost(context, jumphost_name: str, network_name: str, keypair_name: str):
             # config
-            security_groups = [{"name": "ssh"}, {"name": "default"}, {"name": "ping-sg"}]
+            ping_sec_group_name = "ping-sg-test"
+            ping_sec_group_description = "Ping security group - allow ICMP"
+            security_groups = [{"name": "ssh"}, {"name": "default"}, {"name": ping_sec_group_name}]
             keypair_filename = f"{keypair_name}-private"
- 
+
             image = context.client.compute.find_image(name_or_id=context.vm_image)
             assert image, f"Image with name {context.vm_image} doesn't exist"
             flavor = context.client.compute.find_flavor(name_or_id=context.flavor_name)
             assert flavor, f"Flavor with name {context.flavor_name} doesn't exist"
             network = context.client.network.find_network(network_name)
             assert network, f"Network with name {network_name} doesn't exist"
-            keypair = context.client.compute.create_keypair(name=keypair_name)
-            with open(keypair_filename, 'w') as f:
-                f.write("%s" % keypair.private_key)
-            os.chmod(keypair_filename, 0o400)
-            keypair = context.client.compute.find_keypair(keypair_name)
-            assert keypair, f"Keypair with name {keypair_name} doesn't exist"
+            keypair = tools.check_keypair_exists(context.client, keypair_name=keypair_name)
+            if not keypair:
+                keypair = context.client.compute.create_keypair(name=keypair_name)
+                assert keypair, f"Keypair with name {keypair_name} doesn't exist"
+                with open(keypair_filename, 'w') as f:
+                    f.write("%s" % keypair.private_key)
+                os.chmod(keypair_filename, 0o600)
+            ping_sec_group = tools.check_security_group_exists(context.client, sec_group_name=ping_sec_group_name)
+            if not ping_sec_group:
+                print(f"SG not found, creating")
+                ping_sec_group = tools.create_security_group(context, ping_sec_group_name, ping_sec_group_description)
+                tools.create_security_group_rule(context, ping_sec_group.id, protocol="icmp")
+
             for security_group in security_groups:
-                security_group = context.client.network.find_security_group(security_group['name'])
+                security_group = tools.check_security_group_exists(context.client, security_group['name'])
                 assert security_group, f"Security Group with name {security_group['name']} doesn't exist"
 
             server = context.client.compute.create_server(
