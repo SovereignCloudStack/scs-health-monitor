@@ -136,3 +136,70 @@ def collect_ips(client):
             ips.append(fixed_ip['ip_address'])
     return ips
 
+def check_security_group_exists(context, sec_group_name: str):
+    """Check if security group exists
+
+    Args:
+        context: Behave context object
+        sec_group_name (str): Name of security group to check
+    
+    Returns:
+        ~openstack.network.v2.security_group.SecurityGroup: Found security group or None
+    """
+    return context.client.network.find_security_group(name_or_id=sec_group_name)
+
+def check_keypair_exists(context, keypair_name: str):
+    """Check if keypair exists
+
+    Args:
+        context: Behave context object
+        keypair_name (str): Name of keypair to check
+    
+    Returns:
+        ~openstack.compute.v2.keypair.Keypair: Found keypair object or None
+    """
+    return context.client.compute.find_keypair(name_or_id=keypair_name)
+
+def create_security_group(context, sec_group_name: str, description: str):
+    """Create security group in openstack
+
+    Args:
+        context: Behave context object
+        sec_group_name (str): Name of security group
+        description (str): Description of security group
+    
+    Returns:
+        ~openstack.network.v2.security_group.SecurityGroup: The new security group or None
+    """
+    security_group = context.client.network.create_security_group(
+                name=sec_group_name,
+                description=description
+            )
+    context.collector.security_groups.append(security_group.id)
+    assert security_group is not None, f"Security group with name {security_group.name} was not found"
+    return security_group
+
+def create_security_group_rule(context, sec_group_id: str, protocol: str, port_range_min: int = None, port_range_max: int = None, direction: str = 'ingress'):
+    """Create security group rule for specified security group
+
+    Args:
+        context: Behave context object
+        sec_group_id (str): ID of the security group for the rule
+        protocol (str): The protocol that is matched by the security group rule
+        port_range_min (int): The minimum port number in the range that is matched by the security group rule
+        port_range_max (int): The maximum port number in the range that is matched by the security group rule
+        direction (str): The direction in which the security group rule is applied
+    
+    Returns:
+        ~openstack.network.v2.security_group_rule.SecurityGroupRule: The new security group rule
+    """
+    sec_group_rule = context.client.network.create_security_group_rule(
+        security_group_id=sec_group_id,
+        port_range_min=port_range_min,
+        port_range_max=port_range_max,
+        protocol=protocol,
+        direction=direction
+    )
+    context.collector.security_groups_rules.append(sec_group_rule.id)
+    assert sec_group_rule is not None, f"Rule for security group {sec_group_id} was not created"
+    return sec_group_rule

@@ -296,20 +296,16 @@ class StepsDef:
         for sec_group_id in context.collector.security_groups[:]:
             context.client.network.delete_security_group(sec_group_id)
             time.sleep(2)
-            assert not context.client.network.find_security_group(
-                name_or_id=sec_group_id
-            ), f"Security group with id {sec_group_id} was not deleted"
+            assert not tools.check_security_group_exists(context, sec_group.id), f"Security group with id {sec_group_id} was not deleted"
             context.collector.security_groups.remove(sec_group_id)
         if context.collector.security_groups:
             for sec_group in context.client.network.security_groups():
-                security_group = context.client.network.find_security_group(name_or_id=sec_group.id)
+                security_group = tools.check_security_group_exists(context, sec_group.id)
                 assert security_group, f"Security group with name {sec_group.name} does not exist"
                 if f"{context.test_name}-sg" in sec_group.name:
                     context.client.network.delete_security_group(sec_group.id)
                     time.sleep(2)
-                    assert not context.client.network.find_security_group(
-                        name_or_id=sec_group.id
-                    ), f"Security group with name {sec_group.name} was not deleted"
+                    assert not tools.check_security_group_exists(context, sec_group.id), f"Security group with name {sec_group.name} was not deleted"
                     if sec_group.id in context.collector.security_groups:
                         context.collector.security_groups.remove(sec_group.id)
         assert len(context.collector.security_groups) == 0, f"Failed to delete security groups"
@@ -323,7 +319,7 @@ class StepsDef:
             port_range_max = port_range_min
             for sec_group in sec_groups:
                 if context.test_name in sec_group.name:
-                    sel_sec_group = context.client.network.find_security_group(name_or_id=sec_group.name)
+                    sel_sec_group = tools.check_security_group_exists(context, sec_group.name)
                     sel_sec_group_rules = [
                         rule for rule in context.client.network.security_group_rules(
                             direction="ingress",
@@ -360,7 +356,7 @@ class StepsDef:
             sec_groups = list(context.client.network.security_groups())
             for sec_group in sec_groups:
                 if context.test_name in sec_group.name:
-                    sel_sec_group = context.client.network.find_security_group(name_or_id=sec_group.name)
+                    sel_sec_group = tools.check_security_group_exists(context, sec_group.name)
                     sel_sec_group_rules = []
                     for rule in context.client.network.security_group_rules():
                         if rule.security_group_id == sel_sec_group.id:
@@ -487,26 +483,34 @@ class StepsDef:
         assert len(context.collector.volumes) == 0, f"Failed to delete volumes"
 
     @then('I create a jumphost with name {jumphost_name} on network {network_name} with keypair {keypair_name}')
-    def create_a_jumphost(context, jumphost_name, network_name, keypair_name):
-            
+    def create_a_jumphost(context, jumphost_name: str, network_name: str, keypair_name: str):
             # config
-            security_groups = [{"name": "ssh"}, {"name": "default"}, {"name": "ping-sg"}]
+            ping_sec_group_name = "ping-sg"
+            ping_sec_group_description = "Ping security group - allow ICMP"
+            security_groups = [{"name": "ssh"}, {"name": "default"}, {"name": ping_sec_group_name}]
             keypair_filename = f"{keypair_name}-private"
- 
+
             image = context.client.compute.find_image(name_or_id=context.vm_image)
             assert image, f"Image with name {context.vm_image} doesn't exist"
             flavor = context.client.compute.find_flavor(name_or_id=context.flavor_name)
             assert flavor, f"Flavor with name {context.flavor_name} doesn't exist"
             network = context.client.network.find_network(network_name)
             assert network, f"Network with name {network_name} doesn't exist"
-            keypair = context.client.compute.create_keypair(name=keypair_name)
-            with open(keypair_filename, 'w') as f:
-                f.write("%s" % keypair.private_key)
-            os.chmod(keypair_filename, 0o400)
-            keypair = context.client.compute.find_keypair(keypair_name)
-            assert keypair, f"Keypair with name {keypair_name} doesn't exist"
+            keypair = tools.check_keypair_exists(context, keypair_name=keypair_name)
+            if not keypair:
+                keypair = context.client.compute.create_keypair(name=keypair_name)
+                assert keypair, f"Keypair with name {keypair_name} doesn't exist"
+                with open(keypair_filename, 'w') as f:
+                    f.write("%s" % keypair.private_key)
+                os.chmod(keypair_filename, 0o600)
+            ping_sec_group = tools.check_security_group_exists(context, sec_group_name=ping_sec_group_name)
+            if not ping_sec_group:
+                print(f"SG not found, creating")
+                ping_sec_group = tools.create_security_group(context, ping_sec_group_name, ping_sec_group_description)
+                tools.create_security_group_rule(context, ping_sec_group.id, protocol="icmp")
+
             for security_group in security_groups:
-                security_group = context.client.network.find_security_group(security_group['name'])
+                security_group = tools.check_security_group_exists(context, security_group['name'])
                 assert security_group, f"Security Group with name {security_group['name']} doesn't exist"
 
             server = context.client.compute.create_server(
