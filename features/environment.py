@@ -5,6 +5,8 @@ from libs.PrometheusExporter import PrometheusExporter, LabelNames
 from libs.DateTimeProvider import DateTimeProvider
 from libs.Formatter import Formatter
 from behave import fixture, use_fixture
+#from behave.model import Scenario
+
 
 import openstack
 
@@ -44,6 +46,9 @@ def before_all(context):
     context.prometheusExporter.add_default_label(LabelNames.CLOUD_LABEL, cloudName)
 
     context.collector = Collector()
+    # userdata = context.config.userdata
+    # continue_after_failed = userdata.getbool("runner.continue_after_failed_step", False)
+    # Scenario.continue_after_failed_step = continue_after_failed
 
 
 def after_feature(context, feature):
