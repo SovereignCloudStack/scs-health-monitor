@@ -551,15 +551,27 @@ class StepsDef:
         # else:
         #     print(f"{lookup} not in {jh.addresses}")
 
-        key_found = any(context.test_name in key for key in jh.addresses)
-        if key_found:
-            print(f"{context.test_name} in jh.addresses")
-            print(key_found)
-        else:
-            print(f"{context.test_name} not in {jh.addresses}")
-        print("•ᴗ•")
-        context.vm_ip_address= jh.addresses['scs-hm-jh-network-1'][1]['addr']
+        # key_found = any(context.test_name in key for key in jh.addresses)
+        # if key_found:
+        #     print(f"{context.test_name} in jh.addresses")
+        #     print(type(jh.addresses))
+        # else:
+        #     print(f"{context.test_name} not in {jh.addresses}")
 
+        # for d in jh.addresses:
+        #     for key in d.keys():
+        #         if context.test_name in key:
+        #             print(f"{context.test_name} in jh.addresses")
+        #             print(key)
+        #         else:
+        #             print(f"{context.test_name} not in {jh.addresses}")
+
+        for key in jh.addresses:
+            if context.test_name in key:
+                print(f"String containing '{context.test_name}': {key}")
+        print("•ᴗ•")
+        context.vm_ip_address= jh.addresses[key][1]['addr']
+    
     @given("I have a private key at {vm_private_ssh_key_path}")
     def check_private_key_exists(context, vm_private_ssh_key_path: str):
         context.vm_private_ssh_key_path = vm_private_ssh_key_path
