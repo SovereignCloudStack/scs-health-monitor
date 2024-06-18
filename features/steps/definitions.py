@@ -545,6 +545,19 @@ class StepsDef:
 
         jh = context.client.compute.find_server(name_or_id=context.jh_name)
         #TODO: replace network name
+        # lookup= context.test_name+"-jh-network-1"
+        # if lookup in jh.addresses:
+        #     print(f"{lookup} in {jh.addresses}")
+        # else:
+        #     print(f"{lookup} not in {jh.addresses}")
+
+        key_found = any(context.test_name in key for key in jh.addresses)
+        if key_found:
+            print(f"{context.test_name} in jh.addresses")
+            print(key_found)
+        else:
+            print(f"{context.test_name} not in {jh.addresses}")
+        print("•ᴗ•")
         context.vm_ip_address= jh.addresses['scs-hm-jh-network-1'][1]['addr']
 
     @given("I have a private key at {vm_private_ssh_key_path}")
