@@ -545,7 +545,7 @@ class StepsDef:
 
         jh = context.client.compute.find_server(name_or_id=context.jh_name)
         #TODO: replace network name
-        context.vm_ip_address= jh.addresses['scs-hm-network-1'][1]['addr']
+        context.vm_ip_address= jh.addresses['scs-hm-jh-network-1'][1]['addr']
 
     @given("I have a private key at {vm_private_ssh_key_path}")
     def check_private_key_exists(context, vm_private_ssh_key_path: str):
