@@ -544,12 +544,13 @@ class StepsDef:
     @given("I have deployed {jh_quantity:d} JHs")
     def initialize(context, jh_quantity):
         servers=context.client.compute.servers()
+        lookup= context.test_name+"-jh"
         #TODO:
         #for tries  in range(jh_quantity):
         for name in servers:
             print(f"server {name.name}")
-            if context.test_name in name.name:
-                print(f"String containing '{context.test_name}': {name.name}")
+            if lookup in name.name:
+                print(f"String containing '{lookup}': {name.name}")
                 context.jh_name = name.name
                 jh = context.client.compute.find_server(name_or_id=context.jh_name)
 
