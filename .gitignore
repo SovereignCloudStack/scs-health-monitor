@@ -184,6 +184,7 @@ sshKey.pub
 features/ssh_check_connectivity_katha.feature
 test-keypair-private
 jhSshKey-private
+jh_sshKey-private
 *.prom
 
 # Local .terraform directories
