@@ -94,9 +94,11 @@ class SshClient:
         def on_success(duration):
             self.conn_total_count.labels(ResultStatusCodes.SUCCESS, self.host, CommandTypes.SSH).inc()
             self.conn_duration.labels(ResultStatusCodes.SUCCESS, self.host, CommandTypes.SSH).observe(duration)
+            #self.assertline=f"SSH connection to server {self.host} established"
         def on_fail(duration, exception):
             self.conn_total_count.labels(ResultStatusCodes.FAILURE, self.host, CommandTypes.SSH).inc()
-            self.conn_duration.labels(ResultStatusCodes.FAILURE, self.host, CommandTypes.SSH).observe(duration)            
+            self.conn_duration.labels(ResultStatusCodes.FAILURE, self.host, CommandTypes.SSH).observe(duration)
+            #self.assertline=f"SSH connection to server {self.host} failed"           
         TimeRecorder.record_time(
             lambda: self.client.connect(self.host, username=self.username, pkey=self.private_key),
             on_success=on_success,

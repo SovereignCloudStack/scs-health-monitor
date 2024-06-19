@@ -552,39 +552,45 @@ class StepsDef:
             if lookup in name.name:
                 print(f"String containing '{lookup}': {name.name}")
                 context.jh["name"]=name.name
-                print(context.jh)
+                print(f"dict {context.jh}")
                 context.jh_name = name.name
-                jh = context.client.compute.find_server(name_or_id=context.jh_name)
-        
-        assert jh, f"No Jumphost with {lookup} in name found"
-
-        for key in jh.addresses:
-            if context.test_name in key:
-                print(f"String containing '{context.test_name}': {key}")
-        print("•ᴗ•")
-        context.vm_ip_address= jh.addresses[key][1]['addr']
+                jh = context.client.compute.find_server(name_or_id=name.name)
+                for key in jh.addresses:
+                    if context.test_name in key:
+                        print(f"String containing '{context.test_name}': {key}")
+                        context.jh["ip"]=jh.addresses[key][1]['addr']
+                        context.vm_ip_address= jh.addresses[key][1]['addr']
+                        print(context.vm_ip_address)
+                        print("•ᴗ•")
+        print(context.jh)    
+        assert len(context.jh)==jh_quantity, f"Not enough Jumphost with {lookup} in name found"
+       
     
-    @given("I have a private key at {vm_private_ssh_key_path}")
-    def check_private_key_exists(context, vm_private_ssh_key_path: str):
+    @given("I have a private key at {vm_private_ssh_key_path} and a {username}")
+    def check_private_key_exists(context, vm_private_ssh_key_path: str, username:str):
         context.vm_private_ssh_key_path = vm_private_ssh_key_path
+        context.vm_username = username
         assert os.path.isfile(vm_private_ssh_key_path)
     
 ##### iterating
-    @then ("I should be able to SSH into {jh_quantity:d} JHs as {username} and test their {conn_test} connectivity")
-    def step_iterate_steps(context, jh_quantity):
+    @then ("I should be able to SSH into {jh_quantity:d} JHs and test their {conn_test} connectivity")
+    def step_iterate_steps(context, jh_quantity, username:str,conn_test:str):
         for i in range(1, jh_quantity + 1): 
             print(f"Iteration {i}")
             
             # Invoke the steps programmatically
             context.execute_steps('''
-                Then step one
-                Then step two
-                Then step three
+                Then I should be able to SSH into the VM
+                Then I should be able to collect all VM IPs
+                And be able to ping all IPs to test {conn_test} connectivity
             ''')
 
-    @then("I should be able to SSH into the VM as user {username}")
-    def test_ssh_connection(context, username):
-        ssh_client = SshClient(context.vm_ip_address, username, context.vm_private_ssh_key_path)
+    @then("I should be able to SSH into the VM")
+    def test_ssh_connection(context):
+        print(f"try to access {context.vm_ip_address}")
+        ssh_client = SshClient(context.vm_ip_address, context.vm_username, context.vm_private_ssh_key_path)
+        assert ssh_client, f"could not access VM"
+
         ssh_client.connect()
         context.ssh_client = ssh_client
 
@@ -623,20 +629,19 @@ class StepsDef:
 
 @given('I want to test iterations')
 def testing(context):
-    context.test="•ᴗ•"
     print("Testing iterations")
 
 @then('step one')
 def step_one(context):
-    print(f"Step one executed {context.test}")
+    print(f"Step one executed")
 
 @then('step two')
 def step_two(context):
-    print(f"Step two executed {context.test}")
+    print(f"Step two executed")
 
 @then('step three')
 def step_three(context):
-    print(f"Step three executed {context.test}")
+    print(f"Step three executed")
 
 @then('iterate steps {quantity:d} times')
 def step_iterate_steps(context, quantity):
