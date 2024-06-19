@@ -537,15 +537,16 @@ class StepsDef:
 
     @given("I have deployed a VM with IP {vm_ip_address}")
     def initialize(context, vm_ip_address: str):
-        context.vm_ip_address = vm_ip_address    
-    #@given("I have deployed a JH with the name {jh_name}")
-    #def initialize(context, jh_name: str):
-    @given("I have deployed {jh_quantity} JHs")
-    def initialize(context):
-
-        for name in context.client.compute.servers:
-            if context.test_name in name:
-                print(f"String containing '{context.test_name}': {name}")
+        context.vm_ip_address = vm_ip_address
+    
+    # @given("I have deployed a JH with the name {jh_name}")
+    # def initialize(context, jh_name: str):
+    @given("I have deployed {jh_quantity:d} JHs")
+    def initialize(context, jh_quantity):
+        print(context.client.compute.servers)
+        # for name in context.client.compute.servers:
+        #     if context.test_name in name:
+        #         print(f"String containing '{context.test_name}': {name}")
         context.jh_name = "scs-hm-jh-1"
         jh = context.client.compute.find_server(name_or_id=context.jh_name)
         #TODO: replace network name
