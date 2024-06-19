@@ -545,12 +545,15 @@ class StepsDef:
     def initialize(context, jh_quantity):
         servers=context.client.compute.servers()
         lookup= context.test_name+"-jh"
+        context.jh=[]
         #TODO:
         #for tries  in range(jh_quantity):
         for name in servers:
             print(f"server {name.name}")
             if lookup in name.name:
                 print(f"String containing '{lookup}': {name.name}")
+                context.jh["name"]=name.name
+                print(context.jh)
                 context.jh_name = name.name
                 jh = context.client.compute.find_server(name_or_id=context.jh_name)
 
@@ -559,27 +562,6 @@ class StepsDef:
                 print(f"String containing '{context.test_name}': {key}")
         print("•ᴗ•")
         context.vm_ip_address= jh.addresses[key][1]['addr']
-                #TODO: replace network name
-        # lookup= context.test_name+"-jh-network-1"
-        # if lookup in jh.addresses:
-        #     print(f"{lookup} in {jh.addresses}")
-        # else:
-        #     print(f"{lookup} not in {jh.addresses}")
-
-        # key_found = any(context.test_name in key for key in jh.addresses)
-        # if key_found:
-        #     print(f"{context.test_name} in jh.addresses")
-        #     print(type(jh.addresses))
-        # else:
-        #     print(f"{context.test_name} not in {jh.addresses}")
-
-        # for d in jh.addresses:
-        #     for key in d.keys():
-        #         if context.test_name in key:
-        #             print(f"{context.test_name} in jh.addresses")
-        #             print(key)
-        #         else:
-        #             print(f"{context.test_name} not in {jh.addresses}")
     
     @given("I have a private key at {vm_private_ssh_key_path}")
     def check_private_key_exists(context, vm_private_ssh_key_path: str):
@@ -623,3 +605,33 @@ class StepsDef:
         assert server, f"Server with name {server_name} not found"
         ip = context.client.add_auto_ip(server=server, wait=True)
 
+#########testing
+
+@given('I want to test iterations')
+def testing(context):
+    context.test="•ᴗ•"
+    print("Testing iterations")
+
+@then('step one')
+def step_one(context):
+    print(f"Step one executed {context.test}")
+
+@then('step two')
+def step_two(context):
+    print(f"Step two executed {context.test}")
+
+@then('step three')
+def step_three(context):
+    print(f"Step three executed {context.test}")
+
+@then('iterate steps {quantity:d} times')
+def step_iterate_steps(context, quantity):
+    for i in range(1, quantity + 1):  # Iterate the specified number of times
+        print(f"Iteration {i}")
+        
+        # Invoke the steps programmatically
+        context.execute_steps('''
+            Then step one
+            Then step two
+            Then step three
+        ''')

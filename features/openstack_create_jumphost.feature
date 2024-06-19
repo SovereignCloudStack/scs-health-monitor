@@ -12,5 +12,6 @@ Feature: OpenStack Jumphost Creation
     | default-jh  | scs-hm-jh-default |test-keypair|
     |   test-jh   |  scs-hm-jh-network-1 |sshKey|
     | scs-hm-jh-1 |  scs-hm-jh-network-1 |jh_sshKey|
+    | scs-hm-jh-2 |  scs-hm-jh-network-1 |jh_sshKey|
 
 

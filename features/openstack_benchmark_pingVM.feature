@@ -14,5 +14,5 @@ Feature: Benchmark ping VMs
 
     Examples:
 	  |jh_name        | vm_private_ssh_key_path   | username 	| jh_quantity	| conn_test |
-	  |scs-hm-jh-1    | jh_sshKey-private	        | ubuntu	  | 1	          | ping			|
+	  |scs-hm-jh      | jh_sshKey-private	        | ubuntu	  | 2	          | ping			|
   #  |localhost      | sshKey	                  | katha			| 1	          | ping			|
