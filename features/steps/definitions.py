@@ -545,9 +545,8 @@ class StepsDef:
     def initialize(context, jh_quantity):
         servers=context.client.compute.servers()
         lookup= context.test_name+"-jh"
-        context.jh=[]
-        #TODO:
-        #for tries  in range(jh_quantity):
+        context.jh={}
+        jh=None
         for name in servers:
             print(f"server {name.name}")
             if lookup in name.name:
@@ -556,6 +555,8 @@ class StepsDef:
                 print(context.jh)
                 context.jh_name = name.name
                 jh = context.client.compute.find_server(name_or_id=context.jh_name)
+        
+        assert jh, f"No Jumphost with {lookup} in name found"
 
         for key in jh.addresses:
             if context.test_name in key:
@@ -567,6 +568,19 @@ class StepsDef:
     def check_private_key_exists(context, vm_private_ssh_key_path: str):
         context.vm_private_ssh_key_path = vm_private_ssh_key_path
         assert os.path.isfile(vm_private_ssh_key_path)
+    
+##### iterating
+    @then ("I should be able to SSH into {jh_quantity:d} JHs as {username} and test their {conn_test} connectivity")
+    def step_iterate_steps(context, jh_quantity):
+        for i in range(1, jh_quantity + 1): 
+            print(f"Iteration {i}")
+            
+            # Invoke the steps programmatically
+            context.execute_steps('''
+                Then step one
+                Then step two
+                Then step three
+            ''')
 
     @then("I should be able to SSH into the VM as user {username}")
     def test_ssh_connection(context, username):
