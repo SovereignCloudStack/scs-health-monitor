@@ -543,13 +543,22 @@ class StepsDef:
     # def initialize(context, jh_name: str):
     @given("I have deployed {jh_quantity:d} JHs")
     def initialize(context, jh_quantity):
-        print(context.client.compute.servers)
-        # for name in context.client.compute.servers:
-        #     if context.test_name in name:
-        #         print(f"String containing '{context.test_name}': {name}")
-        context.jh_name = "scs-hm-jh-1"
-        jh = context.client.compute.find_server(name_or_id=context.jh_name)
-        #TODO: replace network name
+        servers=context.client.compute.servers()
+        #TODO:
+        #for tries  in range(jh_quantity):
+        for name in servers:
+            print(f"server {name.name}")
+            if context.test_name in name.name:
+                print(f"String containing '{context.test_name}': {name.name}")
+                context.jh_name = name.name
+                jh = context.client.compute.find_server(name_or_id=context.jh_name)
+
+        for key in jh.addresses:
+            if context.test_name in key:
+                print(f"String containing '{context.test_name}': {key}")
+        print("•ᴗ•")
+        context.vm_ip_address= jh.addresses[key][1]['addr']
+                #TODO: replace network name
         # lookup= context.test_name+"-jh-network-1"
         # if lookup in jh.addresses:
         #     print(f"{lookup} in {jh.addresses}")
@@ -570,12 +579,6 @@ class StepsDef:
         #             print(key)
         #         else:
         #             print(f"{context.test_name} not in {jh.addresses}")
-
-        for key in jh.addresses:
-            if context.test_name in key:
-                print(f"String containing '{context.test_name}': {key}")
-        print("•ᴗ•")
-        context.vm_ip_address= jh.addresses[key][1]['addr']
     
     @given("I have a private key at {vm_private_ssh_key_path}")
     def check_private_key_exists(context, vm_private_ssh_key_path: str):
