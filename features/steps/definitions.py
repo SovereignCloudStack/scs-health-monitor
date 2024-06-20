@@ -545,28 +545,31 @@ class StepsDef:
     def initialize(context, jh_quantity):
         servers=context.client.compute.servers()
         lookup= context.test_name+"-jh"
-        context.jh={}
+        context.jh=[]
         jh=None
+        i = 0       
         for name in servers:
             print(f"server {name.name}")
             if lookup in name.name:
-                print(f"String containing '{lookup}': {name.name}")
-                context.jh["name"]=name.name
-                print(f"dict {context.jh}")
-                context.jh_name = name.name
+                print(f"String containing '{lookup}': {name.name}")                
                 jh = context.client.compute.find_server(name_or_id=name.name)
+                assert jh, f"No Jumphosts with {lookup} in name found"
                 for key in jh.addresses:
                     if context.test_name in key:
                         print(f"String containing '{context.test_name}': {key}")
-                        context.jh["ip"]=jh.addresses[key][1]['addr']
                         context.vm_ip_address= jh.addresses[key][1]['addr']
                         print(context.vm_ip_address)
-                        print("•ᴗ•")
-        print(context.jh)    
-        assert len(context.jh)==jh_quantity, f"Not enough Jumphost with {lookup} in name found"
+                        context.jh.append({"name":name.name,"ip":context.vm_ip_address})
+                        print(f"dict {context.jh[i].name}")
+                i = i+1
+
+        print(f"jh {context.jh}")
+        print(f"len {len(context.jh)}")  
+        print("•ᴗ•")
+        assert len(context.jh)>=jh_quantity, f"Not enough Jumphost with {lookup} in name found"
        
     
-    @given("I have a private key at {vm_private_ssh_key_path} and a {username}")
+    @given("I have a private key at {vm_private_ssh_key_path} for {username}")
     def check_private_key_exists(context, vm_private_ssh_key_path: str, username:str):
         context.vm_private_ssh_key_path = vm_private_ssh_key_path
         context.vm_username = username

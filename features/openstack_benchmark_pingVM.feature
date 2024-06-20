@@ -7,7 +7,7 @@ Feature: Benchmark ping VMs
     #Given I have deployed a JH with the name <jh_name>
     # TODO:
     Given I have deployed <jh_quantity> JHs
-    and I have a private key at <vm_private_ssh_key_path> and a <username>
+    and I have a private key at <vm_private_ssh_key_path> for <username>
 #    Then I should be able to SSH into <jh_quantity> JHs and test their <conn_test> connectivity
     Then I should be able to SSH into the VM
     Then I should be able to collect all VM IPs
@@ -15,5 +15,5 @@ Feature: Benchmark ping VMs
 
     Examples:
 	  |jh_name        | vm_private_ssh_key_path   | username 	| jh_quantity	| conn_test |
-	  |scs-hm-jh      | jh_sshKey-private	        | ubuntu	  | 2	          | ping			|
+	  |scs-hm-jh      | create_keypair-private	  | ubuntu	  | 4	          | ping			|
   #  |localhost      | sshKey	                  | katha			| 1	          | ping			|
