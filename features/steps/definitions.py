@@ -570,18 +570,35 @@ class StepsDef:
         assert server, f"Server with name {server_name} not found"
         ip = context.client.add_auto_ip(server=server, wait=True)
 
+    @then("I should be able to calculate 4000 digits of Pi on VM {vm_ip_address} and measure time")
+    def benchmark_pi_on_vms(context, vm_ip_address: str):
+        command = "{ TIMEFORMAT='%2U'; time echo 'scale=4000; 4*a(1)' | bc -l; } 2>&1"
+        context.ssh_client = SshClient(vm_ip_address, context.username, context.vm_private_ssh_key_path)
+        context.ssh_client.connect()
 
-    @then("I should be able to calculate 4000 digits of Pi on each VM and measure time")
-    def benchmark_pi_on_vms(context):
-        results = []
-        for ip in context.ips:
-            command = "{ TIMEFORMAT='%2U'; time echo 'scale=4000; 4*a(1)' | bc -l; } 2>&1"
+        try:
+            # Measure initial ping response
+            initial_ping, initial_ping_output = context.ssh_client.test_internet_connectivity("google.com")
+
             start_time = time.time()
-            context.ssh_client.connect()
             try:
+                # Execute the Pi calculation command
                 result = context.ssh_client.execute_command(command)
+
+                # Measure CPU usage during the calculation - CPU usage is measured during the calculation using the mpstat command.
+                # This provides the percentage of CPU usage excluding idle time.
+                cpu_usage = context.ssh_client.execute_command("mpstat 1 1 | grep 'all' | awk '{print 100-$13}'")
             finally:
                 context.ssh_client.close_conn()
+
             end_time = time.time()
-            duration = end_time - start_time
-            results.append((ip, duration))
+            calculation_duration = end_time - start_time
+
+            # Measure final ping response
+            final_ping, final_ping_output = context.ssh_client.test_internet_connectivity("google.com")
+
+            # Calculate average ping response
+            avg_ping = (initial_ping + final_ping) / 2
+
+        except Exception as e:
+            assert f"An error occurred: {e}"
