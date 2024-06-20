@@ -247,6 +247,29 @@ def create_network(client, name, **kwargs):
         name_or_id=network), f"Network called {network} not present!"
     return network
 
+def create_subnet(client, name, **kwargs):
+    """
+    Create subnet and check whether it was created
+    @param client: OpenStack client
+    @param name: router name
+    @param kwargs: additional arguments to be passed to resource create command
+    @return: created subnet
+    """
+    subnet = client.network.create_subnet(name=name, **kwargs)
+    time.sleep(5)
+    assert not client.network.find_network(name_or_id=subnet), \
+        f"Failed to create subnet with name {subnet}"
+    return subnet
+
+def create_router(client, name):
+    """
+    Create router
+    @param client: OpenStack client
+    @param name: router name
+    @return created router
+    """
+    return client.network.create_router(name=name)
+
 def get_availability_zones(client):
     return client.network.availability_zones()
 
@@ -255,7 +278,8 @@ def create_lb(client, name, **kwargs):
     Create Loadbalancer and wait until it's in state active
     @param client: OpenStack client
     @param name: lb name
-    @param kwargs: Arguments to be passed to creation command
+    @param kwargs: additional arguments to be passed to resource create command
+    @return created lb
     """
     print(kwargs)
     assert (client.load_balancer.create_load_balancer(name=name, **kwargs).
