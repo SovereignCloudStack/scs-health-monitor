@@ -545,7 +545,7 @@ class StepsDef:
     def initialize(context, jh_quantity):
         servers=context.client.compute.servers()
         lookup= context.test_name+"-jh"
-        context.jh=[]
+        context.jh={}
         jh=None
         i = 0       
         for name in servers:
@@ -559,7 +559,8 @@ class StepsDef:
                         print(f"String containing '{context.test_name}': {key}")
                         context.vm_ip_address= jh.addresses[key][1]['addr']
                         print(context.vm_ip_address)
-                        context.jh.append({"name":name.name,"ip":context.vm_ip_address})
+                        #context.jh.append({"name":name.name,"ip":context.vm_ip_address})
+                        context.jh[name.name]=context.vm_ip_address
                         print(f"dict {context.jh[i].name}")
                 i = i+1
 
