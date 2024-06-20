@@ -189,6 +189,24 @@ def collect_ips(client):
     return ips
 
 
+def collect_jhs(client, test_name):
+    servers=client.compute.servers()
+    lookup= test_name+"-jh"
+    jhs=[]
+    jh=None   
+    for name in servers:
+        print(f"server {name.name}")
+        if lookup in name.name:
+            print(f"String containing '{lookup}': {name.name}")                
+            jh = client.compute.find_server(name_or_id=name.name)
+            assert jh, f"No Jumphosts with {lookup} in name found"
+            for key in jh.addresses:
+                if test_name in key:
+                    print(f"String containing '{test_name}': {key}")
+                    jhs.append({"name":name.name,"ip":jh.addresses[key][1]['addr']})
+    return jhs
+
+
 def check_security_group_exists(context, sec_group_name: str):
     """Check if security group exists
 

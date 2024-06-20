@@ -543,21 +543,21 @@ class StepsDef:
     # def initialize(context, jh_name: str):
     @given("I have deployed {jh_quantity:d} JHs")
     def initialize(context, jh_quantity):
-        servers=context.client.compute.servers()
-        lookup= context.test_name+"-jh"
-        context.jh=[]
-        jh=None   
-        for name in servers:
-            print(f"server {name.name}")
-            if lookup in name.name:
-                print(f"String containing '{lookup}': {name.name}")                
-                jh = context.client.compute.find_server(name_or_id=name.name)
-                assert jh, f"No Jumphosts with {lookup} in name found"
-                for key in jh.addresses:
-                    if context.test_name in key:
-                        print(f"String containing '{context.test_name}': {key}")
-                        context.jh.append({"name":name.name,"ip":jh.addresses[key][1]['addr']})
-
+        # servers=context.client.compute.servers()
+        # lookup= context.test_name+"-jh"
+        # context.jh=[]
+        # jh=None   
+        # for name in servers:
+        #     print(f"server {name.name}")
+        #     if lookup in name.name:
+        #         print(f"String containing '{lookup}': {name.name}")                
+        #         jh = context.client.compute.find_server(name_or_id=name.name)
+        #         assert jh, f"No Jumphosts with {lookup} in name found"
+        #         for key in jh.addresses:
+        #             if context.test_name in key:
+        #                 print(f"String containing '{context.test_name}': {key}")
+        #                 context.jh.append({"name":name.name,"ip":jh.addresses[key][1]['addr']})
+        context.jh=tools.collect_jhs(context.client,context.test_name)
 
         print(f"jh {context.jh}")
         print(f"len {len(context.jh)}")  
