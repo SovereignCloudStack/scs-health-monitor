@@ -310,8 +310,10 @@ def create_router(client, name, **kwargs):
     """
     return client.network.create_router(name=name, **kwargs)
 
-def get_availability_zones(client):
-    return client.network.availability_zones()
+# def get_availability_zones(client):
+#     return client.network.availability_zones()
+def get_availability_zones(client) -> list:
+    return list(client.network.availability_zones())
 
 def create_lb(client, name, **kwargs):
     """
