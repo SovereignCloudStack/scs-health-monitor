@@ -500,12 +500,12 @@ class StepsDef:
             security_groups = [{"name": "ssh"}, {"name": "default"}, {"name": ping_sec_group_name}]
             keypair_filename = f"{keypair_name}-private"
 
-            image = context.client.compute.find_image(name_or_id=context.vm_image)
-            assert image, f"Image with name {context.vm_image} doesn't exist"
-            flavor = context.client.compute.find_flavor(name_or_id=context.flavor_name)
-            assert flavor, f"Flavor with name {context.flavor_name} doesn't exist"
-            network = context.client.network.find_network(network_name)
-            assert network, f"Network with name {network_name} doesn't exist"
+            # image = context.client.compute.find_image(name_or_id=context.vm_image)
+            # assert image, f"Image with name {context.vm_image} doesn't exist"
+            # flavor = context.client.compute.find_flavor(name_or_id=context.flavor_name)
+            # assert flavor, f"Flavor with name {context.flavor_name} doesn't exist"
+            # network = context.client.network.find_network(network_name)
+            # assert network, f"Network with name {network_name} doesn't exist"
             keypair = tools.check_keypair_exists(context, keypair_name=keypair_name)
             if not keypair:
                 keypair = context.client.compute.create_keypair(name=keypair_name)
@@ -523,17 +523,24 @@ class StepsDef:
                 security_group = tools.check_security_group_exists(context, security_group['name'])
                 assert security_group, f"Security Group with name {security_group['name']} doesn't exist"
 
-            server = context.client.compute.create_server(
-                name=jumphost_name,
-                image_id=image.id,
-                flavor_id=flavor.id,
-                networks=[{"uuid": network.id}],
-                key_name=keypair.name,
-                security_groups=security_groups,
-            )
-            server = context.client.compute.wait_for_server(server)
-            created_jumphost = context.client.compute.find_server(name_or_id=jumphost_name)
-            assert created_jumphost, f"Jumphost with name {jumphost_name} was not created successfully"
+            # server = context.client.compute.create_server(
+            #     name=jumphost_name,
+            #     image_id=image.id,
+            #     flavor_id=flavor.id,
+            #     networks=[{"uuid": network.id}],
+            #     key_name=keypair.name,
+            #     security_groups=security_groups,
+            # )
+            # server = context.client.compute.wait_for_server(server)
+            # created_jumphost = context.client.compute.find_server(name_or_id=jumphost_name)
+            # assert created_jumphost, f"Jumphost with name {jumphost_name} was not created successfully"
+            server = tools.create_jumphost(context.client,
+                                           jumphost_name,
+                                           network_name,
+                                           keypair_name,
+                                           context.vm_image,
+                                           context.flavor_name,
+                                           security_groups=security_groups)
             context.collector.jumphosts.append(server.id)
 
 
