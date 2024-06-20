@@ -240,10 +240,15 @@ class StepsDef:
             if f"{context.test_name}-network" in network.name:
                 cidr = tools.create_subnets(num=subnet_quantity)
                 for num in range(1, subnet_quantity + 1):
-                    subnet = context.client.network.create_subnet(
-                        name=f"{context.test_name}-subnet-{num}",
-                        network_id=network.id, ip_version=4, cidr=cidr[num - 1])
-                    time.sleep(5)
+                    # subnet = context.client.network.create_subnet(
+                    #     name=f"{context.test_name}-subnet-{num}",
+                    #     network_id=network.id, ip_version=4, cidr=cidr[num - 1])
+                    # time.sleep(5)
+                    subnet = tools.create_subnet(context.client,
+                                                 f"{context.test_name}-subnet-{num}",
+                                                 network_id=network.id,
+                                                 ip_version=4,
+                                                 cidr=cidr[num - 1])
                     context.collector.subnets.append(subnet.id)
                     assert not context.client.network.find_network(name_or_id=subnet), \
                         f"Failed to create subnet with name {subnet}"
