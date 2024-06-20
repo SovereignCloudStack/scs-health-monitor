@@ -1,6 +1,9 @@
 import ipaddress
 import time
 from functools import wraps
+import paramiko
+import openstack
+from libs.PrometheusExporter import CommandTypes, LabelNames
 
 import yaml
 
@@ -208,3 +211,31 @@ def create_security_group_rule(context, sec_group_id: str, protocol: str, port_r
     context.collector.security_groups_rules.append(sec_group_rule.id)
     assert sec_group_rule is not None, f"Rule for security group {sec_group_id} was not created"
     return sec_group_rule
+
+def delete_vms(context, vm_ids: list = None):
+    """
+    """
+    vm_ids = context.collector.virtual_machines if not vm_ids else vm_ids
+    for vm_id in vm_ids:
+        context.client.compute.delete_server(vm_id)
+
+def delete_routers(context, router_ids: list = None):
+    """
+    """
+    router_ids = context.collector.routers if not router_ids else router_ids
+    for router_id in router_ids:
+        print(router_id)
+        context.client.network.delete_router(router_id)
+
+def delete_networks(context, network_ids: list = None):
+    """
+    """
+    network_ids = context.collector.networks if not network_ids else network_ids
+    for network_id in network_ids:
+        print(network_id)
+        context.client.network.delete_network(network_id) 
+
+def delete_all_test_resources(context):
+    """
+    """
+    delete_vms(context)
