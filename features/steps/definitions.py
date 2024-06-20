@@ -64,7 +64,8 @@ class StepsDef:
     @then("I should be able to create {router_quantity:d} routers")
     def create_router(context, router_quantity: int):
         for num in range(1, router_quantity + 1):
-            router = context.client.network.create_router(name=f"{context.test_name}-{num}")
+            #router = context.client.network.create_router(name=f"{context.test_name}-{num}")
+            router = tools.create_router(context.client, f"{context.test_name}-{num}")
             context.collector.routers.append(router.id)
             assert router is not None, f"Failed to create router with name {context.test_name}-{num}"
         assert len(context.collector.routers) == router_quantity,\
