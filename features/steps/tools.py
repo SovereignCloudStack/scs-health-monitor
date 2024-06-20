@@ -5,6 +5,7 @@ import paramiko
 from libs.PrometheusExporter import CommandTypes, LabelNames
 
 import yaml
+from openstack.exceptions import DuplicateResource
 
 
 class Collector:
@@ -203,3 +204,53 @@ def create_security_group_rule(context, sec_group_id: str, protocol: str, port_r
     context.collector.security_groups_rules.append(sec_group_rule.id)
     assert sec_group_rule is not None, f"Rule for security group {sec_group_id} was not created"
     return sec_group_rule
+
+
+def create_vm(client, name, image_name, flavor_name, network_id, **kwargs):
+    # TODO: We can intercept here for the collector to register that a resource is created
+    #  -> Move those openstack client methods to their own class
+    image = client.compute.find_image(name_or_id=image_name)
+    assert image, f"Image with name {image_name} doesn't exist"
+    flavor = client.compute.find_flavor(name_or_id=flavor_name)
+    assert flavor, f"Flavor with name {flavor_name} doesn't exist"
+    try:
+        server = client.compute.create_server(
+            name=name,
+            image_id=image.id,
+            flavor_id=flavor.id,
+            networks=[{"uuid": network_id}],
+            **kwargs
+        )
+        client.compute.wait_for_server(server)
+    except DuplicateResource as e:
+        assert e, "Server already created!"
+        server = None
+    return server
+
+def create_network(client, name):
+    # TODO: We can intercept here for the collector to register that a resource is created
+    network = client.network.create_network(name=name)
+    assert not client.network.find_network(
+        name_or_id=network), f"Network called {network} not present!"
+    return network
+
+def get_availability_zones(client):
+    return client.network.availability_zones()
+
+def create_lb(client, name, **kwargs):
+    """
+    Create Loadbalancer and wait until it's in state active
+    @param client: OpenStack client
+    @param name: lb name
+    @param kwargs: Arguments to be passed to creation command
+    """
+    print(kwargs)
+    assert (client.load_balancer.create_load_balancer(name=name, **kwargs).
+            provisioning_status == "PENDING_CREATE"), f"Expected LB {name} not in creation"
+    lb = client.load_balancer.wait_for_load_balancer(name_or_id=name,
+                                                     status='ACTIVE',
+                                                     failures=['ERROR'], interval=2,
+                                                     wait=300)
+    assert lb.provisioning_status == "ACTIVE", f"Expected LB {name} not Active"
+    assert lb.operating_status == "ONLINE", f"Expected LB {name} not Online"
+    return lb
