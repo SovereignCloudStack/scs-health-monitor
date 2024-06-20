@@ -3,6 +3,7 @@ import time
 from functools import wraps
 import paramiko
 from libs.PrometheusExporter import CommandTypes, LabelNames
+import os
 
 import yaml
 from openstack.exceptions import DuplicateResource
@@ -234,9 +235,9 @@ def create_vm(client, name, image_name, flavor_name, network_id, **kwargs):
         server = None
     return server
 
-def create_jumphost(client, name, network_name, keypair_name, vm_image, flavor_name):
+def create_jumphost(client, name, network_name, keypair_name, vm_image, flavor_name, security_groups):
     # config
-    security_groups = [{"name": "ssh"}, {"name": "default"}]
+    #security_groups = [{"name": "ssh"}, {"name": "default"}]
     keypair_filename = f"{keypair_name}-private"
 
     image = client.compute.find_image(name_or_id=vm_image)
@@ -245,12 +246,15 @@ def create_jumphost(client, name, network_name, keypair_name, vm_image, flavor_n
     assert flavor, f"Flavor with name {flavor_name} doesn't exist"
     network = client.network.find_network(network_name)
     assert network, f"Network with name {network_name} doesn't exist"
-    keypair = client.compute.create_keypair(name=keypair_name)
-    with open(keypair_filename, 'w') as f:
-        f.write("%s" % keypair.private_key)
-    os.chmod(keypair_filename, 0o400)
-    keypair = client.compute.find_keypair(keypair_name)
-    assert keypair, f"Keypair with name {keypair_name} doesn't exist"
+
+    keypair = check_keypair_exists(client, keypair_name=keypair_name)
+    if not keypair:
+        keypair = client.compute.create_keypair(name=keypair_name)
+        assert keypair, f"Keypair with name {keypair_name} doesn't exist"
+        with open(keypair_filename, 'w') as f:
+            f.write("%s" % keypair.private_key)
+        os.chmod(keypair_filename, 0o600)
+
     for security_group in security_groups:
         security_group = client.network.find_security_group(security_group['name'])
         assert security_group, f"Security Group with name {security_group['name']} doesn't exist"
