@@ -300,14 +300,15 @@ def create_subnet(client, name, network_id, ip_version=4, **kwargs):
         f"Failed to create subnet with name {subnet}"
     return subnet
 
-def create_router(client, name):
+def create_router(client, name, **kwargs):
     """
     Create router
+    @type kwargs: additional arguments to be passed to resource create command
     @param client: OpenStack client
     @param name: router name
     @return created router
     """
-    return client.network.create_router(name=name)
+    return client.network.create_router(name=name, **kwargs)
 
 def get_availability_zones(client):
     return client.network.availability_zones()
