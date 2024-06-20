@@ -154,7 +154,7 @@ def check_keypair_exists(client, keypair_name: str):
     """Check if keypair exists
 
     Args:
-        context: Behave context object
+        client: OpenStack client
         keypair_name (str): Name of keypair to check
     
     Returns:
