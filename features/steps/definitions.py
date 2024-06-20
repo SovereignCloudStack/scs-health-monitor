@@ -7,7 +7,7 @@ import string
 import os
 
 #from libs.ConnectivityTests import FullConn
-from openstack.exceptions import DuplicateResource
+#from openstack.exceptions import DuplicateResource
 from libs.ConnectivityClient import SshClient
 import os
 import tools

@@ -207,8 +207,15 @@ def create_security_group_rule(context, sec_group_id: str, protocol: str, port_r
 
 
 def create_vm(client, name, image_name, flavor_name, network_id, **kwargs):
-    # TODO: We can intercept here for the collector to register that a resource is created
-    #  -> Move those openstack client methods to their own class
+    """
+    Create virtual machine
+    @param client: OpenStack client
+    @param name: vm name
+    @param image_name: image name or id to use
+    @param flavor_name: flavor name or id to use
+    @param network_id: network id to attach to
+    @return: created vm
+    """
     image = client.compute.find_image(name_or_id=image_name)
     assert image, f"Image with name {image_name} doesn't exist"
     flavor = client.compute.find_flavor(name_or_id=flavor_name)
@@ -227,9 +234,15 @@ def create_vm(client, name, image_name, flavor_name, network_id, **kwargs):
         server = None
     return server
 
-def create_network(client, name):
-    # TODO: We can intercept here for the collector to register that a resource is created
-    network = client.network.create_network(name=name)
+def create_network(client, name, **kwargs):
+    """
+    Create network
+    @param client: OpenStack client
+    @param name: network name
+    @param kwargs: additional arguments to be passed to resource create command
+    @return: created network
+    """
+    network = client.network.create_network(name=name, **kwargs)
     assert not client.network.find_network(
         name_or_id=network), f"Network called {network} not present!"
     return network
