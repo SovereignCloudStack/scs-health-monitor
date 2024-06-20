@@ -281,9 +281,14 @@ def create_network(client, name, **kwargs):
         name_or_id=network), f"Network called {network} not present!"
     return network
 
-def create_subnet(client, name, **kwargs):
+def list_networks(client, filter: dict=None) -> list:
+    return list(client.list_networks(filter))
+
+def create_subnet(client, name, network_id, ip_version=4, **kwargs):
     """
     Create subnet and check whether it was created
+    @param network_id: network (UUID) the subnet should belong to
+    @param ip_version: ip version
     @param client: OpenStack client
     @param name: router name
     @param kwargs: additional arguments to be passed to resource create command
