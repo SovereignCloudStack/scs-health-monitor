@@ -545,9 +545,8 @@ class StepsDef:
     def initialize(context, jh_quantity):
         servers=context.client.compute.servers()
         lookup= context.test_name+"-jh"
-        context.jh={}
-        jh=None
-        i = 0       
+        context.jh=[]
+        jh=None   
         for name in servers:
             print(f"server {name.name}")
             if lookup in name.name:
@@ -557,12 +556,8 @@ class StepsDef:
                 for key in jh.addresses:
                     if context.test_name in key:
                         print(f"String containing '{context.test_name}': {key}")
-                        context.vm_ip_address= jh.addresses[key][1]['addr']
-                        print(context.vm_ip_address)
-                        #context.jh.append({"name":name.name,"ip":context.vm_ip_address})
-                        context.jh[name.name]=context.vm_ip_address
-                        print(f"dict {context.jh[i].name}")
-                i = i+1
+                        context.jh.append({"name":name.name,"ip":jh.addresses[key][1]['addr']})
+
 
         print(f"jh {context.jh}")
         print(f"len {len(context.jh)}")  
@@ -578,11 +573,13 @@ class StepsDef:
     
 ##### iterating
     @then ("I should be able to SSH into {jh_quantity:d} JHs and test their {conn_test} connectivity")
-    def step_iterate_steps(context, jh_quantity, username:str,conn_test:str):
+    def step_iterate_steps(context, jh_quantity,conn_test:str):
         for i in range(1, jh_quantity + 1): 
             print(f"Iteration {i}")
-            
-            # Invoke the steps programmatically
+            context.vm_ip_address=context.jh[i]['ip']
+            print(f"ip {1}: {context.vm_ip_address} ")
+
+
             context.execute_steps('''
                 Then I should be able to SSH into the VM
                 Then I should be able to collect all VM IPs
