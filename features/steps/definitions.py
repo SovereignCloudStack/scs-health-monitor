@@ -247,7 +247,7 @@ class StepsDef:
                     subnet = tools.create_subnet(context.client,
                                                  f"{context.test_name}-subnet-{num}",
                                                  network_id=network.id,
-                                                 ip_version=4,
+                                                # ip_version=4,
                                                  cidr=cidr[num - 1])
                     context.collector.subnets.append(subnet.id)
                     assert not context.client.network.find_network(name_or_id=subnet), \
@@ -412,8 +412,8 @@ class StepsDef:
             context.collector.floating_ips.remove(ip_id)
         assert len(context.collector.floating_ips) == 0, f"Failed to delete floating IPs"
 
-    @then("I should be able to create {vms_quantity} VMs")
-    def create_vm(context, vms_quantity: str):
+    @then("I should be able to create {vms_quantity:d} VMs")
+    def create_vm(context, vms_quantity: int):
         security_groups = [{"name": "default"}, {"name": "ping-sg"}]
         for network in context.client.network.networks():
             if context.test_name in network.name:
