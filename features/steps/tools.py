@@ -1,8 +1,6 @@
 import ipaddress
 import time
 from functools import wraps
-import paramiko
-from libs.PrometheusExporter import CommandTypes, LabelNames
 
 import yaml
 
@@ -41,7 +39,7 @@ class Tools:
             return False
         elif isinstance(value, bool):
             return value
-        # If the value is a string, check if it is 'True' (case insensitive)
+        # If the value is a string, check if it is 'True' (case-insensitive)
         elif isinstance(value, str):
             return value.lower() == 'true'
         # Otherwise, default to False
@@ -57,6 +55,7 @@ def time_it(func):
         end = time.perf_counter()
         print(f'time taken by {func.__name__} is {end - start}')
         return result, end - start
+
     return wrapper
 
 
@@ -127,6 +126,7 @@ def check_volumes_created(client, test_name):
             assert volume.status == 'available', f"Volume {volume.name} not available"
             return volume.status
 
+
 def collect_ips(client):
     print("collecting ips")
     ports = client.network.ports()
@@ -135,6 +135,7 @@ def collect_ips(client):
         for fixed_ip in port.fixed_ips:
             ips.append(fixed_ip['ip_address'])
     return ips
+
 
 def check_security_group_exists(context, sec_group_name: str):
     """Check if security group exists
@@ -148,6 +149,7 @@ def check_security_group_exists(context, sec_group_name: str):
     """
     return context.client.network.find_security_group(name_or_id=sec_group_name)
 
+
 def check_keypair_exists(context, keypair_name: str):
     """Check if keypair exists
 
@@ -159,6 +161,7 @@ def check_keypair_exists(context, keypair_name: str):
         ~openstack.compute.v2.keypair.Keypair: Found keypair object or None
     """
     return context.client.compute.find_keypair(name_or_id=keypair_name)
+
 
 def create_security_group(context, sec_group_name: str, description: str):
     """Create security group in openstack
@@ -172,14 +175,16 @@ def create_security_group(context, sec_group_name: str, description: str):
         ~openstack.network.v2.security_group.SecurityGroup: The new security group or None
     """
     security_group = context.client.network.create_security_group(
-                name=sec_group_name,
-                description=description
-            )
+        name=sec_group_name,
+        description=description
+    )
     context.collector.security_groups.append(security_group.id)
     assert security_group is not None, f"Security group with name {security_group.name} was not found"
     return security_group
 
-def create_security_group_rule(context, sec_group_id: str, protocol: str, port_range_min: int = None, port_range_max: int = None, direction: str = 'ingress'):
+
+def create_security_group_rule(context, sec_group_id: str, protocol: str, port_range_min: int = None,
+                               port_range_max: int = None, direction: str = 'ingress'):
     """Create security group rule for specified security group
 
     Args:

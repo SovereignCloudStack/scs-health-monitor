@@ -1,10 +1,8 @@
-from prometheus_client import push_to_gateway, REGISTRY
-from steps.tools import Tools, Collector
-from libs.loggerClass import Logger
-from libs.PrometheusExporter import PrometheusExporter, LabelNames
 from libs.DateTimeProvider import DateTimeProvider
 from libs.Formatter import Formatter
-from behave import fixture, use_fixture
+from libs.PrometheusExporter import PrometheusExporter, LabelNames
+from libs.loggerClass import Logger
+from steps.tools import Tools, Collector
 
 DEFAULT_PROMETHEUS_BATCH_NAME = "SCS-Health-Monitor"
 DEFAULT_CLOUD_NAME = "gx"
@@ -43,11 +41,12 @@ def before_all(context):
 
     context.collector = Collector()
 
+
 def after_feature(context, feature):
     """
-        behave frame work hook: code will run after each feature
+        behave framework hook: code will run after each feature
         checks if the feature has failed and if it belongs to the creational or deletional features
-        then it would perform a clean up
+        then it would perform a cleanup
         
         Args:
             context(object): context
@@ -66,6 +65,7 @@ def after_feature(context, feature):
         print(f"Feature '{feature.name}' passed")
     print(f"Feature completed: performing additional actions")
     print(f"this is in the collector {context.collector}")
+
 
 def after_all(context):
     context.stop_time = DateTimeProvider.get_current_utc_time()
