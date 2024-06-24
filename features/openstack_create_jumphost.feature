@@ -9,5 +9,5 @@ Feature: OpenStack Jumphost Creation
         Then I attach a floating ip to server <jumphost_name>
 
   Examples:
-    |jumphost_name|network_name    |keypair_name|security_group_name|
-    |    test-scs-3  |scs-hm-network-1|test-keypair-3|ping-sg|
+    |  jumphost_name |network_name    |keypair_name  |security_group_name|
+    |   test-scs-3   |scs-hm-network-1|test-keypair-3|     ping-sg       |
