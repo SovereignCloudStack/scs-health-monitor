@@ -10,7 +10,7 @@ import openstack
 
 DEFAULT_PROMETHEUS_BATCH_NAME = "SCS-Health-Monitor"
 DEFAULT_CLOUD_NAME = "gx"
-DEFAULT_LOG_LEVEL = "DEBUG"
+DEFAULT_LOG_LEVEL = "INFO"
 
 
 class SetupClass:

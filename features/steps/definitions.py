@@ -515,20 +515,20 @@ class StepsDef:
             security_group = tools.check_security_group_exists(context, security_group['name'])
             assert security_group, f"Security Group with name {security_group['name']} doesn't exist"
 
-            server = context.client.compute.create_server(
-                name=jumphost_name,
-                image_id=image.id,
-                flavor_id=flavor.id,
-                networks=[{"uuid": network.id}],
-                key_name=keypair.name,
-                security_groups=security_groups,
-                wait=True,
-                availability_zone="nova",
-            )
-            server = context.client.compute.wait_for_server(server)
-            created_jumphost = context.client.compute.find_server(name_or_id=jumphost_name)
-            assert created_jumphost, f"Jumphost with name {jumphost_name} was not created successfully"
-            context.collector.jumphosts.append(server.id)
+        server = context.client.compute.create_server(
+            name=jumphost_name,
+            image_id=image.id,
+            flavor_id=flavor.id,
+            networks=[{"uuid": network.id}],
+            key_name=keypair.name,
+            security_groups=security_groups,
+            wait=True,
+            availability_zone="nova",
+        )
+        server = context.client.compute.wait_for_server(server)
+        created_jumphost = context.client.compute.find_server(name_or_id=jumphost_name)
+        assert created_jumphost, f"Jumphost with name {jumphost_name} was not created successfully"
+        context.collector.jumphosts.append(server.id)
 
     ###### from SshSteps:
 
