@@ -2,6 +2,8 @@ from behave import given, when, then
 import openstack
 from openstack.cloud._floating_ip import FloatingIPCloudMixin
 import time
+import random
+import string
 
 from openstack.exceptions import DuplicateResource
 from libs.ConnectivityClient import SshClient
@@ -15,7 +17,7 @@ class StepsDef:
     @given("I connect to OpenStack")
     def given_i_connect_to_openstack(context):
         cloud_name = context.env.get("CLOUD_NAME")
-        context.test_name = context.env.get("TESTS_NAME_IDENTIFICATION", "scs-hm")
+        context.test_name = context.env.get("TESTS_NAME_IDENTIFICATION")
         context.vm_image = context.env.get("VM_IMAGE")
         context.flavor_name = context.env.get("FLAVOR_NAME")
         context.client = openstack.connect(cloud=cloud_name)
@@ -219,13 +221,12 @@ class StepsDef:
 
     @then("I am able to delete all the ports")
     def delete_network_ports(context):
-        for port in context.collector.ports:
-            context.client.network.delete_port(port.id)
-        for network in context.client.network.networks():
-            if f"{context.test_name}" in network.name:
-                remaining_ports = list(context.client.network.ports(network_id=network.id))
-                for port in remaining_ports:
-                    context.client.network.delete_port(port.id)
+        """Delete all ports used in the feature run based on the collector
+
+        Args:
+            context: Behave context object
+        """
+        tools.delete_ports(context)
         assert len(context.collector.ports) == 0, f"failed to delete all ports from all networks under test."
 
     @then('I should be able to create {subnet_quantity:d} subnets')
@@ -403,14 +404,15 @@ class StepsDef:
             context.collector.floating_ips.remove(ip_id)
         assert len(context.collector.floating_ips) == 0, f"Failed to delete floating IPs"
 
-    @then("I should be able to create {vms_quantity} VMs")
-    def create_vm(context, vms_quantity: str):
+    @then("I should be able to create {vms_quantity:d} VMs")
+    def create_vm(context, vms_quantity: int):
         security_groups = [{"name": "default"}, {"name": "ping-sg"}]
+        network_count = 0
         for network in context.client.network.networks():
             if context.test_name in network.name:
+                network_count += 1
                 for num in range(1, vms_quantity + 1):
-                    vm_name = f"{context.test_name}-vm-{num}"
-                    #  vm_name = f"{context.test_name}-vm-{''.join(random.choices(string.ascii_letters + string.digits, k=10))}"
+                    vm_name = f"{context.test_name}-vm-{''.join(random.choices(string.ascii_letters + string.digits, k=10))}"
                     image = context.client.compute.find_image(name_or_id=context.vm_image)
                     assert image, f"Image with name {context.vm_image} doesn't exist"
                     flavor = context.client.compute.find_flavor(name_or_id=context.flavor_name)
@@ -428,11 +430,12 @@ class StepsDef:
                     except DuplicateResource as e:
                         assert e, "Server already created!"
                     time.sleep(5)
+                    context.collector.virtual_machines.append(server.id)
                     created_server = context.client.compute.find_server(name_or_id=vm_name)
-                    context.collector.virtual_machines.append(created_server.id)
                     # context.collector.virtual_machines.append(created_server.ip)
                     assert created_server, f"VM with name {vm_name} was not created successfully"
-        assert len(context.collector.virtual_machines) == vms_quantity, \
+        # TODO rework check to compare with collector eg. len(context.collector.networks)
+        assert len(context.collector.virtual_machines) == vms_quantity * network_count,\
             f"Failed to create the desired amount of VMs"
 
     @then('I should be able to delete the VMs')
@@ -503,7 +506,7 @@ class StepsDef:
             os.chmod(keypair_filename, 0o600)
         ping_sec_group = tools.check_security_group_exists(context, sec_group_name=ping_sec_group_name)
         if not ping_sec_group:
-            print(f"SG not found, creating")
+            context.logger.log_info(f"SG not found, creating")
             ping_sec_group = tools.create_security_group(context, ping_sec_group_name, ping_sec_group_description)
             tools.create_security_group_rule(context, ping_sec_group.id, protocol="icmp")
 
@@ -518,6 +521,8 @@ class StepsDef:
             networks=[{"uuid": network.id}],
             key_name=keypair.name,
             security_groups=security_groups,
+            wait=True,
+            availability_zone="nova",
         )
         server = context.client.compute.wait_for_server(server)
         created_jumphost = context.client.compute.find_server(name_or_id=jumphost_name)
