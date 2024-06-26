@@ -2,6 +2,8 @@ from behave import given, when, then
 import openstack
 from openstack.cloud._floating_ip import FloatingIPCloudMixin
 import time
+import random
+import string
 
 from openstack.exceptions import DuplicateResource
 from libs.ConnectivityClient import SshClient
@@ -225,10 +227,6 @@ class StepsDef:
             context: Behave context object
         """
         tools.delete_ports(context)
-        # for network in context.client.network.networks():
-        #     if f"{context.test_name}" in network.name:
-        #         remaining_ports = list(context.client.network.ports(network_id=network.id))
-        #         tools.delete_ports(context, remaining_ports)
         assert len(context.collector.ports) == 0, f"failed to delete all ports from all networks under test."
 
     @then('I should be able to create {subnet_quantity:d} subnets')
@@ -409,11 +407,12 @@ class StepsDef:
     @then("I should be able to create {vms_quantity:d} VMs")
     def create_vm(context, vms_quantity: int):
         security_groups = [{"name": "default"}, {"name": "ping-sg"}]
+        network_count = 0
         for network in context.client.network.networks():
             if context.test_name in network.name:
+                network_count += 1
                 for num in range(1, vms_quantity + 1):
-                    vm_name = f"{context.test_name}-vm-{num}"
-                    # vm_name = f"{context.test_name}-vm-{''.join(random.choices(string.ascii_letters + string.digits, k=10))}"
+                    vm_name = f"{context.test_name}-vm-{''.join(random.choices(string.ascii_letters + string.digits, k=10))}"
                     image = context.client.compute.find_image(name_or_id=context.vm_image)
                     assert image, f"Image with name {context.vm_image} doesn't exist"
                     flavor = context.client.compute.find_flavor(name_or_id=context.flavor_name)
@@ -435,9 +434,9 @@ class StepsDef:
                     created_server = context.client.compute.find_server(name_or_id=vm_name)
                     # context.collector.virtual_machines.append(created_server.ip)
                     assert created_server, f"VM with name {vm_name} was not created successfully"
-        # TODO not working for current VM creation strategy
-        # assert len(context.collector.virtual_machines) == vms_quantity,\
-        #     f"Failed to create the desired amount of VMs"
+        # TODO rework check to compare with collector eg. len(context.collector.networks)
+        assert len(context.collector.virtual_machines) == vms_quantity * network_count,\
+            f"Failed to create the desired amount of VMs"
 
     @then('I should be able to delete the VMs')
     def delete_vm(context):
