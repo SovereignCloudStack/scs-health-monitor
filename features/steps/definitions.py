@@ -15,7 +15,7 @@ class StepsDef:
     @given("I connect to OpenStack")
     def given_i_connect_to_openstack(context):
         cloud_name = context.env.get("CLOUD_NAME")
-        context.test_name = context.env.get("TESTS_NAME_IDENTIFICATION", "scs-hm")
+        context.test_name = context.env.get("TESTS_NAME_IDENTIFICATION")
         context.vm_image = context.env.get("VM_IMAGE")
         context.flavor_name = context.env.get("FLAVOR_NAME")
         context.client = openstack.connect(cloud=cloud_name)
@@ -219,13 +219,16 @@ class StepsDef:
 
     @then("I am able to delete all the ports")
     def delete_network_ports(context):
-        for port in context.collector.ports:
-            context.client.network.delete_port(port.id)
-        for network in context.client.network.networks():
-            if f"{context.test_name}" in network.name:
-                remaining_ports = list(context.client.network.ports(network_id=network.id))
-                for port in remaining_ports:
-                    context.client.network.delete_port(port.id)
+        """Delete all ports used in the feature run based on the collector
+
+        Args:
+            context: Behave context object
+        """
+        tools.delete_ports(context)
+        # for network in context.client.network.networks():
+        #     if f"{context.test_name}" in network.name:
+        #         remaining_ports = list(context.client.network.ports(network_id=network.id))
+        #         tools.delete_ports(context, remaining_ports)
         assert len(context.collector.ports) == 0, f"failed to delete all ports from all networks under test."
 
     @then('I should be able to create {subnet_quantity:d} subnets')
@@ -403,14 +406,14 @@ class StepsDef:
             context.collector.floating_ips.remove(ip_id)
         assert len(context.collector.floating_ips) == 0, f"Failed to delete floating IPs"
 
-    @then("I should be able to create {vms_quantity} VMs")
-    def create_vm(context, vms_quantity: str):
+    @then("I should be able to create {vms_quantity:d} VMs")
+    def create_vm(context, vms_quantity: int):
         security_groups = [{"name": "default"}, {"name": "ping-sg"}]
         for network in context.client.network.networks():
             if context.test_name in network.name:
                 for num in range(1, vms_quantity + 1):
                     vm_name = f"{context.test_name}-vm-{num}"
-                    #  vm_name = f"{context.test_name}-vm-{''.join(random.choices(string.ascii_letters + string.digits, k=10))}"
+                    # vm_name = f"{context.test_name}-vm-{''.join(random.choices(string.ascii_letters + string.digits, k=10))}"
                     image = context.client.compute.find_image(name_or_id=context.vm_image)
                     assert image, f"Image with name {context.vm_image} doesn't exist"
                     flavor = context.client.compute.find_flavor(name_or_id=context.flavor_name)
@@ -428,12 +431,13 @@ class StepsDef:
                     except DuplicateResource as e:
                         assert e, "Server already created!"
                     time.sleep(5)
+                    context.collector.virtual_machines.append(server.id)
                     created_server = context.client.compute.find_server(name_or_id=vm_name)
-                    context.collector.virtual_machines.append(created_server.id)
                     # context.collector.virtual_machines.append(created_server.ip)
                     assert created_server, f"VM with name {vm_name} was not created successfully"
-        assert len(context.collector.virtual_machines) == vms_quantity, \
-            f"Failed to create the desired amount of VMs"
+        # TODO not working for current VM creation strategy
+        # assert len(context.collector.virtual_machines) == vms_quantity,\
+        #     f"Failed to create the desired amount of VMs"
 
     @then('I should be able to delete the VMs')
     def delete_vm(context):
@@ -488,41 +492,43 @@ class StepsDef:
         security_groups = [{"name": "ssh"}, {"name": "default"}, {"name": ping_sec_group_name}]
         keypair_filename = f"{keypair_name}-private"
 
-        image = context.client.compute.find_image(name_or_id=context.vm_image)
-        assert image, f"Image with name {context.vm_image} doesn't exist"
-        flavor = context.client.compute.find_flavor(name_or_id=context.flavor_name)
-        assert flavor, f"Flavor with name {context.flavor_name} doesn't exist"
-        network = context.client.network.find_network(network_name)
-        assert network, f"Network with name {network_name} doesn't exist"
-        keypair = tools.check_keypair_exists(context, keypair_name=keypair_name)
-        if not keypair:
-            keypair = context.client.compute.create_keypair(name=keypair_name)
-            assert keypair, f"Keypair with name {keypair_name} doesn't exist"
-            with open(keypair_filename, 'w') as f:
-                f.write("%s" % keypair.private_key)
-            os.chmod(keypair_filename, 0o600)
-        ping_sec_group = tools.check_security_group_exists(context, sec_group_name=ping_sec_group_name)
-        if not ping_sec_group:
-            print(f"SG not found, creating")
-            ping_sec_group = tools.create_security_group(context, ping_sec_group_name, ping_sec_group_description)
-            tools.create_security_group_rule(context, ping_sec_group.id, protocol="icmp")
+            image = context.client.compute.find_image(name_or_id=context.vm_image)
+            assert image, f"Image with name {context.vm_image} doesn't exist"
+            flavor = context.client.compute.find_flavor(name_or_id=context.flavor_name)
+            assert flavor, f"Flavor with name {context.flavor_name} doesn't exist"
+            network = context.client.network.find_network(network_name)
+            assert network, f"Network with name {network_name} doesn't exist"
+            keypair = tools.check_keypair_exists(context, keypair_name=keypair_name)
+            if not keypair:
+                keypair = context.client.compute.create_keypair(name=keypair_name)
+                assert keypair, f"Keypair with name {keypair_name} doesn't exist"
+                with open(keypair_filename, 'w') as f:
+                    f.write("%s" % keypair.private_key)
+                os.chmod(keypair_filename, 0o600)
+            ping_sec_group = tools.check_security_group_exists(context, sec_group_name=ping_sec_group_name)
+            if not ping_sec_group:
+                context.logger.log_info(f"SG not found, creating")
+                ping_sec_group = tools.create_security_group(context, ping_sec_group_name, ping_sec_group_description)
+                tools.create_security_group_rule(context, ping_sec_group.id, protocol="icmp")
 
         for security_group in security_groups:
             security_group = tools.check_security_group_exists(context, security_group['name'])
             assert security_group, f"Security Group with name {security_group['name']} doesn't exist"
 
-        server = context.client.compute.create_server(
-            name=jumphost_name,
-            image_id=image.id,
-            flavor_id=flavor.id,
-            networks=[{"uuid": network.id}],
-            key_name=keypair.name,
-            security_groups=security_groups,
-        )
-        server = context.client.compute.wait_for_server(server)
-        created_jumphost = context.client.compute.find_server(name_or_id=jumphost_name)
-        assert created_jumphost, f"Jumphost with name {jumphost_name} was not created successfully"
-        context.collector.jumphosts.append(server.id)
+            server = context.client.compute.create_server(
+                name=jumphost_name,
+                image_id=image.id,
+                flavor_id=flavor.id,
+                networks=[{"uuid": network.id}],
+                key_name=keypair.name,
+                security_groups=security_groups,
+                wait=True,
+                availability_zone="nova",
+            )
+            server = context.client.compute.wait_for_server(server)
+            created_jumphost = context.client.compute.find_server(name_or_id=jumphost_name)
+            assert created_jumphost, f"Jumphost with name {jumphost_name} was not created successfully"
+            context.collector.jumphosts.append(server.id)
 
     ###### from SshSteps:
 

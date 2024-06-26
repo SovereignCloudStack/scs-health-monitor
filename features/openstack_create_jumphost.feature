@@ -9,4 +9,4 @@ Feature: OpenStack Jumphost Creation
 
   Examples:
     |jumphost_name|   network_name    |keypair_name|
-    |   test-jh   |  scs-hm-network-1 |test-keypair|
+    | default-jh  | scs-hm-jh-default |test-keypair|
