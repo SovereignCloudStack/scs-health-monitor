@@ -524,8 +524,6 @@ class StepsDef:
         assert created_jumphost, f"Jumphost with name {jumphost_name} was not created successfully"
         context.collector.jumphosts.append(server.id)
 
-    ###### from SshSteps:
-
     @given("I have deployed a VM with IP {vm_ip_address}")
     def initialize(context, vm_ip_address: str):
         context.vm_ip_address = vm_ip_address
