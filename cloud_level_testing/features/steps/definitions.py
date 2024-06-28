@@ -562,6 +562,7 @@ class StepsDef:
 
     @then("I should be able to SSH into the VM")
     def test_ssh_connection(context):
+        time.sleep(70)
         ssh_client = SshClient(context.vm_ip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger)
         if not ssh_client:
             context.assertline = f"could not access VM {context.vm_ip_address}"
@@ -601,3 +602,4 @@ class StepsDef:
         server = context.client.compute.find_server(name_or_id=server_name)
         assert server, f"Server with name {server_name} not found"
         ip = context.client.add_auto_ip(server=server, wait=True)
+        context.vm_ip_address = ip

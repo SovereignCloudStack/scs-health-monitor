@@ -39,7 +39,7 @@ class Collector:
                 self.ports,
                 self.enabled_ports,
                 self.disabled_ports,
-                self.virtual_machines_ip
+                self.virtual_machines_ip,
             )
         )
 
@@ -75,7 +75,6 @@ def time_it(func):
         end = time.perf_counter()
         print(f"time taken by {func.__name__} is {end - start}")
         return result, end - start
-
 
     return wrapper
 
@@ -288,7 +287,7 @@ def delete_vms(context, vm_ids: list = None):
 
     Args:
         context: Behave context object
-        vm_ids (list): list of VM IDs to delete, if None, collector VM IDs are be used
+        vm_ids (list): list of VM IDs to delete, if None, collector VM IDs are used
     """
     vm_ids = context.collector.virtual_machines[:] if not vm_ids else vm_ids
     if vm_ids:
@@ -296,7 +295,11 @@ def delete_vms(context, vm_ids: list = None):
         for vm_id in vm_ids:
             if context.client.delete_server(vm_id, wait=True):
                 context.logger.log_info(f"VM {vm_id} deleted")
-                context.collector.virtual_machines.remove(vm_id)
+                try:
+                    context.collector.virtual_machines.remove(vm_id)
+                except ValueError:
+                    if vm_id in context.collector.jumphosts:
+                        context.collector.jumphosts.remove(vm_id)
             else:
                 context.logger.log_info(f"FAIL! VM {vm_id} wasn't deleted")
 
@@ -306,7 +309,7 @@ def delete_routers(context, router_ids: list = None):
 
     Args:
         context: Behave context object
-        router_ids (list): list of router IDs to delete, if None, collector router IDs are be used
+        router_ids (list): list of router IDs to delete, if None, collector router IDs are used
     """
     router_ids = context.collector.routers[:] if not router_ids else router_ids
     if router_ids:
@@ -372,6 +375,15 @@ def delete_ports(context, port_ids: list = None):
             else:
                 context.logger.log_info(f"FAIL! Port {port_id} wasn't deleted")
 
+def delete_jumphosts(context, jumphost_ids: list = None):
+    """Delete jumphosts based on list of IDs or jumphost IDs in collector
+
+    Args:
+        context: Behave context object
+        jumphost_ids (list): list of jumphost IDs to delete, if None, collector jumphost IDs are used
+    """
+    jumphost_ids = context.collector.jumphosts[:] if not jumphost_ids else jumphost_ids
+    delete_vms(context, jumphost_ids)
 
 def delete_all_test_resources(context):
     """Delete all resources used in the feature run
@@ -380,6 +392,7 @@ def delete_all_test_resources(context):
         context: Behave context object
     """
     delete_vms(context)
+    delete_jumphosts(context)
     delete_ports(context)
     delete_subnets(context)
     delete_networks(context)
