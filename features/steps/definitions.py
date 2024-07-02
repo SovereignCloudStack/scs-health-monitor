@@ -572,14 +572,16 @@ class StepsDef:
     def step_iterate_steps(context, jh_quantity,conn_test:str):
         for i in range(1, jh_quantity + 1):
             context.vm_ip_address=context.jh[i-1]['ip']
-            print(f"ip {1}: {context.vm_ip_address} ")
-
-
+            print(f"ip {1}: {context.vm_ip_address}, {conn_test} ")
+            # try:
             context.execute_steps('''
                 Then I should be able to SSH into the VM
                 Then I should be able to collect all VM IPs
                 And be able to ping all IPs to test {conn_test} connectivity
             ''')
+            # except:
+            #     print("other")
+
 
     @then("I should be able to SSH into the VM")
     def test_ssh_connection(context):
@@ -603,11 +605,14 @@ class StepsDef:
         tot_ips=len(context.ips)
         for ip in context.ips:
             result,assertline=context.ssh_client.test_internet_connectivity(conn_test, ip,tot_ips)
-        print (result)
-        #assert result[1] == 0, assertline
+        print(f"result {result}")
+        # if result[1] != 0:
+        #     raise tools.CustomAssertionError(assertline)
+        assert result[1] == 0, assertline
+
 
     @then("be able to communicate with {ip} to test {conn_test} connectivity")
-    def test_domain_connectivity(context, ip: str, conn_test: str):
+    def test_domain_connectivity(context, ip: str, conn_test: str):       
         result,assertline=context.ssh_client.test_internet_connectivity(conn_test, ip)
         assert result[1] == 0, assertline
 

@@ -7,7 +7,6 @@ from libs.PrometheusExporter import CommandTypes, LabelNames
 
 import yaml
 
-
 class Collector:
 
     def __init__(self):
