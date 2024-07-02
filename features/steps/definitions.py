@@ -529,11 +529,6 @@ class StepsDef:
         assert created_jumphost, f"Jumphost with name {jumphost_name} was not created successfully"
         context.collector.jumphosts.append(server.id)
 
-    @then('I attach a floating ip to server {server_name}')
-    def attach_floating_ip_to_server(context, server_name):
-        server = context.client.compute.find_server(name_or_id=server_name)
-        assert server, f"Server with name {server_name} not found"
-        ip = context.client.add_auto_ip(server=server, wait=True)
 
     @given("I have deployed a VM with IP {vm_ip_address}")
     def initialize(context, vm_ip_address: str):
@@ -562,7 +557,8 @@ class StepsDef:
         print(f"jh {context.jh}")
         print(f"len {len(context.jh)}")  
         print("•ᴗ•")
-        assert len(context.jh)>=jh_quantity, f"Not enough Jumphost with {lookup} in name found"
+        assert len(context.jh)>=jh_quantity, f"Not enough Jumphost with name found"
+#        assert len(context.jh)>=jh_quantity, f"Not enough Jumphost with {lookup} in name found"
        
     
     @given("I have a private key at {vm_private_ssh_key_path} for {username}")
@@ -625,33 +621,3 @@ class StepsDef:
         server = context.client.compute.find_server(name_or_id=server_name)
         assert server, f"Server with name {server_name} not found"
         ip = context.client.add_auto_ip(server=server, wait=True)
-
-#########testing
-
-@given('I want to test iterations')
-def testing(context):
-    print("Testing iterations")
-
-@then('step one')
-def step_one(context):
-    print(f"Step one executed")
-
-@then('step two')
-def step_two(context):
-    print(f"Step two executed")
-
-@then('step three')
-def step_three(context):
-    print(f"Step three executed")
-
-@then('iterate steps {quantity:d} times')
-def step_iterate_steps(context, quantity):
-    for i in range(1, quantity + 1):  # Iterate the specified number of times
-        print(f"Iteration {i}")
-        
-        # Invoke the steps programmatically
-        context.execute_steps('''
-            Then step one
-            Then step two
-            Then step three
-        ''')

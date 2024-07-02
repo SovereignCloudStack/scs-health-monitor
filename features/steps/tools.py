@@ -192,6 +192,7 @@ def collect_ips(client):
 def collect_jhs(client, test_name):
     servers=client.compute.servers()
     lookup= test_name+"-jh"
+    lookup="default-jh" # just for testing delete
     jhs=[]
     jh=None   
     for name in servers:

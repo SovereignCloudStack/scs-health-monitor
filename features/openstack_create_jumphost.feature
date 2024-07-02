@@ -8,14 +8,9 @@ Feature: OpenStack Jumphost Creation
         Then I attach a floating ip to server <jumphost_name>
 
   Examples:
-<<<<<<< HEAD
     |jumphost_name|   network_name    |keypair_name|
     | default-jh  | scs-hm-jh-default |test-keypair|
-    | scs-hm-jh-1 |  scs-hm-jh-network-1 |jh_sshKey   |
-    | scs-hm-jh-2 |  scs-hm-jh-network-1 |jh_sshKey   |
-=======
-    |jumphost_name|   network_name       |keypair_name|
     | scs-hm-jh-4 |  scs-hm-jh-network-1 | create_keypair |
->>>>>>> dict of jumphosts
+
 
 
