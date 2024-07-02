@@ -572,7 +572,8 @@ class StepsDef:
     def step_iterate_steps(context, jh_quantity,conn_test:str):
         for i in range(1, jh_quantity + 1): 
             print(f"Iteration {i}")
-            context.vm_ip_address=context.jh[i]['ip']
+            print("-----")
+            context.vm_ip_address=context.jh[i-1]['ip']
             print(f"ip {1}: {context.vm_ip_address} ")
 
 
