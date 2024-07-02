@@ -7,7 +7,6 @@ from libs.PrometheusExporter import CommandTypes, LabelNames
 
 import yaml
 
-
 class Collector:
 
     def __init__(self):
@@ -175,13 +174,37 @@ def check_volumes_created(client, test_name):
 
 
 def collect_ips(client):
-    print("collecting ips")
-    ports = client.network.ports()
     ips = []
-    for port in ports:
-        for fixed_ip in port.fixed_ips:
-            ips.append(fixed_ip["ip_address"])
+    print("collecting ips")
+    floating_ips = client.network.ips()
+    print("floating")
+    for ip in floating_ips:
+        ips.append(ip.floating_ip_address)
+        print(ip.floating_ip_address)
+    # ports = client.network.ports()    
+    # for port in ports:
+    #     for fixed_ip in port.fixed_ips:
+    #         ips.append(fixed_ip['ip_address'])
     return ips
+
+
+def collect_jhs(client, test_name):
+    servers=client.compute.servers()
+    lookup= test_name+"-jh"
+    lookup="default-jh" # just for testing delete
+    jhs=[]
+    jh=None   
+    for name in servers:
+        print(f"server {name.name}")
+        if lookup in name.name:
+            print(f"String containing '{lookup}': {name.name}")                
+            jh = client.compute.find_server(name_or_id=name.name)
+            assert jh, f"No Jumphosts with {lookup} in name found"
+            for key in jh.addresses:
+                if test_name in key:
+                    print(f"String containing '{test_name}': {key}")
+                    jhs.append({"name":name.name,"ip":jh.addresses[key][1]['addr']})
+    return jhs
 
 
 def check_security_group_exists(context, sec_group_name: str):

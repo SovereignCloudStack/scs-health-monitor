@@ -1,6 +1,5 @@
 import time
 
-
 class TimeRecorder:
     @staticmethod
     def record_time(func, on_success=None, on_fail=None, *args, **kwargs):
