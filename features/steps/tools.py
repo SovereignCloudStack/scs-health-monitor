@@ -173,7 +173,6 @@ def check_volumes_created(client, test_name):
             assert volume.status == "available", f"Volume {volume.name} not available"
             return volume.status
 
-
 def collect_ips(client):
     ips = []
     assertline=None
@@ -185,7 +184,6 @@ def collect_ips(client):
         assertline= f"No ips found"
     return ips, assertline
 
-
 def collect_jhs(client, test_name):
     servers=client.compute.servers()
     lookup= test_name+"-jh"
@@ -193,7 +191,7 @@ def collect_jhs(client, test_name):
     jhs=[]
     jh=None
     for name in servers:
-        print(f"server {name.name}")
+        Logger.log.log_debug(f"server {name.name}")
         if lookup in name.name:
             print(f"String containing '{lookup}': {name.name}")                
             jh = client.compute.find_server(name_or_id=name.name)
