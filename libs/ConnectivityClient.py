@@ -2,7 +2,7 @@ import paramiko
 from prometheus_client import Counter, Histogram
 from libs.TimeRecorder import TimeRecorder
 from libs.PrometheusExporter import CommandTypes, LabelNames
-
+from libs.loggerClass import Logger
 
 
 class MetricLabels:
@@ -35,7 +35,7 @@ class SshClient:
     conn_test_count = Counter(MetricName.PING_TOT, MetricDescription.PING_TOT,
                                     [MetricLabels.STATUS_CODE, MetricLabels.HOST,
                                     MetricLabels.ENDPOINT, LabelNames.COMMAND_LABEL])
-    def __init__(self, host, username, key_path):
+    def __init__(self, host, username, key_path, logger:Logger):
         self.host = host
         self.username = username
         self.client = paramiko.SSHClient()
@@ -43,6 +43,7 @@ class SshClient:
         self.client.set_missing_host_key_policy(policy)
         self.private_key = paramiko.RSAKey.from_private_key_file(key_path)
         self.ping_stat=[0,0,0] # retries, fairure, total
+        self.logger = logger
 
     def log(self, level, message):
         """
@@ -135,7 +136,7 @@ class SshClient:
                 self.ping_stat[1]=self.ping_stat[1]+1
                 self.conn_test_count.labels(ResultStatusCodes.FAILURE, self.host, ip, conn_test).inc()
                 self.assertline=f"Failed to test internet connectivity for server {self.host}, Failures: {self.ping_stat[1]}/{self.ping_stat[2]}, Retries: {self.ping_stat[0]}"
-            print(self.ping_stat)
+            self.logger.log_debug(f"ping status [retries,failures,total] {self.ping_stat}")
         test_connectivity()    
         return self.ping_stat,self.assertline
 
@@ -156,7 +157,7 @@ class SshClient:
             Raises:
                 Assertion Failed: Failed to test internet connectivity for endpoint, if IP address is in wrong format or unreachable
         """
-        print(ip_str)
+        self.logger.log_debug("create script ip string{ip_str}")
         script_content = f"""
             #!/bin/bash
 
@@ -205,5 +206,5 @@ class SshClient:
                 Exception:
         """
         directory = self.execute_command("pwd")
-        #self.log("DEBUG",f"Current working directory on server {self.host}: {directory}")
+        self.logger.log_info(f"Current working directory on server {self.host}: {directory}")
     

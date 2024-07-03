@@ -3,7 +3,6 @@ import logging
 
 class Logger:
     _instance = None
-
     def __new__(cls,**kwargs):
         if cls._instance is None:
             print('Creating the object')
@@ -11,7 +10,6 @@ class Logger:
         return cls._instance
 
     def __init__(self, name="root", level=logging.DEBUG, log_file="logfile.log"):
-        print(f"!level {level}")
         self.instance = logging.getLogger(name)
         self.instance.setLevel(level)
         self.formatter = logging.Formatter(

@@ -176,11 +176,14 @@ def check_volumes_created(client, test_name):
 
 def collect_ips(client):
     ips = []
+    assertline=None
     floating_ips = client.network.ips()
     for ip in floating_ips:
         ips.append(ip.floating_ip_address)
         print(ip.floating_ip_address)
-    return ips
+    if len(ips)==0:
+        assertline= f"No ips found"
+    return ips, assertline
 
 
 def collect_jhs(client, test_name):
@@ -188,17 +191,18 @@ def collect_jhs(client, test_name):
     lookup= test_name+"-jh"
     lookup="default-jh" # just for testing delete
     jhs=[]
-    jh=None   
+    jh=None
     for name in servers:
         print(f"server {name.name}")
         if lookup in name.name:
             print(f"String containing '{lookup}': {name.name}")                
             jh = client.compute.find_server(name_or_id=name.name)
             assert jh, f"No Jumphosts with {lookup} in name found"
-            for key in jh.addresses:
-                if test_name in key:
-                    print(f"String containing '{test_name}': {key}")
-                    jhs.append({"name":name.name,"ip":jh.addresses[key][1]['addr']})
+            if jh:
+                for key in jh.addresses:
+                    if test_name in key:
+                        print(f"String containing '{test_name}': {key}")
+                        jhs.append({"name":name.name,"ip":jh.addresses[key][1]['addr']})
     return jhs
 
 
