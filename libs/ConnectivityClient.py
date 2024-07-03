@@ -47,7 +47,7 @@ class SshClient:
 
     def log(self, level, message):
         """
-            Takes an instance of the Logger Class to log if level is greater than min log level 
+            configures behave to print log information greater than min log level
 
             Args:
                 level: (string)

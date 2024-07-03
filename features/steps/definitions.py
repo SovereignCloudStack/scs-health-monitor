@@ -9,7 +9,7 @@ from openstack.exceptions import DuplicateResource
 from libs.ConnectivityClient import SshClient
 import os
 import tools
-
+from libs.loggerClass import Logger
 
 class StepsDef:
     collector = tools.Collector()
@@ -537,7 +537,7 @@ class StepsDef:
 
     @given("I have deployed {jh_quantity:d} JHs")
     def initialize(context, jh_quantity):
-        context.jh=tools.collect_jhs(context.client,context.test_name)
+        context.jh=tools.collect_jhs(context.client,context.test_name, context.logger)
         assert len(context.jh)>=jh_quantity, f"Not enough Jumphost with name found"
 
     
@@ -566,10 +566,9 @@ class StepsDef:
 
     @then("I should be able to SSH into the VM")
     def test_ssh_connection(context):
-        print(f"try to access {context.vm_ip_address}")
         ssh_client = SshClient(context.vm_ip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger)
         if not ssh_client:
-            context.assertline = f"could not access VM"
+            context.assertline = f"could not access VM {context.vm_ip_address}"
         ssh_client.connect()
         context.ssh_client = ssh_client
 
@@ -579,7 +578,7 @@ class StepsDef:
 
     @then("I should be able to collect all VM IPs")
     def collect_ips(context):
-        context.ips,assertline=tools.collect_ips(context.client)
+        context.ips,assertline=tools.collect_ips(context.client, context.logger)
         if assertline != None:
             context.assertline = assertline
     
