@@ -8,7 +8,6 @@ class Logger:
         if cls._instance is None:
             print('Creating the object')
             cls._instance = super(Logger, cls).__new__(cls)
-            # Put any initialization here.
         return cls._instance
 
     def __init__(self, name="root", level=logging.DEBUG, log_file="logfile.log"):
