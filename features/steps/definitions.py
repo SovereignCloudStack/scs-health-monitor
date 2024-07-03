@@ -534,31 +534,12 @@ class StepsDef:
     def initialize(context, vm_ip_address: str):
         context.vm_ip_address = vm_ip_address
     
-    # @given("I have deployed a JH with the name {jh_name}")
-    # def initialize(context, jh_name: str):
+
     @given("I have deployed {jh_quantity:d} JHs")
     def initialize(context, jh_quantity):
-        # servers=context.client.compute.servers()
-        # lookup= context.test_name+"-jh"
-        # context.jh=[]
-        # jh=None   
-        # for name in servers:
-        #     print(f"server {name.name}")
-        #     if lookup in name.name:
-        #         print(f"String containing '{lookup}': {name.name}")                
-        #         jh = context.client.compute.find_server(name_or_id=name.name)
-        #         assert jh, f"No Jumphosts with {lookup} in name found"
-        #         for key in jh.addresses:
-        #             if context.test_name in key:
-        #                 print(f"String containing '{context.test_name}': {key}")
-        #                 context.jh.append({"name":name.name,"ip":jh.addresses[key][1]['addr']})
         context.jh=tools.collect_jhs(context.client,context.test_name)
-
-        print(f"jh {context.jh}")
-        print(f"len {len(context.jh)}")  
-        print("•ᴗ•")
         assert len(context.jh)>=jh_quantity, f"Not enough Jumphost with name found"
-#        assert len(context.jh)>=jh_quantity, f"Not enough Jumphost with {lookup} in name found"
+
        
     
     @given("I have a private key at {vm_private_ssh_key_path} for {username}")
@@ -567,21 +548,16 @@ class StepsDef:
         context.vm_username = username
         assert os.path.isfile(vm_private_ssh_key_path)
     
-##### iterating
     @then ("I should be able to SSH into {jh_quantity:d} JHs and test their {conn_test} connectivity")
     def step_iterate_steps(context, jh_quantity,conn_test:str):
         for i in range(1, jh_quantity + 1):
             context.vm_ip_address=context.jh[i-1]['ip']
             print(f"ip {1}: {context.vm_ip_address}, {conn_test} ")
-            # try:
             context.execute_steps('''
                 Then I should be able to SSH into the VM
                 Then I should be able to collect all VM IPs
                 And be able to ping all IPs to test {conn_test} connectivity
-            ''')
-            # except:
-            #     print("other")
-
+                ''')
 
     @then("I should be able to SSH into the VM")
     def test_ssh_connection(context):
@@ -605,9 +581,6 @@ class StepsDef:
         tot_ips=len(context.ips)
         for ip in context.ips:
             result,assertline=context.ssh_client.test_internet_connectivity(conn_test, ip,tot_ips)
-        print(f"result {result}")
-        # if result[1] != 0:
-        #     raise tools.CustomAssertionError(assertline)
         assert result[1] == 0, assertline
 
 

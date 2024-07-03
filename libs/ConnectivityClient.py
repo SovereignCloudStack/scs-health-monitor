@@ -2,6 +2,7 @@ import paramiko
 from prometheus_client import Counter, Histogram
 from libs.TimeRecorder import TimeRecorder
 from libs.PrometheusExporter import CommandTypes, LabelNames
+from libs.loggerClass import Logger
 
 
 class MetricLabels:
@@ -124,6 +125,9 @@ class SshClient:
         """
         self.assertline=""
         def test_connectivity():
+            logging= Logger()
+            logging.log_debug('testing logger')
+
             script = self.create_script(ip,5,3)
             output = self.execute_command(script)
             self.ping_stat[2]=tot_ips
@@ -204,5 +208,5 @@ class SshClient:
                 Exception:
         """
         directory = self.execute_command("pwd")
-        print(f"Current working directory on server {self.host}: {directory}")
+        #self.log("DEBUG",f"Current working directory on server {self.host}: {directory}")
     

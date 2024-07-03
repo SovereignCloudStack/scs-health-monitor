@@ -4,6 +4,7 @@ from functools import wraps
 import paramiko
 import openstack
 from libs.PrometheusExporter import CommandTypes, LabelNames
+from libs.loggerClass import Logger
 
 import yaml
 
@@ -175,16 +176,10 @@ def check_volumes_created(client, test_name):
 
 def collect_ips(client):
     ips = []
-    print("collecting ips")
     floating_ips = client.network.ips()
-    print("floating")
     for ip in floating_ips:
         ips.append(ip.floating_ip_address)
         print(ip.floating_ip_address)
-    # ports = client.network.ports()    
-    # for port in ports:
-    #     for fixed_ip in port.fixed_ips:
-    #         ips.append(fixed_ip['ip_address'])
     return ips
 
 
