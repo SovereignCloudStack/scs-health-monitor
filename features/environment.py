@@ -46,9 +46,6 @@ def before_all(context):
 
     context.collector = Collector()
 
-    # userdata = context.config.userdata
-    # continue_after_failed = userdata.getbool("runner.continue_after_failed_step", False)
-    # Scenario.continue_after_failed_step = continue_after_failed
 
 def after_feature(context, feature):
     """

@@ -432,9 +432,7 @@ class StepsDef:
                     time.sleep(5)
                     context.collector.virtual_machines.append(server.id)
                     created_server = context.client.compute.find_server(name_or_id=vm_name)
-                    # context.collector.virtual_machines.append(created_server.ip)
                     assert created_server, f"VM with name {vm_name} was not created successfully"
-        # TODO rework check to compare with collector eg. len(context.collector.networks)
         assert len(context.collector.virtual_machines) == vms_quantity * network_count,\
             f"Failed to create the desired amount of VMs"
 
@@ -538,7 +536,7 @@ class StepsDef:
     @given("I have deployed {jh_quantity:d} JHs")
     def initialize(context, jh_quantity):
         context.jh=tools.collect_jhs(context.client,context.test_name, context.logger)
-        assert len(context.jh)>=jh_quantity, f"Not enough Jumphost with name found"
+        assert len(context.jh) >= jh_quantity, f"Not enough Jumphost with name found"
 
     
     @given("I have a private key at {vm_private_ssh_key_path} for {username}")
@@ -550,10 +548,9 @@ class StepsDef:
     @then ("I should be able to SSH into {jh_quantity:d} JHs and test their {conn_test} connectivity")
     def step_iterate_steps(context, jh_quantity,conn_test:str):
         context.assertline=None
-        for i in range(1, jh_quantity + 1):
+        for i in range(0, jh_quantity):
             if not isinstance(context.jh,str):
-                context.vm_ip_address=context.jh[i-1]['ip']            
-                #print(f"ip {1}: {context.vm_ip_address}, {conn_test} ")           
+                context.vm_ip_address = context.jh[i]['ip']                      
                 context.execute_steps('''
                     Then I should be able to SSH into the VM
                     Then I should be able to collect all VM IPs
@@ -561,7 +558,6 @@ class StepsDef:
                     ''')
             else:
                 context.assertline = f"No matching Jumphosts was found"
-                print(f"assert {context.assertline}")
         assert context.assertline == None, context.assertline
 
     @then("I should be able to SSH into the VM")
@@ -578,16 +574,16 @@ class StepsDef:
 
     @then("I should be able to collect all VM IPs")
     def collect_ips(context):
-        context.ips,assertline=tools.collect_ips(context.client, context.logger)
+        context.ips,assertline = tools.collect_ips(context.client, context.logger)
         if assertline != None:
             context.assertline = assertline
     
     @then("be able to ping all IPs to test {conn_test} connectivity") 
     def ping_ips_test(context, conn_test: str):
-        tot_ips=len(context.ips)
+        tot_ips = len(context.ips)
         if len(context.ips) > 0:
             for ip in context.ips:
-                result,assertline=context.ssh_client.test_internet_connectivity(conn_test, ip,tot_ips)
+                result,assertline = context.ssh_client.test_internet_connectivity(conn_test, ip,tot_ips)
             if result[1] != 0:
                 context.assertline = assertline
 

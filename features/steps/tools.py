@@ -180,16 +180,16 @@ def collect_ips(client,logger:Logger):
     for ip in floating_ips:
         ips.append(ip.floating_ip_address)
         logger.log_info(f"found {ip.floating_ip_address}")
-    if len(ips)==0:
-        assertline= f"No ips found"
+    if len(ips) == 0:
+        assertline = f"No ips found"
     return ips, assertline
 
 def collect_jhs(client, test_name,logger:Logger):
-    servers=client.compute.servers()
-    lookup= test_name+"-jh"
-    lookup="default-jh" # just for testing delete later
-    jhs=[]
-    jh=None
+    servers = client.compute.servers()
+    lookup = test_name+"-jh"
+    lookup = "default-jh" # just for testing delete later
+    jhs = []
+    jh = None
     for name in servers:
         logger.log_info(f"found jh server {name.name}")
         if lookup in name.name:
