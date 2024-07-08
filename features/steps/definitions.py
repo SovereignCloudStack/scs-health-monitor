@@ -432,9 +432,12 @@ class StepsDef:
                     time.sleep(5)
                     context.collector.virtual_machines.append(server.id)
                     created_server = context.client.compute.find_server(name_or_id=vm_name)
+                    # context.collector.virtual_machines.append(created_server.ip)
                     assert created_server, f"VM with name {vm_name} was not created successfully"
+        # TODO rework check to compare with collector eg. len(context.collector.networks)
         assert len(context.collector.virtual_machines) == vms_quantity * network_count,\
             f"Failed to create the desired amount of VMs"
+
 
     @then('I should be able to delete the VMs')
     def delete_vm(context):
