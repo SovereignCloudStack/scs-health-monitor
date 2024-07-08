@@ -6,6 +6,8 @@ from libs.DateTimeProvider import DateTimeProvider
 from libs.Formatter import Formatter
 from behave import fixture, use_fixture
 
+
+
 import openstack
 
 DEFAULT_PROMETHEUS_BATCH_NAME = "SCS-Health-Monitor"
@@ -29,8 +31,7 @@ class TeardownClass:
     def teardown(self):
         # Your teardown logic here
         pass
-
-
+   
 def before_all(context):
     context.start_time = DateTimeProvider.get_current_utc_time()
 
@@ -74,6 +75,7 @@ def after_feature(context, feature):
     context.logger.log_info(f"Feature completed: performing additional actions")
     if context.collector:
         context.logger.log_info(f"this is in the collector {context.collector}")
+
 
 def after_all(context):
     context.stop_time = DateTimeProvider.get_current_utc_time()

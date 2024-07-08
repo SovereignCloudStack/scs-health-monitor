@@ -9,7 +9,7 @@ from openstack.exceptions import DuplicateResource
 from libs.ConnectivityClient import SshClient
 import os
 import tools
-
+from libs.loggerClass import Logger
 
 class StepsDef:
     collector = tools.Collector()
@@ -438,6 +438,7 @@ class StepsDef:
         assert len(context.collector.virtual_machines) == vms_quantity * network_count,\
             f"Failed to create the desired amount of VMs"
 
+
     @then('I should be able to delete the VMs')
     def delete_vm(context):
         vms = context.collector.virtual_machines if len(context.collector.virtual_machines) else list()
@@ -529,20 +530,44 @@ class StepsDef:
         assert created_jumphost, f"Jumphost with name {jumphost_name} was not created successfully"
         context.collector.jumphosts.append(server.id)
 
-    ###### from SshSteps:
 
     @given("I have deployed a VM with IP {vm_ip_address}")
     def initialize(context, vm_ip_address: str):
         context.vm_ip_address = vm_ip_address
+    
 
-    @given("I have a private key at {vm_private_ssh_key_path}")
-    def check_private_key_exists(context, vm_private_ssh_key_path: str):
+    @given("I have deployed {jh_quantity:d} JHs")
+    def initialize(context, jh_quantity):
+        context.jh=tools.collect_jhs(context.client,context.test_name, context.logger)
+        assert len(context.jh) >= jh_quantity, f"Not enough Jumphost with name found"
+
+    
+    @given("I have a private key at {vm_private_ssh_key_path} for {username}")
+    def check_private_key_exists(context, vm_private_ssh_key_path: str, username:str):
         context.vm_private_ssh_key_path = vm_private_ssh_key_path
+        context.vm_username = username
         assert os.path.isfile(vm_private_ssh_key_path)
+    
+    @then ("I should be able to SSH into {jh_quantity:d} JHs and test their {conn_test} connectivity")
+    def step_iterate_steps(context, jh_quantity,conn_test:str):
+        context.assertline=None
+        for i in range(0, jh_quantity):
+            if not isinstance(context.jh,str):
+                context.vm_ip_address = context.jh[i]['ip']                      
+                context.execute_steps('''
+                    Then I should be able to SSH into the VM
+                    Then I should be able to collect all VM IPs
+                    And be able to ping all IPs to test {conn_test} connectivity
+                    ''')
+            else:
+                context.assertline = f"No matching Jumphosts was found"
+        assert context.assertline == None, context.assertline
 
-    @then("I should be able to SSH into the VM as user {username}")
-    def test_ssh_connection(context, username):
-        ssh_client = SshClient(context.vm_ip_address, username, context.vm_private_ssh_key_path)
+    @then("I should be able to SSH into the VM")
+    def test_ssh_connection(context):
+        ssh_client = SshClient(context.vm_ip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger)
+        if not ssh_client:
+            context.assertline = f"could not access VM {context.vm_ip_address}"
         ssh_client.connect()
         context.ssh_client = ssh_client
 
@@ -552,19 +577,22 @@ class StepsDef:
 
     @then("I should be able to collect all VM IPs")
     def collect_ips(context):
-        context.ips = tools.collect_ips(context.client)
-
-    @then("be able to ping all IPs")
-    def ping_ips_test(context):
+        context.ips,assertline = tools.collect_ips(context.client, context.logger)
+        if assertline != None:
+            context.assertline = assertline
+    
+    @then("be able to ping all IPs to test {conn_test} connectivity") 
+    def ping_ips_test(context, conn_test: str):
         tot_ips = len(context.ips)
-        for ip in context.ips:
-            result, assertline = context.ssh_client.test_internet_connectivity(ip, tot_ips)
-        print(result)
-        assert result[1] == 0, assertline
+        if len(context.ips) > 0:
+            for ip in context.ips:
+                result,assertline = context.ssh_client.test_internet_connectivity(conn_test, ip,tot_ips)
+            if result[1] != 0:
+                context.assertline = assertline
 
-    @then("be able to communicate with {ip}")
-    def test_domain_connectivity(context, ip: str):
-        result, assertline = context.ssh_client.test_internet_connectivity(ip)
+    @then("be able to communicate with {ip} to test {conn_test} connectivity")
+    def test_domain_connectivity(context, ip: str, conn_test: str):       
+        result,assertline=context.ssh_client.test_internet_connectivity(conn_test, ip)
         assert result[1] == 0, assertline
 
     @then("close the connection")
