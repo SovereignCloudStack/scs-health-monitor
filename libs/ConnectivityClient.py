@@ -7,6 +7,26 @@ from libs.PrometheusExporter import CommandTypes, LabelNames
 
 from libs.loggerClass import Logger
 
+import os
+import time
+import subprocess
+import json
+from decimal import Decimal
+
+RPRE = 'your_rpre_value'
+REDIRS = ['your_redirs_value']
+NOAZS = 3  # Number of Availability Zones
+NONETS = 3  # Number of Networks
+NOVMS = 6  # Number of VMs
+IPS = ['ip1', 'ip2', 'ip3', 'ip4', 'ip5', 'ip6']
+FLOATS = ['float1', 'float2', 'float3']
+DEFLTUSER = 'default_user'
+DATADIR = 'your_data_directory'
+KEYPAIRS = ['keypair1', 'keypair2']
+LOGFILE = 'your_log_file.log'
+BOLD = '\033[1m'
+NORM = '\033[0m'
+BANDWIDTH = []
 
 class MetricLabels:
     STATUS_CODE = "status_code"
@@ -289,3 +309,105 @@ class SshClient:
                 )
                 time.sleep(timeout)
         return False
+    
+########################## iperf
+
+    def create_wait_script():
+        """
+            creates a listener on host
+        """
+        script_content = f"""
+        #!/bin/bash
+        let MAXW=100
+        if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 5; sync; fi
+        while test $MAXW -ge 1; do
+        if type -p "$1">/dev/null; then exit 0; fi
+        let MAXW-=1
+        sleep 1
+        if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 1; fi
+        done
+        exit 1
+        """
+        script_path = f'{RPRE}wait' # RPRE =~/script_    <file>.sh like waitscript
+        with open(script_path, 'w') as file:
+            file.write(script_content)
+        os.chmod(script_path, 0o755)
+        return script_path
+
+    for VM in range(NONETS):
+            TGT = IPS[VM] if IPS[VM] else IPS[VM + NONETS]
+            SRC = IPS[VM + NOVMS - NONETS] if IPS[VM + NOVMS - NONETS] else IPS[VM + NOVMS - 2 * NONETS]
+
+    def transfer_wait_script(FLT, pno):
+        scp_command = f"scp -o UserKnownHostsFile=~/.ssh/known_hosts.{RPRE} -o PasswordAuthentication=no " \
+                    f"-o StrictHostKeyChecking=no -i {DATADIR}/{KEYPAIRS[1]} -P {pno} -p {RPRE}wait {DEFLTUSER}@{FLT}:"
+        subprocess.run(scp_command, shell=True, stdout=subprocess.DEVNULL)
+
+
+    def run_iperf3_test(SRC, TGT, FLT, pno):
+        iperf_command = f"ssh -o UserKnownHostsFile=~/.ssh/known_hosts.{RPRE} -o PasswordAuthentication=no " \
+                        f"-o StrictHostKeyChecking=no -i {DATADIR}/{KEYPAIRS[1]} -p {pno} {DEFLTUSER}@{FLT} " \
+                        f"./{RPRE}wait iperf3; iperf3 -t5 -J -c {TGT}"
+        try:
+            IPJSON = subprocess.check_output(iperf_command, shell=True)
+        except subprocess.CalledProcessError:
+            print(" retry ", end='')
+            time.sleep(16)
+
+
+def parse_and_log_results(IPJSON, SRC, TGT, VM):
+    if LOGFILE:
+        with open(LOGFILE, 'a') as log:
+            log.write(f"{IPJSON}\n")
+ 
+    ipjson_dict = json.loads(IPJSON)
+    SENDBW = int(Decimal(ipjson_dict['end']['sum_sent']['bits_per_second']) / 1048576)
+    RECVBW = int(Decimal(ipjson_dict['end']['sum_received']['bits_per_second']) / 1048576)
+    HUTIL = f"{ipjson_dict['end']['cpu_utilization_percent']['host_total']:.1f}%"
+    RUTIL = f"{ipjson_dict['end']['cpu_utilization_percent']['remote_total']:.1f}%"
+ 
+    print(f" {SRC} <-> {TGT}: {BOLD}{SENDBW} Mbps {RECVBW} Mbps {HUTIL} {RUTIL}{NORM}")
+    if LOGFILE:
+        with open(LOGFILE, 'a') as log:
+            log.write(f"IPerf3: {SRC}-{TGT}: {SENDBW} Mbps {RECVBW} Mbps {HUTIL} {RUTIL}\n")
+ 
+    BANDWIDTH.extend([SENDBW, RECVBW])
+    SBW = float(Decimal(SENDBW) / 1000)
+    RBW = float(Decimal(RECVBW) / 1000)
+
+
+def run_iperf_test():
+    create_wait_script()
+    red = REDIRS[NOAZS - 1].strip().split()
+    pno = red[-1].split(',')[1]
+ 
+    print("IPerf3 tests:")
+    for VM in range(NONETS):
+        TGT = IPS[VM] if IPS[VM] else IPS[VM + NONETS]
+        SRC = IPS[VM + NOVMS - NONETS] if IPS[VM + NOVMS - NONETS] else IPS[VM + NOVMS - 2 * NONETS]
+ 
+        if not SRC or not TGT or SRC == TGT:
+            print(f"#ERROR: Skip test {SRC} <-> {TGT}")
+            if LOGFILE:
+                with open(LOGFILE, 'a') as log:
+                    log.write(f"IPerf3: {SRC}-{TGT}: skipped\n")
+            continue
+ 
+        FLT = FLOATS[VM % NOAZS]
+        transfer_wait_script(FLT, pno)
+ 
+        if LOGFILE:
+            with open(LOGFILE, 'a') as log:
+                log.write(f"ssh -o \"UserKnownHostsFile=~/.ssh/known_hosts.{RPRE}\" -o \"PasswordAuthentication=no\" "
+                          f"-o \"StrictHostKeyChecking=no\" -i {DATADIR}/{KEYPAIRS[1]} -p {pno} {DEFLTUSER}@{FLT} "
+                          f"iperf3 -t5 -J -c {TGT}\n")
+ 
+        IPJSON = run_iperf3_test(SRC, TGT, FLT, pno)
+        if IPJSON:
+            parse_and_log_results(IPJSON, SRC, TGT, VM)
+ 
+    os.remove(f'{RPRE}wait')
+    print("\b")
+ 
+if __name__ == "__main__":
+    run_iperf_test()
