@@ -124,21 +124,6 @@ Accepted connection from 127.0.0.1, port 39768
 * creates a temporary script ${RPRE}wait that  is made executable and checks for the availability of a specified command `\$1` (e.g. iperf3).
 * waits for the system boot to finish if necessary and retries for up to 100 seconds if the command is not found
 
-```
-cat >${RPRE}wait <<EOT
-#!/bin/bash
-let MAXW=100
-if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 5; sync; fi
-while test \$MAXW -ge 1; do
-  if type -p "\$1">/dev/null; then exit 0; fi
-  let MAXW-=1
-  sleep 1
-  if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 1; fi
-done
-exit 1
-EOT
-chmod +x ${RPRE}wait
-```
 
 
 [#calcRedirs.. L3441-L3462](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L3443-L3462):
