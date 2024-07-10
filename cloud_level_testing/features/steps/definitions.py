@@ -620,39 +620,16 @@ class StepsDef:
         ping_command = f"ping -D -c50 {context.vm_ip_address} "
         ping_magic = "| tail -n +2 | head -n -4 |awk '{split($0,a,\" \"); print a[1], a[8]}'"
         ping_command = ping_command + ping_magic
-        timestamp_command = f"date +%s.%N | cut -b1-17"
 
         ping_server_ssh_client = SshClient("213.131.230.11", "ubuntu", context.vm_private_ssh_key_path)
         ping_server_ssh_client.connect()
-        # ping_output = ping_server_ssh_client.execute_command(ping_command)
-
-        # calc approx start
-        # start_timestamp = context.ssh_client.execute_command(timestamp_command)
-        # print(f"Calc started at {start_timestamp}")
 
         tasks = [
             (context.ssh_client.execute_command, calc_command, True),
             (ping_server_ssh_client.execute_command, ping_command),
         ]
         results = tools.run_parallel(tasks)
-
-        # p1 = Process(target=ping_server_ssh_client.execute_command, args=(ping_command,))
-        # p2 = Process(target=context.ssh_client.execute_command, args=(calc_command, True,))
         
-
-        # try:
-        #     ping_output = asyncio.get_event_loop().run_until_complete(run_async_command("213.131.230.11", "ubuntu", context.vm_private_ssh_key_path, ping_command))
-        # except (OSError, asyncssh.Error) as exc:
-        #     print('SSH connection failed: ' + str(exc))
-        
-        
-        # output = context.ssh_client.execute_command(calc_command, ignore_error_output=True)
-        # print(f"Command output is {output}")
-
-        # end_timestamp = context.ssh_client.execute_command(timestamp_command)
-        # print(f"Calc ended at {end_timestamp}")
-        # elapsed = float(end_timestamp) - float(start_timestamp)
-        # print(f"Calc took {elapsed}")
         tools.parse_ping_output(results)
-        # ping_server_ssh_client.close_conn()
+        ping_server_ssh_client.close_conn()
         context.ssh_client.close_conn()
