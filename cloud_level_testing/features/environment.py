@@ -1,12 +1,8 @@
-from prometheus_client import push_to_gateway, REGISTRY
-from steps.tools import Tools, Collector, delete_all_test_resources
+from cloud_level_testing.features.steps.tools import Tools, Collector, delete_all_test_resources
 from libs.loggerClass import Logger
 from libs.PrometheusExporter import PrometheusExporter, LabelNames
 from libs.DateTimeProvider import DateTimeProvider
 from libs.Formatter import Formatter
-from behave import fixture, use_fixture
-
-
 
 import openstack
 

@@ -177,11 +177,11 @@ sandbox/
 
 
 ## SSH keys
-features/SSH/test_ssh
-features/SSH/test_ssh.pub
+cloud_level_testing/features/SSH/test_ssh
+cloud_level_testing/features/SSH/test_ssh.pub
 sshKey
 sshKey.pub
-features/ssh_check_connectivity_katha.feature
+cloud_level_testing/features/ssh_check_connectivity_katha.feature
 test-keypair-private
 jhSshKey-private
 jh_sshKey-private

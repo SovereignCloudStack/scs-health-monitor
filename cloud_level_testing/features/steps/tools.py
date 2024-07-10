@@ -1,9 +1,6 @@
 import ipaddress
 import time
 from functools import wraps
-import paramiko
-import openstack
-from libs.PrometheusExporter import CommandTypes, LabelNames
 from libs.loggerClass import Logger
 
 import yaml
