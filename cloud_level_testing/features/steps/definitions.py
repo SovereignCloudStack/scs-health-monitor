@@ -5,8 +5,12 @@ import time
 import random
 import string
 
+import asyncio, asyncssh
+from multiprocessing import Process
+from concurrent.futures import ThreadPoolExecutor
+
 from openstack.exceptions import DuplicateResource
-from libs.ConnectivityClient import SshClient
+from libs.ConnectivityClient import SshClient, run_async_command
 import os
 from cloud_level_testing.features.steps import tools
 
@@ -562,10 +566,13 @@ class StepsDef:
 
     @then("I should be able to SSH into the VM")
     def test_ssh_connection(context):
-        time.sleep(70)
         ssh_client = SshClient(context.vm_ip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger)
         if not ssh_client:
             context.assertline = f"could not access VM {context.vm_ip_address}"
+        if ssh_client.check_server_readiness(attempts=10):
+            context.logger.log_info(f"Server ready for SSH connections")
+        else:
+            context.logger.log_info(f"Server SSH connection failed to establish")
         ssh_client.connect()
         context.ssh_client = ssh_client
 
@@ -603,3 +610,49 @@ class StepsDef:
         assert server, f"Server with name {server_name} not found"
         ip = context.client.add_auto_ip(server=server, wait=True)
         context.vm_ip_address = ip
+        context.logger.log_info(f"Attached floating ip: {ip}")
+    
+    @then('I start calculating 4000 digits of pi on VM')
+    def calculate_pi_on_vm(context):
+
+        # config
+        calc_command = "date +%s.%N | cut -b1-17 && time echo 'scale=4000; 4*a(1)' | bc -l >/dev/null 2>&1 && date +%s.%N | cut -b1-17"
+        ping_command = f"ping -D -c50 {context.vm_ip_address} "
+        ping_magic = "| tail -n +2 | head -n -4 |awk '{split($0,a,\" \"); print a[1], a[8]}'"
+        ping_command = ping_command + ping_magic
+        timestamp_command = f"date +%s.%N | cut -b1-17"
+
+        ping_server_ssh_client = SshClient("213.131.230.11", "ubuntu", context.vm_private_ssh_key_path)
+        ping_server_ssh_client.connect()
+        # ping_output = ping_server_ssh_client.execute_command(ping_command)
+
+        # calc approx start
+        # start_timestamp = context.ssh_client.execute_command(timestamp_command)
+        # print(f"Calc started at {start_timestamp}")
+
+        tasks = [
+            (context.ssh_client.execute_command, calc_command, True),
+            (ping_server_ssh_client.execute_command, ping_command),
+        ]
+        results = tools.run_parallel(tasks)
+
+        # p1 = Process(target=ping_server_ssh_client.execute_command, args=(ping_command,))
+        # p2 = Process(target=context.ssh_client.execute_command, args=(calc_command, True,))
+        
+
+        # try:
+        #     ping_output = asyncio.get_event_loop().run_until_complete(run_async_command("213.131.230.11", "ubuntu", context.vm_private_ssh_key_path, ping_command))
+        # except (OSError, asyncssh.Error) as exc:
+        #     print('SSH connection failed: ' + str(exc))
+        
+        
+        # output = context.ssh_client.execute_command(calc_command, ignore_error_output=True)
+        # print(f"Command output is {output}")
+
+        # end_timestamp = context.ssh_client.execute_command(timestamp_command)
+        # print(f"Calc ended at {end_timestamp}")
+        # elapsed = float(end_timestamp) - float(start_timestamp)
+        # print(f"Calc took {elapsed}")
+        tools.parse_ping_output(results)
+        # ping_server_ssh_client.close_conn()
+        context.ssh_client.close_conn()

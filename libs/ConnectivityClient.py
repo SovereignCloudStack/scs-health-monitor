@@ -1,28 +1,38 @@
 import paramiko
+import paramiko.ssh_exception
+import time
 from prometheus_client import Counter, Histogram
 from libs.TimeRecorder import TimeRecorder
 from libs.PrometheusExporter import CommandTypes, LabelNames
+
+import asyncio, asyncssh, sys
 from libs.loggerClass import Logger
 
 
 class MetricLabels:
-    STATUS_CODE = 'status_code'
-    HOST = 'host'
-    ENDPOINT = 'endpoint'
+    STATUS_CODE = "status_code"
+    HOST = "host"
+    ENDPOINT = "endpoint"
+
 
 class ResultStatusCodes:
-    SUCCESS = '200'
-    FAILURE = '400'
+    SUCCESS = "200"
+    FAILURE = "400"
+
 
 class MetricName:
-    SSH_TOT = 'ssh_connections_total'
-    SSH_CONN_DUR = 'ssh_connect_duration_seconds'
-    PING_TOT='connectivity_tests_total'
+    SSH_TOT = "ssh_connections_total"
+    SSH_CONN_TEST_TOT = "ssh_connectivity_tests_total"
+    SSH_CONN_DUR = "ssh_connect_duration_seconds"
+    PING_TOT = "connectivity_tests_total"
+
 
 class MetricDescription:
-    SSH_TOT = 'Total number of SSH connections'
-    SSH_CONN_DUR = 'Durations of SSH connections'
-    PING_TOT= 'Total number of connectivity tests'
+    SSH_TOT = "Total number of SSH connections"
+    SSH_CONN_TEST_TOT = "Total number of SSH connectivity tests"
+    SSH_CONN_DUR = "Durations of SSH connections"
+    PING_TOT = "Total number of connectivity tests"
+
 
 
 class SshClient:
@@ -42,7 +52,7 @@ class SshClient:
         policy = paramiko.AutoAddPolicy()
         self.client.set_missing_host_key_policy(policy)
         self.private_key = paramiko.RSAKey.from_private_key_file(key_path)
-        self.ping_stat=[0,0,0] # retries, fairure, total
+        self.ping_stat = [0, 0, 0]  # retries, fairure, total
         self.logger = logger
 
     def log(self, level, message):
@@ -78,7 +88,9 @@ class SshClient:
             return output
 
         except Exception as e:
-            raise RuntimeError(f"Failed to execute command '{command}' on server {self.host}: {e}")
+            raise RuntimeError(
+                f"Failed to execute command '{command}' on server {self.host}: {e}"
+            )
 
     def connect(self):
         """
@@ -94,23 +106,35 @@ class SshClient:
         """
 
         def on_success(duration):
-            self.conn_total_count.labels(ResultStatusCodes.SUCCESS, self.host, CommandTypes.SSH).inc()
-            self.conn_duration.labels(ResultStatusCodes.SUCCESS, self.host, CommandTypes.SSH).observe(duration)
+            self.conn_total_count.labels(
+                ResultStatusCodes.SUCCESS, self.host, CommandTypes.SSH
+            ).inc()
+            self.conn_duration.labels(
+                ResultStatusCodes.SUCCESS, self.host, CommandTypes.SSH
+            ).observe(duration)
             #self.assertline=f"SSH connection to server {self.host} established"
+
         def on_fail(duration, exception):
-            self.conn_total_count.labels(ResultStatusCodes.FAILURE, self.host, CommandTypes.SSH).inc()
-            self.conn_duration.labels(ResultStatusCodes.FAILURE, self.host, CommandTypes.SSH).observe(duration)
-            #self.assertline=f"SSH connection to server {self.host} failed"           
+            self.conn_total_count.labels(
+                ResultStatusCodes.FAILURE, self.host, CommandTypes.SSH
+            ).inc()
+            self.conn_duration.labels(
+                ResultStatusCodes.FAILURE, self.host, CommandTypes.SSH
+            ).observe(duration)
+
+#self.assertline=f"SSH connection to server {self.host} failed"           
         TimeRecorder.record_time(
-            lambda: self.client.connect(self.host, username=self.username, pkey=self.private_key),
+            lambda: self.client.connect(
+                self.host, username=self.username, pkey=self.private_key
+            ),
             on_success=on_success,
-            on_fail=on_fail
+            on_fail=on_fail,
         )
 
     def close_conn(self):
         self.client.close()
 
-    def test_internet_connectivity(self, conn_test, ip='8.8.8.8', tot_ips=1):
+    def test_internet_connectivity(self, conn_test, ip="8.8.8.8", tot_ips=1):
         """
             Tests connectivity provided IP address by executing bashscript on vm and tracks failures and retries
 
@@ -124,9 +148,10 @@ class SshClient:
             Raises:
                 Assertion Failed: Failed to test internet connectivity for endpoint, if IP address is in wrong format or unreachable
         """
-        self.assertline=""
+        self.assertline = ""
+
         def test_connectivity():
-            script = self.create_script(ip,5,3)
+            script = self.create_script(ip, 5, 3)
             output = self.execute_command(script)
             self.ping_stat[2]=tot_ips
             if output !='2':
@@ -193,7 +218,7 @@ class SshClient:
         command = "sudo apt-get update -y && sudo apt-get install -y iputils-ping"
         response = self.execute_command(command, True)
         return response
-    
+
     def print_working_directory(self):
         """
             prints current working dir on vm 
@@ -207,4 +232,31 @@ class SshClient:
         """
         directory = self.execute_command("pwd")
         self.logger.log_info(f"Current working directory on server {self.host}: {directory}")
-    
+
+    def check_ssh_ready(self) -> bool:
+        """Check if ssh is ready on a provisioned server"""
+        try:
+            self.connect()
+            self.close_conn()
+            return True
+        except (
+            paramiko.ssh_exception.NoValidConnectionsError,
+            paramiko.ssh_exception.SSHException,
+        ):
+            return False
+        except Exception as e:
+            print(f"Error occurred: {e}")
+            return False
+
+    def check_server_readiness(self, attempts, timeout: int = 10) -> bool:
+        for i in range(attempts):
+            if self.check_ssh_ready():
+                return True
+            else:
+                time.sleep(timeout)
+        return False
+
+async def run_async_command(host, username, key, command):
+    async with asyncssh.connect(host, client_keys=[key], username=username) as conn:
+        result = await conn.run(command)
+        return result

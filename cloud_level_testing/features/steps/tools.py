@@ -2,6 +2,8 @@ import ipaddress
 import time
 from functools import wraps
 from libs.loggerClass import Logger
+from concurrent.futures import ThreadPoolExecutor
+
 
 import yaml
 
@@ -397,3 +399,34 @@ def delete_all_test_resources(context):
     delete_subnets(context)
     delete_networks(context)
     delete_routers(context)
+
+def parse_ping_output(data: list):
+    """
+    """
+    # print(data)
+    start_time, end_time = get_timestamps(data[0])
+
+
+def get_timestamps(data: str) -> tuple[str, str]:
+    """Return start and end timestamps from string data
+
+    Args:
+        data (str): input string with timestamp data
+
+    Returns:
+        tuple (str, str): start and end timestamps as str
+    """
+    split_data = data.split(sep='\n')
+    assert len(split_data) == 2, f"Timestamp returned invalid data: {split_data}"
+    return split_data[0], split_data[1]
+
+def run_parallel(tasks, timeout: int = 100) -> list[str]:
+    """
+    """
+    results = []
+    with ThreadPoolExecutor() as executor:
+        running_tasks = [executor.submit(*task) for task in tasks]
+        for running_task in running_tasks:
+            res = running_task.result(timeout=timeout)
+            results.append(res)
+    return results
