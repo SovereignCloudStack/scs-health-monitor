@@ -253,6 +253,7 @@ class SshClient:
             if self.check_ssh_ready():
                 return True
             else:
+                self.logger.log_info(f"Server unavailable, retrying in {timeout} seconds.")
                 time.sleep(timeout)
         return False
 

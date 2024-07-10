@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import yaml
 
+
 class Collector:
 
     def __init__(self):
@@ -171,9 +172,10 @@ def check_volumes_created(client, test_name):
             assert volume.status == "available", f"Volume {volume.name} not available"
             return volume.status
 
-def collect_ips(client,logger:Logger):
+
+def collect_ips(client, logger: Logger):
     ips = []
-    assertline=None
+    assertline = None
     floating_ips = client.network.ips()
     for ip in floating_ips:
         ips.append(ip.floating_ip_address)
@@ -182,23 +184,26 @@ def collect_ips(client,logger:Logger):
         assertline = f"No ips found"
     return ips, assertline
 
-def collect_jhs(client, test_name,logger:Logger):
+
+def collect_jhs(client, test_name, logger: Logger):
     servers = client.compute.servers()
-    lookup = test_name+"-jh"
-    lookup = "default-jh" # just for testing delete later
+    lookup = test_name + "-jh"
+    lookup = "default-jh"  # just for testing delete later
     jhs = []
     jh = None
     for name in servers:
         logger.log_info(f"found jh server {name.name}")
         if lookup in name.name:
-            logger.log_debug(f"String containing '{lookup}': {name.name}")                
+            logger.log_debug(f"String containing '{lookup}': {name.name}")
             jh = client.compute.find_server(name_or_id=name.name)
             assert jh, f"No Jumphosts with {lookup} in name found"
             if jh:
                 for key in jh.addresses:
                     if test_name in key:
                         logger.log_debug(f"String containing '{test_name}': {key}")
-                        jhs.append({"name":name.name,"ip":jh.addresses[key][1]['addr']})
+                        jhs.append(
+                            {"name": name.name, "ip": jh.addresses[key][1]["addr"]}
+                        )
     return jhs
 
 
@@ -377,6 +382,7 @@ def delete_ports(context, port_ids: list = None):
             else:
                 context.logger.log_info(f"FAIL! Port {port_id} wasn't deleted")
 
+
 def delete_jumphosts(context, jumphost_ids: list = None):
     """Delete jumphosts based on list of IDs or jumphost IDs in collector
 
@@ -386,6 +392,7 @@ def delete_jumphosts(context, jumphost_ids: list = None):
     """
     jumphost_ids = context.collector.jumphosts[:] if not jumphost_ids else jumphost_ids
     delete_vms(context, jumphost_ids)
+
 
 def delete_all_test_resources(context):
     """Delete all resources used in the feature run
@@ -400,11 +407,16 @@ def delete_all_test_resources(context):
     delete_networks(context)
     delete_routers(context)
 
+
 def parse_ping_output(data: list):
-    """
-    """
-    # print(data)
+    """ """
     start_time, end_time = get_timestamps(data[0])
+    calc_time = float(end_time) - float(start_time)
+    ping_data = data[1]
+    print(ping_data)
+    print(f"Calc start: {start_time}")
+    print(f"Calc took approx {calc_time}")
+    print(f"Calc ended: {end_time}")
 
 
 def get_timestamps(data: str) -> tuple[str, str]:
@@ -416,13 +428,13 @@ def get_timestamps(data: str) -> tuple[str, str]:
     Returns:
         tuple (str, str): start and end timestamps as str
     """
-    split_data = data.split(sep='\n')
+    split_data = data.split(sep="\n")
     assert len(split_data) == 2, f"Timestamp returned invalid data: {split_data}"
     return split_data[0], split_data[1]
 
+
 def run_parallel(tasks, timeout: int = 100) -> list[str]:
-    """
-    """
+    """ """
     results = []
     with ThreadPoolExecutor() as executor:
         running_tasks = [executor.submit(*task) for task in tasks]

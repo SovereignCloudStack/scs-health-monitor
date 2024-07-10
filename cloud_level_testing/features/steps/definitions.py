@@ -617,11 +617,11 @@ class StepsDef:
 
         # config
         calc_command = "date +%s.%N | cut -b1-17 && time echo 'scale=4000; 4*a(1)' | bc -l >/dev/null 2>&1 && date +%s.%N | cut -b1-17"
-        ping_command = f"ping -D -c50 {context.vm_ip_address} "
-        ping_magic = "| tail -n +2 | head -n -4 |awk '{split($0,a,\" \"); print a[1], a[8]}'"
-        ping_command = ping_command + ping_magic
+        ping_command = f"ping -D -c35 {context.vm_ip_address} "
+        ping_parse_magic = "| tail -n +2 | head -n -4 |awk '{split($0,a,\" \"); print a[1], a[8]}'"
+        ping_command = ping_command + ping_parse_magic
 
-        ping_server_ssh_client = SshClient("213.131.230.11", "ubuntu", context.vm_private_ssh_key_path)
+        ping_server_ssh_client = SshClient("213.131.230.11", "ubuntu", context.vm_private_ssh_key_path, context.logger)
         ping_server_ssh_client.connect()
 
         tasks = [
