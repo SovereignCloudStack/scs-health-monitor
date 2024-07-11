@@ -673,5 +673,11 @@ class StepsDef:
                 context.ssh_client.run_iperf_test(context.test_name,context.ips, 2)
                 #SshClient.run_iperf_test(SshClient,context.test_name,context.ips)
             else:
-                context.assertline = f"No matching Jumphosts was found"
+                context.assertline = f"No matching hosts found"
         assert context.assertline == None, context.assertline
+
+    @then('I should be able to delete the local checkup script')
+    def cleanup_temp_script(context):
+        assertline = tools.delete_wait_script(context.test_name)
+        assert assertline == None, assertline
+    

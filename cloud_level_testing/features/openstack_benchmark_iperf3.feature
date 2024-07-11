@@ -9,6 +9,7 @@ Feature: Benchmark Iperf3 VMs
     Then I should be able to create a checkup script for <conn_test> locally
     Then I should be able to collect all VM IPs
     Then I should be able to SSH into <network_quantity> VMs and perform <conn_test> test
+    Then I should be able to delete the local checkup script
 
    
    

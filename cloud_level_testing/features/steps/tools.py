@@ -181,7 +181,7 @@ def collect_ips(client, logger: Logger):
     floating_ips = client.network.ips()
     for ip in floating_ips:
         ips.append(ip.floating_ip_address)
-        logger.log_info(f"found {ip.floating_ip_address}")
+        logger.log_info(f"found floating ip {ip.floating_ip_address}")
     if len(ips) == 0:
         assertline = f"No ips found"
     return ips, assertline
@@ -194,7 +194,7 @@ def collect_jhs(client, test_name, logger: Logger):
     jhs = []
     jh = None
     for name in servers:
-        logger.log_info(f"found jh server {name.name}")
+        logger.log_info(f"found host {name.name}")
         if lookup in name.name:
             logger.log_debug(f"String containing '{lookup}': {name.name}")
             jh = client.compute.find_server(name_or_id=name.name)
@@ -313,7 +313,7 @@ def create_wait_script(conn_test,testname):
             if necessary and retries for up to 100 seconds if the command is not found
         """
         assertline = None
-        script_path = f'{testname}wait'
+        script_path = f'{testname}-wait'
         secondary = None
         if "iperf" in conn_test:
             secondary = "iperf"
@@ -334,10 +334,22 @@ def create_wait_script(conn_test,testname):
             with open(script_path, 'w') as file:
                     file.write(script_content)
             os.chmod(script_path, 0o755)
-            #logger.log_info(f"Script file {script_path} created locally")
+            #context.logger.log_info(f"Script file {script_path} created locally")
         except:
-            assertline = "Failed to write script file"
+            assertline = f"Failed to write script file {script_path}"
         return assertline
+
+def delete_wait_script(testname):
+    assertline = None
+    script_path = f'{testname}-wait'
+    try:
+        os.remove(script_path)
+        print("\b")
+    except:
+        assertline = f"Failed to delete script file {script_path}"
+    return assertline
+
+
 
 def delete_vms(context, vm_ids: list = None):
     """Delete VMs based on list of IDs or VM IDs in collector.
