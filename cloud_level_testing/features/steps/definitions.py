@@ -12,6 +12,7 @@ from cloud_level_testing.features.steps import tools
 
 
 class StepsDef:
+    PING_RETRIES = 60
     collector = tools.Collector()
 
     @given("I connect to OpenStack")
@@ -492,6 +493,12 @@ class StepsDef:
         security_groups = [{"name": "ssh"}, {"name": "default"}, {"name": ping_sec_group_name}]
         keypair_filename = f"{keypair_name}-private"
 
+        user_data = '''#cloud-config
+        runcmd:
+          - echo "Hello, World!" > /tmp/hello.txt
+          - apt-get update
+        '''
+
         image = context.client.compute.find_image(name_or_id=context.vm_image)
         assert image, f"Image with name {context.vm_image} doesn't exist"
         flavor = context.client.compute.find_flavor(name_or_id=context.flavor_name)
@@ -524,6 +531,7 @@ class StepsDef:
             security_groups=security_groups,
             wait=True,
             availability_zone="nova",
+            user_data=user_data,
         )
         server = context.client.compute.wait_for_server(server)
         created_jumphost = context.client.compute.find_server(name_or_id=jumphost_name)
@@ -612,10 +620,8 @@ class StepsDef:
     def calculate_pi_on_vm(context):
         """
         """
-        # config
-        ping_retries = 60
         calc_command = "date +%s && time echo 'scale=4000; 4*a(1)' | bc -l >/dev/null 2>&1 && date +%s"
-        ping_command = f"ping -D -c{ping_retries} {context.vm_ip_address} "
+        ping_command = f"ping -D -c{StepsDef.PING_RETRIES} {context.vm_ip_address} "
         ping_parse_magic = "| tail -n +2 | head -n -4 |awk '{split($0,a,\" \"); print a[1], a[8]}'"
         ping_command = ping_command + ping_parse_magic
 

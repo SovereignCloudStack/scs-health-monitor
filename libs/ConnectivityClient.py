@@ -33,18 +33,29 @@ class MetricDescription:
     PING_TOT = "Total number of connectivity tests"
 
 
-
 class SshClient:
-    conn_total_count = Counter(MetricName.SSH_TOT, MetricDescription.SSH_TOT,
-                                [MetricLabels.STATUS_CODE, MetricLabels.HOST,
-                                LabelNames.COMMAND_LABEL])
-    conn_duration = Histogram(MetricName.SSH_CONN_DUR, MetricDescription.SSH_CONN_DUR,
-                                [MetricLabels.STATUS_CODE, MetricLabels.HOST,
-                                LabelNames.COMMAND_LABEL])
-    conn_test_count = Counter(MetricName.PING_TOT, MetricDescription.PING_TOT,
-                                    [MetricLabels.STATUS_CODE, MetricLabels.HOST,
-                                    MetricLabels.ENDPOINT, LabelNames.COMMAND_LABEL])
-    def __init__(self, host, username, key_path, logger:Logger):
+    conn_total_count = Counter(
+        MetricName.SSH_TOT,
+        MetricDescription.SSH_TOT,
+        [MetricLabels.STATUS_CODE, MetricLabels.HOST, LabelNames.COMMAND_LABEL],
+    )
+    conn_duration = Histogram(
+        MetricName.SSH_CONN_DUR,
+        MetricDescription.SSH_CONN_DUR,
+        [MetricLabels.STATUS_CODE, MetricLabels.HOST, LabelNames.COMMAND_LABEL],
+    )
+    conn_test_count = Counter(
+        MetricName.PING_TOT,
+        MetricDescription.PING_TOT,
+        [
+            MetricLabels.STATUS_CODE,
+            MetricLabels.HOST,
+            MetricLabels.ENDPOINT,
+            LabelNames.COMMAND_LABEL,
+        ],
+    )
+
+    def __init__(self, host, username, key_path, logger: Logger):
         self.host = host
         self.username = username
         self.client = paramiko.SSHClient()
@@ -56,27 +67,27 @@ class SshClient:
 
     def log(self, level, message):
         """
-            configures behave to print log information greater than min log level
+        configures behave to print log information greater than min log level
 
-            Args:
-                level: (string)
-                message: (string)
+        Args:
+            level: (string)
+            message: (string)
         """
         if self.logger and level >= self.min_log_level:
             self.logger.log(level, message)
 
     def execute_command(self, command, ignore_error_output=False):
         """
-            Executs provided bashscript on vm and returns the commands response code
+        Executs provided bashscript on vm and returns the commands response code
 
-            Args:
-                command: bashscript (string)
-                ignore_error_output: raises exception (string)
-            Returns:
-                the status of success failures and retries as a list of strings [retries,fairure,total] and the assertionline in case of failures 
+        Args:
+            command: bashscript (string)
+            ignore_error_output: raises exception (string)
+        Returns:
+            the status of success failures and retries as a list of strings [retries,fairure,total] and the assertionline in case of failures
 
-            Raises:
-                Assertion Failed: Failed to test internet connectivity for endpoint, if IP address is in wrong format or unreachable
+        Raises:
+            Assertion Failed: Failed to test internet connectivity for endpoint, if IP address is in wrong format or unreachable
         """
         try:
             _stdin, stdout, stderr = self.client.exec_command(command)
@@ -93,15 +104,15 @@ class SshClient:
 
     def connect(self):
         """
-            establishes connection via ssh by calling the TimeRecorder Class 
+        establishes connection via ssh by calling the TimeRecorder Class
 
-            Args:
-                class
-            Returns:
-                the status of success failures and retries as a list of strings [retries,fairure,total] and the assertionline in case of failures 
-            Raises:
-                Exception: exceptions.ConnectFailure(msg)
-                Assertion Failed: Failed to connect
+        Args:
+            class
+        Returns:
+            the status of success failures and retries as a list of strings [retries,fairure,total] and the assertionline in case of failures
+        Raises:
+            Exception: exceptions.ConnectFailure(msg)
+            Assertion Failed: Failed to connect
         """
 
         def on_success(duration):
@@ -111,7 +122,7 @@ class SshClient:
             self.conn_duration.labels(
                 ResultStatusCodes.SUCCESS, self.host, CommandTypes.SSH
             ).observe(duration)
-            #self.assertline=f"SSH connection to server {self.host} established"
+            # self.assertline=f"SSH connection to server {self.host} established"
 
         def on_fail(duration, exception):
             self.conn_total_count.labels(
@@ -121,7 +132,7 @@ class SshClient:
                 ResultStatusCodes.FAILURE, self.host, CommandTypes.SSH
             ).observe(duration)
 
-#self.assertline=f"SSH connection to server {self.host} failed"           
+        # self.assertline=f"SSH connection to server {self.host} failed"
         TimeRecorder.record_time(
             lambda: self.client.connect(
                 self.host, username=self.username, pkey=self.private_key
@@ -135,51 +146,57 @@ class SshClient:
 
     def test_internet_connectivity(self, conn_test, ip="8.8.8.8", tot_ips=1):
         """
-            Tests connectivity provided IP address by executing bashscript on vm and tracks failures and retries
+        Tests connectivity provided IP address by executing bashscript on vm and tracks failures and retries
 
-            Args:
-                conn_test: metric type (string, filter key is command)
-                ip: ip address (string)
-                tot_ips: total number of ip adresses (int)
-            Returns:
-                the status of success failures and retries as a list of strings [retries,fairure,total] and the assertionline in case of failures 
+        Args:
+            conn_test: metric type (string, filter key is command)
+            ip: ip address (string)
+            tot_ips: total number of ip adresses (int)
+        Returns:
+            the status of success failures and retries as a list of strings [retries,fairure,total] and the assertionline in case of failures
 
-            Raises:
-                Assertion Failed: Failed to test internet connectivity for endpoint, if IP address is in wrong format or unreachable
+        Raises:
+            Assertion Failed: Failed to test internet connectivity for endpoint, if IP address is in wrong format or unreachable
         """
         self.assertline = ""
 
         def test_connectivity():
             script = self.create_script(ip, 5, 3)
             output = self.execute_command(script)
-            self.ping_stat[2]=tot_ips
-            if output !='2':
-                self.conn_test_count.labels(ResultStatusCodes.SUCCESS, self.host, ip, conn_test).inc()
-                self.assertline=f"Internet connectivity test passed for server {self.host}, Failures: {self.ping_stat[1]}/{self.ping_stat[2]}, Retries: {self.ping_stat[0]}"                 
-            elif output=='2':
-                self.ping_stat[1]=self.ping_stat[1]+1
-                self.conn_test_count.labels(ResultStatusCodes.FAILURE, self.host, ip, conn_test).inc()
-                self.assertline=f"Failed to test internet connectivity for server {self.host}, Failures: {self.ping_stat[1]}/{self.ping_stat[2]}, Retries: {self.ping_stat[0]}"
-            self.logger.log_debug(f"ping status [retries,failures,total] {self.ping_stat}")
-        test_connectivity()    
-        return self.ping_stat,self.assertline
+            self.ping_stat[2] = tot_ips
+            if output != "2":
+                self.conn_test_count.labels(
+                    ResultStatusCodes.SUCCESS, self.host, ip, conn_test
+                ).inc()
+                self.assertline = f"Internet connectivity test passed for server {self.host}, Failures: {self.ping_stat[1]}/{self.ping_stat[2]}, Retries: {self.ping_stat[0]}"
+            elif output == "2":
+                self.ping_stat[1] = self.ping_stat[1] + 1
+                self.conn_test_count.labels(
+                    ResultStatusCodes.FAILURE, self.host, ip, conn_test
+                ).inc()
+                self.assertline = f"Failed to test internet connectivity for server {self.host}, Failures: {self.ping_stat[1]}/{self.ping_stat[2]}, Retries: {self.ping_stat[0]}"
+            self.logger.log_debug(
+                f"ping status [retries,failures,total] {self.ping_stat}"
+            )
 
+        test_connectivity()
+        return self.ping_stat, self.assertline
 
-    def create_script(self,ip_str,c=1,w=3,c_retry=1,w_retry=3):
+    def create_script(self, ip_str, c=1, w=3, c_retry=1, w_retry=3):
         """
-            Creates a bash script to ping the provided IP address
+        Creates a bash script to ping the provided IP address
 
-            Args:
-                ip_str: ip address (string)
-                c: count of pings for first try (int)
-                w: wait for ping result of first try (int)
-                c_retry: count of pings for second try (int)
-                w_retry: wait for ping result of second try (int)
-            Returns:
-                executable bashcript 
+        Args:
+            ip_str: ip address (string)
+            c: count of pings for first try (int)
+            w: wait for ping result of first try (int)
+            c_retry: count of pings for second try (int)
+            w_retry: wait for ping result of second try (int)
+        Returns:
+            executable bashcript
 
-            Raises:
-                Assertion Failed: Failed to test internet connectivity for endpoint, if IP address is in wrong format or unreachable
+        Raises:
+            Assertion Failed: Failed to test internet connectivity for endpoint, if IP address is in wrong format or unreachable
         """
         self.logger.log_debug("create script ip string{ip_str}")
         script_content = f"""
@@ -203,34 +220,36 @@ class SshClient:
 
     def install_ping(self):
         """
-            installs ping on vm 
+        installs ping on vm
 
-            Args:
-                class
-            Returns:
-                response from command execution
-            Raises:
-                Exception: exceptions.ConnectFailure(msg)
-                Assertion Failed: Failed to connect
+        Args:
+            class
+        Returns:
+            response from command execution
+        Raises:
+            Exception: exceptions.ConnectFailure(msg)
+            Assertion Failed: Failed to connect
         """
-    
+
         command = "sudo apt-get update -y && sudo apt-get install -y iputils-ping"
         response = self.execute_command(command, True)
         return response
 
     def print_working_directory(self):
         """
-            prints current working dir on vm 
+        prints current working dir on vm
 
-            Args:
-                class
-            Returns:
-                prints current working dir 
-            Raises:
-                Exception:
+        Args:
+            class
+        Returns:
+            prints current working dir
+        Raises:
+            Exception:
         """
         directory = self.execute_command("pwd")
-        self.logger.log_info(f"Current working directory on server {self.host}: {directory}")
+        self.logger.log_info(
+            f"Current working directory on server {self.host}: {directory}"
+        )
 
     def check_ssh_ready(self) -> bool:
         """Check if ssh is ready on a provisioned server.
@@ -257,7 +276,7 @@ class SshClient:
         Args:
             attempts: Number of attempts to check server readiness.
             timeout: Time to wait after each attempt.
-        
+
         Returns:
             True if server is ready to respond to ssh connection, else False.
         """
@@ -265,6 +284,8 @@ class SshClient:
             if self.check_ssh_ready():
                 return True
             else:
-                self.logger.log_info(f"Server unavailable, retrying in {timeout} seconds.")
+                self.logger.log_info(
+                    f"Server unavailable, retrying in {timeout} seconds."
+                )
                 time.sleep(timeout)
         return False
