@@ -12,6 +12,7 @@ from cloud_level_testing.features.steps import tools
 
 
 class StepsDef:
+    PING_RETRIES = 60
     collector = tools.Collector()
 
     @given("I connect to OpenStack")
@@ -492,6 +493,12 @@ class StepsDef:
         security_groups = [{"name": "ssh"}, {"name": "default"}, {"name": ping_sec_group_name}]
         keypair_filename = f"{keypair_name}-private"
 
+        user_data = '''#cloud-config
+        runcmd:
+          - echo "Hello, World!" > /tmp/hello.txt
+          - apt-get update
+        '''
+
         image = context.client.compute.find_image(name_or_id=context.vm_image)
         assert image, f"Image with name {context.vm_image} doesn't exist"
         flavor = context.client.compute.find_flavor(name_or_id=context.flavor_name)
@@ -524,6 +531,7 @@ class StepsDef:
             security_groups=security_groups,
             wait=True,
             availability_zone="nova",
+            user_data=user_data,
         )
         server = context.client.compute.wait_for_server(server)
         created_jumphost = context.client.compute.find_server(name_or_id=jumphost_name)
@@ -565,6 +573,10 @@ class StepsDef:
         ssh_client = SshClient(context.vm_ip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger)
         if not ssh_client:
             context.assertline = f"could not access VM {context.vm_ip_address}"
+        if ssh_client.check_server_readiness(attempts=10):
+            context.logger.log_info(f"Server ready for SSH connections")
+        else:
+            context.logger.log_info(f"Server SSH connection failed to establish")
         ssh_client.connect()
         context.ssh_client = ssh_client
 
@@ -601,3 +613,25 @@ class StepsDef:
         server = context.client.compute.find_server(name_or_id=server_name)
         assert server, f"Server with name {server_name} not found"
         ip = context.client.add_auto_ip(server=server, wait=True)
+        context.vm_ip_address = ip
+        context.logger.log_info(f"Attached floating ip: {ip}")
+    
+    @then('I start calculating 4000 digits of pi on VM and check the ping response')
+    def calculate_pi_on_vm(context):
+        """
+        """
+        calc_command = "date +%s && time echo 'scale=4000; 4*a(1)' | bc -l >/dev/null 2>&1 && date +%s"
+        ping_parse_magic = "| tail -n +2 | head -n -4 |awk '{split($0,a,\" \"); print a[1], a[8]}'"
+        ping_command = f"ping -D -c{StepsDef.PING_RETRIES} {context.vm_ip_address} {ping_parse_magic}"
+
+        ping_server_ssh_client = SshClient("213.131.230.11", "ubuntu", context.vm_private_ssh_key_path, context.logger)
+        ping_server_ssh_client.connect()
+
+        tasks = [
+            (context.ssh_client.execute_command, calc_command, True),
+            (ping_server_ssh_client.execute_command, ping_command),
+        ]
+        results = tools.run_parallel(tasks)
+        tools.parse_ping_output(results, context.logger)
+        ping_server_ssh_client.close_conn()
+        context.ssh_client.close_conn()
