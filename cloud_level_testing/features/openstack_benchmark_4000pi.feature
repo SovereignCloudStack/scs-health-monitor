@@ -8,7 +8,7 @@ Feature: Test VM under load
     Then I create a jumphost with name <jumphost_name> on network <network_name> with keypair <keypair_name>
     Then I attach a floating ip to server <jumphost_name>   
     Then I should be able to SSH into the VM
-    Then I start calculating 4000 digits of pi on VM
+    Then I start calculating 4000 digits of pi on VM and check the ping response
 
   Examples:
     |jumphost_name|   network_name    |keypair_name| username |vm_private_ssh_key_path|

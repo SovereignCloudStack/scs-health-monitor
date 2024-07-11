@@ -1,5 +1,6 @@
 import ipaddress
 import time
+import datetime
 from functools import wraps
 from libs.loggerClass import Logger
 from concurrent.futures import ThreadPoolExecutor
@@ -208,41 +209,41 @@ def collect_jhs(client, test_name, logger: Logger):
 
 
 def check_security_group_exists(context, sec_group_name: str):
-    """Check if security group exists
+    """Check if security group exists.
 
     Args:
-        context: Behave context object
-        sec_group_name (str): Name of security group to check
+        context: Behave context object.
+        sec_group_name: Name of security group to check.
 
     Returns:
-        ~openstack.network.v2.security_group.SecurityGroup: Found security group or None
+        ~openstack.network.v2.security_group.SecurityGroup: Found security group or None.
     """
     return context.client.network.find_security_group(name_or_id=sec_group_name)
 
 
 def check_keypair_exists(context, keypair_name: str):
-    """Check if keypair exists
+    """Check if keypair exists.
 
     Args:
-        context: Behave context object
-        keypair_name (str): Name of keypair to check
+        context: Behave context object.
+        keypair_name: Name of keypair to check.
 
     Returns:
-        ~openstack.compute.v2.keypair.Keypair: Found keypair object or None
+        ~openstack.compute.v2.keypair.Keypair: Found keypair object or None.
     """
     return context.client.compute.find_keypair(name_or_id=keypair_name)
 
 
 def create_security_group(context, sec_group_name: str, description: str):
-    """Create security group in openstack
+    """Create security group in openstack.
 
     Args:
-        context: Behave context object
-        sec_group_name (str): Name of security group
-        description (str): Description of security group
+        context: Behave context object.
+        sec_group_name: Name of security group.
+        description: Description of security group.
 
     Returns:
-        ~openstack.network.v2.security_group.SecurityGroup: The new security group or None
+        ~openstack.network.v2.security_group.SecurityGroup: The new security group or None.
     """
     security_group = context.client.network.create_security_group(
         name=sec_group_name, description=description
@@ -262,18 +263,18 @@ def create_security_group_rule(
     port_range_max: int = None,
     direction: str = "ingress",
 ):
-    """Create security group rule for specified security group
+    """Create security group rule for specified security group.
 
     Args:
-        context: Behave context object
-        sec_group_id (str): ID of the security group for the rule
-        protocol (str): The protocol that is matched by the security group rule
-        port_range_min (int): The minimum port number in the range that is matched by the security group rule
-        port_range_max (int): The maximum port number in the range that is matched by the security group rule
-        direction (str): The direction in which the security group rule is applied
+        context: Behave context object.
+        sec_group_id: ID of the security group for the rule.
+        protocol: The protocol that is matched by the security group rule.
+        port_range_min: The minimum port number in the range that is matched by the security group rule.
+        port_range_max: The maximum port number in the range that is matched by the security group rule.
+        direction: The direction in which the security group rule is applied.
 
     Returns:
-        ~openstack.network.v2.security_group_rule.SecurityGroupRule: The new security group rule
+        ~openstack.network.v2.security_group_rule.SecurityGroupRule: The new security group rule.
     """
     sec_group_rule = context.client.network.create_security_group_rule(
         security_group_id=sec_group_id,
@@ -290,11 +291,11 @@ def create_security_group_rule(
 
 
 def delete_vms(context, vm_ids: list = None):
-    """Delete VMs based on list of IDs or VM IDs in collector
+    """Delete VMs based on list of IDs or VM IDs in collector.
 
     Args:
-        context: Behave context object
-        vm_ids (list): list of VM IDs to delete, if None, collector VM IDs are used
+        context: Behave context object.
+        vm_ids: List of VM IDs to delete, if None, collector VM IDs are used.
     """
     vm_ids = context.collector.virtual_machines[:] if not vm_ids else vm_ids
     if vm_ids:
@@ -312,11 +313,11 @@ def delete_vms(context, vm_ids: list = None):
 
 
 def delete_routers(context, router_ids: list = None):
-    """Delete routers based on list of IDs or router IDs in collector
+    """Delete routers based on list of IDs or router IDs in collector.
 
     Args:
-        context: Behave context object
-        router_ids (list): list of router IDs to delete, if None, collector router IDs are used
+        context: Behave context object.
+        router_ids: List of router IDs to delete, if None, collector router IDs are used.
     """
     router_ids = context.collector.routers[:] if not router_ids else router_ids
     if router_ids:
@@ -330,11 +331,11 @@ def delete_routers(context, router_ids: list = None):
 
 
 def delete_networks(context, network_ids: list = None):
-    """Delete networks based on list of IDs or network IDs in collector
+    """Delete networks based on list of IDs or network IDs in collector.
 
     Args:
-        context: Behave context object
-        network_ids (list): list of network IDs to delete, if None, collector network IDs are used
+        context: Behave context object.
+        network_ids: List of network IDs to delete, if None, collector network IDs are used.
     """
     network_ids = context.collector.networks[:] if not network_ids else network_ids
     if network_ids:
@@ -348,11 +349,11 @@ def delete_networks(context, network_ids: list = None):
 
 
 def delete_subnets(context, subnet_ids: list = None):
-    """Delete subnets based on list of IDs or subnet IDs in collector
+    """Delete subnets based on list of IDs or subnet IDs in collector.
 
     Args:
-        context: Behave context object
-        subnet_ids (list): list of subnet IDs to delete, if None, collector subnet IDs are used
+        context: Behave context object.
+        subnet_ids: List of subnet IDs to delete, if None, collector subnet IDs are used.
     """
     subnet_ids = context.collector.subnets[:] if not subnet_ids else subnet_ids
     if subnet_ids:
@@ -366,11 +367,11 @@ def delete_subnets(context, subnet_ids: list = None):
 
 
 def delete_ports(context, port_ids: list = None):
-    """Delete ports based on list of IDs or port IDs in collector
+    """Delete ports based on list of IDs or port IDs in collector.
 
     Args:
-        context: Behave context object
-        port_ids (list): list of port IDs to delete, if None, collector port IDs are used
+        context: Behave context object.
+        port_ids: List of port IDs to delete, if None, collector port IDs are used.
     """
     port_ids = context.collector.ports[:] if not port_ids else port_ids
     if port_ids:
@@ -384,18 +385,18 @@ def delete_ports(context, port_ids: list = None):
 
 
 def delete_jumphosts(context, jumphost_ids: list = None):
-    """Delete jumphosts based on list of IDs or jumphost IDs in collector
+    """Delete jumphosts based on list of IDs or jumphost IDs in collector.
 
     Args:
-        context: Behave context object
-        jumphost_ids (list): list of jumphost IDs to delete, if None, collector jumphost IDs are used
+        context: Behave context object.
+        jumphost_ids: List of jumphost IDs to delete, if None, collector jumphost IDs are used.
     """
     jumphost_ids = context.collector.jumphosts[:] if not jumphost_ids else jumphost_ids
     delete_vms(context, jumphost_ids)
 
 
 def delete_all_test_resources(context):
-    """Delete all resources used in the feature run
+    """Delete all resources used in the feature run.
 
     Args:
         context: Behave context object
@@ -408,33 +409,63 @@ def delete_all_test_resources(context):
     delete_routers(context)
 
 
-def parse_ping_output(data: list):
-    """ """
+def parse_ping_output(data: list[str], logger: Logger):
+    """Parse the outputs of the ping response test and print them to logger.
+
+    Args:
+        data: Ssh command stdout data.
+        logger: Default context logger.
+    """
     start_time, end_time = get_timestamps(data[0])
-    calc_time = float(end_time) - float(start_time)
-    ping_data = data[1]
-    print(ping_data)
-    print(f"Calc start: {start_time}")
-    print(f"Calc took approx {calc_time}")
-    print(f"Calc ended: {end_time}")
+    calc_time = int(end_time) - int(start_time)
+    start_time = datetime.datetime.fromtimestamp(int(start_time))
+    end_time = datetime.datetime.fromtimestamp(int(end_time))
+    ping_data = data[1].split(sep="\n")
+    response_times = []
+    for ping_res in ping_data:
+        split_ping_res = ping_res.split()
+        timestamp = split_ping_res[0][1:11:1]
+        timestamp = datetime.datetime.fromtimestamp(int(timestamp))
+        if timestamp >= start_time and timestamp <= end_time:
+            response_times.append(float(split_ping_res[1].split(sep="=")[1]))
+    logger.log_info(f"Average response time is: {calc_average(response_times)} ms")
+    logger.log_info(f"Num of values: {len(response_times)}")
+    logger.log_info(f"Calc start: {start_time}")
+    logger.log_info(f"Calc ended: {end_time}")
+    logger.log_info(f"Calc took approx {calc_time}")
+
+
+def calc_average(values: list[float]) -> float:
+    sum = 0
+    for value in values:
+        sum = sum + value
+    return sum / len(values)
 
 
 def get_timestamps(data: str) -> tuple[str, str]:
-    """Return start and end timestamps from string data
+    """Return start and end timestamps from string data.
 
     Args:
-        data (str): input string with timestamp data
+        data: Input string with timestamp data.
 
     Returns:
-        tuple (str, str): start and end timestamps as str
+        Start and end timestamps as str.
     """
     split_data = data.split(sep="\n")
     assert len(split_data) == 2, f"Timestamp returned invalid data: {split_data}"
     return split_data[0], split_data[1]
 
 
-def run_parallel(tasks, timeout: int = 100) -> list[str]:
-    """ """
+def run_parallel(tasks: list[tuple], timeout: int = 100) -> list[str]:
+    """Run submitted tasks in multithreaded executor and collect the results.
+
+    Args:
+        tasks: List of tasks written as tuples.
+        timeout: Amount of time for executor to wait before terminating the tasks.
+
+    Returns:
+        The output of called tasks as list of strings.
+    """
     results = []
     with ThreadPoolExecutor() as executor:
         running_tasks = [executor.submit(*task) for task in tasks]

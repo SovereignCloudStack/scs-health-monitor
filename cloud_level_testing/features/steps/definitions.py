@@ -612,12 +612,14 @@ class StepsDef:
         context.vm_ip_address = ip
         context.logger.log_info(f"Attached floating ip: {ip}")
     
-    @then('I start calculating 4000 digits of pi on VM')
+    @then('I start calculating 4000 digits of pi on VM and check the ping response')
     def calculate_pi_on_vm(context):
-
+        """
+        """
         # config
-        calc_command = "date +%s.%N | cut -b1-17 && time echo 'scale=4000; 4*a(1)' | bc -l >/dev/null 2>&1 && date +%s.%N | cut -b1-17"
-        ping_command = f"ping -D -c35 {context.vm_ip_address} "
+        ping_retries = 60
+        calc_command = "date +%s && time echo 'scale=4000; 4*a(1)' | bc -l >/dev/null 2>&1 && date +%s"
+        ping_command = f"ping -D -c{ping_retries} {context.vm_ip_address} "
         ping_parse_magic = "| tail -n +2 | head -n -4 |awk '{split($0,a,\" \"); print a[1], a[8]}'"
         ping_command = ping_command + ping_parse_magic
 
@@ -630,6 +632,6 @@ class StepsDef:
         ]
         results = tools.run_parallel(tasks)
         
-        tools.parse_ping_output(results)
+        tools.parse_ping_output(results, context.logger)
         ping_server_ssh_client.close_conn()
         context.ssh_client.close_conn()
