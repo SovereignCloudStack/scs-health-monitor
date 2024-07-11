@@ -436,6 +436,14 @@ def parse_ping_output(data: list[str], logger: Logger):
 
 
 def calc_average(values: list[float]) -> float:
+    """Calculate average from list of values.
+
+    Args:
+        values: List of values to average.
+
+    Returns:
+        Calculated average value.
+    """
     sum = 0
     for value in values:
         sum = sum + value

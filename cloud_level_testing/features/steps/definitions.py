@@ -621,9 +621,8 @@ class StepsDef:
         """
         """
         calc_command = "date +%s && time echo 'scale=4000; 4*a(1)' | bc -l >/dev/null 2>&1 && date +%s"
-        ping_command = f"ping -D -c{StepsDef.PING_RETRIES} {context.vm_ip_address} "
         ping_parse_magic = "| tail -n +2 | head -n -4 |awk '{split($0,a,\" \"); print a[1], a[8]}'"
-        ping_command = ping_command + ping_parse_magic
+        ping_command = f"ping -D -c{StepsDef.PING_RETRIES} {context.vm_ip_address} {ping_parse_magic}"
 
         ping_server_ssh_client = SshClient("213.131.230.11", "ubuntu", context.vm_private_ssh_key_path, context.logger)
         ping_server_ssh_client.connect()
@@ -633,7 +632,6 @@ class StepsDef:
             (ping_server_ssh_client.execute_command, ping_command),
         ]
         results = tools.run_parallel(tasks)
-        
         tools.parse_ping_output(results, context.logger)
         ping_server_ssh_client.close_conn()
         context.ssh_client.close_conn()
