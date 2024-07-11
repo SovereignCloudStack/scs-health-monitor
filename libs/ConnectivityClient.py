@@ -5,7 +5,6 @@ from prometheus_client import Counter, Histogram
 from libs.TimeRecorder import TimeRecorder
 from libs.PrometheusExporter import CommandTypes, LabelNames
 
-import asyncio, asyncssh, sys
 from libs.loggerClass import Logger
 
 
@@ -256,8 +255,3 @@ class SshClient:
                 self.logger.log_info(f"Server unavailable, retrying in {timeout} seconds.")
                 time.sleep(timeout)
         return False
-
-async def run_async_command(host, username, key, command):
-    async with asyncssh.connect(host, client_keys=[key], username=username) as conn:
-        result = await conn.run(command)
-        return result

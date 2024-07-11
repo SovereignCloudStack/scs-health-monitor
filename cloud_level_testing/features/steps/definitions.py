@@ -5,10 +5,6 @@ import time
 import random
 import string
 
-import asyncio, asyncssh
-from multiprocessing import Process
-from concurrent.futures import ThreadPoolExecutor
-
 from openstack.exceptions import DuplicateResource
 from libs.ConnectivityClient import SshClient, run_async_command
 import os
