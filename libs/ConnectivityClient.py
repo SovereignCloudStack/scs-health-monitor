@@ -233,7 +233,11 @@ class SshClient:
         self.logger.log_info(f"Current working directory on server {self.host}: {directory}")
 
     def check_ssh_ready(self) -> bool:
-        """Check if ssh is ready on a provisioned server"""
+        """Check if ssh is ready on a provisioned server.
+
+        Returns:
+            True if server is ready to respond to ssh connection, else False.
+        """
         try:
             self.connect()
             self.close_conn()
@@ -247,7 +251,16 @@ class SshClient:
             print(f"Error occurred: {e}")
             return False
 
-    def check_server_readiness(self, attempts, timeout: int = 10) -> bool:
+    def check_server_readiness(self, attempts: int, timeout: int = 10) -> bool:
+        """Check if server is ready for ssh connection defined amount of times.
+
+        Args:
+            attempts: Number of attempts to check server readiness.
+            timeout: Time to wait after each attempt.
+        
+        Returns:
+            True if server is ready to respond to ssh connection, else False.
+        """
         for i in range(attempts):
             if self.check_ssh_ready():
                 return True
