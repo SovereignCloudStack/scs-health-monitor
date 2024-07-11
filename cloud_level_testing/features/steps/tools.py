@@ -188,7 +188,7 @@ def collect_ips(client, logger: Logger):
 
 def collect_jhs(client, test_name, logger: Logger):
     servers = client.compute.servers()
-    lookup = test_name + "-jh"
+    test_name = f"{test_name}-jh"
     lookup = "default-jh"  # just for testing delete later
     jhs = []
     jh = None
@@ -309,7 +309,7 @@ def delete_vms(context, vm_ids: list = None):
                     if vm_id in context.collector.jumphosts:
                         context.collector.jumphosts.remove(vm_id)
             else:
-                context.logger.log_info(f"FAIL! VM {vm_id} wasn't deleted")
+                context.logger.log_info(f"VM {vm_id} wasn't deleted")
 
 
 def delete_routers(context, router_ids: list = None):
@@ -327,7 +327,7 @@ def delete_routers(context, router_ids: list = None):
                 context.logger.log_info(f"Router {router_id} deleted")
                 context.collector.routers.remove(router_id)
             else:
-                context.logger.log_info(f"FAIL! Router {router_id} wasn't deleted")
+                context.logger.log_info(f"Router {router_id} wasn't deleted")
 
 
 def delete_networks(context, network_ids: list = None):
@@ -345,7 +345,7 @@ def delete_networks(context, network_ids: list = None):
                 context.logger.log_info(f"Network {network_id} deleted")
                 context.collector.networks.remove(network_id)
             else:
-                context.logger.log_info(f"FAIL! Network {network_id} wasn't deleted")
+                context.logger.log_info(f"Network {network_id} wasn't deleted")
 
 
 def delete_subnets(context, subnet_ids: list = None):
@@ -363,7 +363,7 @@ def delete_subnets(context, subnet_ids: list = None):
                 context.logger.log_info(f"Subnet {subnet_id} deleted")
                 context.collector.subnets.remove(subnet_id)
             else:
-                context.logger.log_info(f"FAIL! Subnet {subnet_id} wasn't deleted")
+                context.logger.log_info(f"Subnet {subnet_id} wasn't deleted")
 
 
 def delete_ports(context, port_ids: list = None):
@@ -381,7 +381,7 @@ def delete_ports(context, port_ids: list = None):
                 context.logger.log_info(f"Port {port_id} deleted")
                 context.collector.ports.remove(port_id)
             else:
-                context.logger.log_info(f"FAIL! Port {port_id} wasn't deleted")
+                context.logger.log_info(f"Port {port_id} wasn't deleted")
 
 
 def delete_jumphosts(context, jumphost_ids: list = None):

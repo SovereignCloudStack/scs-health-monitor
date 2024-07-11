@@ -6,7 +6,7 @@ import random
 import string
 
 from openstack.exceptions import DuplicateResource
-from libs.ConnectivityClient import SshClient, run_async_command
+from libs.ConnectivityClient import SshClient
 import os
 from cloud_level_testing.features.steps import tools
 

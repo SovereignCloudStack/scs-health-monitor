@@ -248,7 +248,7 @@ class SshClient:
         ):
             return False
         except Exception as e:
-            print(f"Error occurred: {e}")
+            self.logger.log_error(f"Error occurred: {e}")
             return False
 
     def check_server_readiness(self, attempts: int, timeout: int = 10) -> bool:
