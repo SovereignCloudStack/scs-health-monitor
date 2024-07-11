@@ -257,7 +257,6 @@ class SshClient:
 
     def check_ssh_ready(self) -> bool:
         """Check if ssh is ready on a provisioned server.
-
         Returns:
             True if server is ready to respond to ssh connection, else False.
         """
@@ -280,7 +279,6 @@ class SshClient:
         Args:
             attempts: Number of attempts to check server readiness.
             timeout: Time to wait after each attempt.
-
         Returns:
             True if server is ready to respond to ssh connection, else False.
         """
@@ -313,7 +311,6 @@ class SshClient:
         #             f"-o StrictHostKeyChecking=no -i {DATADIR}/{KEYPAIRS[1]} -P {pno} -p {testname}-wait {DEFLTUSER}@{float_ip}:"
         # subprocess.run(scp_command, shell=True, stdout=subprocess.DEVNULL)
 
-      
         sftp = self.client.open_sftp()
         directory = self.execute_command("pwd")
         print(f"open sftp pwd {directory}")
@@ -437,7 +434,6 @@ class SshClient:
             print(f"float_ip {float_ip}")
             print("...")            
             self.transfer_wait_script(float_ip, pno, testname)
-
             # self.logger.log_info(f"ssh -o \"UserKnownHostsFile=~/.ssh/known_hosts.{testname}\" -o \"PasswordAuthentication=no\" "
             #                 f"-o \"StrictHostKeyChecking=no\" -i {self.private_key} -p {pno} {self.username}@{float_ip} "
             #                 f"iperf3 -t5 -J -c {target_ip}\n")
