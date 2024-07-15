@@ -208,6 +208,23 @@ def collect_jhs(client, test_name, logger: Logger):
     return jhs
 
 
+def get_floating_ip_id(context, floating_ip: str) -> str | None:
+    """Get ID of floating IP based on its address.
+
+    Args:
+        context: Behave context object.
+        floating_ip: Floating IP address value.
+
+    Returns:
+        ID of the floating IP or None if not found.
+    """
+    floating_ip_list = context.client.list_floating_ips()
+    for fl_ip in floating_ip_list:
+        if fl_ip.floating_ip_address == floating_ip:
+            return fl_ip.id
+    return None
+
+
 def check_security_group_exists(context, sec_group_name: str):
     """Check if security group exists.
 
@@ -384,6 +401,26 @@ def delete_ports(context, port_ids: list = None):
                 context.logger.log_info(f"Port {port_id} wasn't deleted")
 
 
+def delete_floating_ips(context, floating_ip_ids: list = None):
+    """Delete floating IPs based on list of IDs or floating IP IDs in collector.
+
+    Args:
+        context: Behave context object.
+        floating_ip_ids: List of floating IP IDs to delete, if None, collector floating IP IDs are used.
+    """
+    floating_ip_ids = (
+        context.collector.floating_ips[:] if not floating_ip_ids else floating_ip_ids
+    )
+    if floating_ip_ids:
+        context.logger.log_info(f"Floating IPs to delete: {floating_ip_ids}")
+        for fl_ip_id in floating_ip_ids:
+            if context.client.delete_floating_ip(fl_ip_id):
+                context.logger.log_info(f"Floating ip {fl_ip_id} deleted")
+                context.collector.floating_ips.remove(fl_ip_id)
+            else:
+                context.logger.log_info(f"Floating ip {fl_ip_id} wasn't deleted")
+
+
 def delete_jumphosts(context, jumphost_ids: list = None):
     """Delete jumphosts based on list of IDs or jumphost IDs in collector.
 
@@ -404,6 +441,7 @@ def delete_all_test_resources(context):
     delete_vms(context)
     delete_jumphosts(context)
     delete_ports(context)
+    delete_floating_ips(context)
     delete_subnets(context)
     delete_networks(context)
     delete_routers(context)

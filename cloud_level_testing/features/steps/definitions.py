@@ -612,9 +612,12 @@ class StepsDef:
     def attach_floating_ip_to_server(context, server_name):
         server = context.client.compute.find_server(name_or_id=server_name)
         assert server, f"Server with name {server_name} not found"
-        ip = context.client.add_auto_ip(server=server, wait=True)
+        ip = context.client.add_auto_ip(server=server, wait=True, reuse=False)
         context.vm_ip_address = ip
         context.logger.log_info(f"Attached floating ip: {ip}")
+        floating_ip_id = tools.get_floating_ip_id(context, ip)
+        assert floating_ip_id, f"Failed to get the ID of floating ip {ip}."
+        context.collector.floating_ips.append(floating_ip_id)
     
     @then('I start calculating 4000 digits of pi on VM and check the ping response')
     def calculate_pi_on_vm(context):
