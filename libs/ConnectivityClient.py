@@ -275,7 +275,6 @@ class SshClient:
 
     def check_server_readiness(self, attempts: int, timeout: int = 10) -> bool:
         """Check if server is ready for ssh connection defined amount of times.
-
         Args:
             attempts: Number of attempts to check server readiness.
             timeout: Time to wait after each attempt.
@@ -337,7 +336,6 @@ class SshClient:
             #IPJSON = subprocess.check_output(iperf_command, shell=True)
             IPJSON = self.execute_command(iperf_command)
             self.logger.log_info(f"iperf json {IPJSON}")
-
         except:
             self.logger.log_error(f"Iperf json retry")
             time.sleep(16)
@@ -396,8 +394,7 @@ class SshClient:
             f.write(message + '\n')
 
     def run_iperf_test(self, testname, ips, network_quantity: int=3, redirs=["tcp,8080, value1", "tcp,9090, value1"], avail_zones=2):
-        print(f"testname: {testname},  ips: { ips}, network_quantity: {network_quantity}")
- 
+        print(f"testname: {testname},  ips: { ips}, network_quantity: {network_quantity}") 
         self.print_working_directory()
         # script_path=self.create_wait_script("iperf3",testname)
         # print(f"scriptpath {script_path}")
