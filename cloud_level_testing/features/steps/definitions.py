@@ -670,8 +670,8 @@ class StepsDef:
                     Then I should be able to SSH into the VM
                     ''')
                 print(f"IPS: {context.ips}")
-                context.ssh_client.run_iperf_test(context.test_name,context.ips, 2)
-                #SshClient.run_iperf_test(SshClient,context.test_name,context.ips)
+                #context.ssh_client.run_iperf_test(context.test_name,context.ips, 2)
+                context.ssh_client.run_iperf_test("default",context.ips, 2)
             else:
                 context.assertline = f"No matching hosts found"
         assert context.assertline == None, context.assertline

@@ -300,7 +300,6 @@ class SshClient:
                 float_ip: floating ip
                 pno: portnumber
                 testname: testname for namespace
-
             Returns:
                 
             Raises:
@@ -346,8 +345,6 @@ class SshClient:
         # except subprocess.CalledProcessError:
         #     print(" retry ", end='')
         #     time.sleep(16)
-
-
     def parse_and_log_results(self,IPJSON, source_ip, target_ip, vm):
         print("parse")
         BOLD = '\033[1m'
@@ -406,7 +403,6 @@ class SshClient:
         # print(f"scriptpath {script_path}")
         NOVMS = len( ips)
         floating_ips = ["213.131.230.87", "213.131.230.10"]
-
         red = redirs[avail_zones - 1]
         red = self.get_last_non_empty_line(red)
         pno = self.extract_pno(red)
