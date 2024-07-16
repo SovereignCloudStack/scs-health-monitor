@@ -407,7 +407,9 @@ class StepsDef:
 
     @then("I should be able to create {vms_quantity:d} VMs")
     def create_vm(context, vms_quantity: int):
-        security_groups = [{"name": "default"}, {"name": "ping-sg"}]
+        security_groups = ["default", "ping-sg"]
+        user_data = '''
+        '''
         network_count = 0
         for network in context.client.network.networks():
             if context.test_name in network.name:
@@ -420,12 +422,14 @@ class StepsDef:
                     assert flavor, f"Flavor with name {context.flavor_name} doesn't exist"
                     assert network, f"Network with name {network.name} doesn't exist"
                     try:
-                        server = context.client.compute.create_server(
+                        server = context.client.create_server(
                             name=vm_name,
-                            image_id=image.id,
-                            flavor_id=flavor.id,
-                            networks=[{"uuid": network.id}],
-                            security_groups=security_groups
+                            image=image.id,
+                            flavor=flavor.id,
+                            network=[network.id],
+                            auto_ip=False,
+                            security_groups=security_groups,
+                            userdata=user_data,
                         )
                         context.client.compute.wait_for_server(server)
                     except DuplicateResource as e:
@@ -500,6 +504,7 @@ class StepsDef:
 
             Hello, World!
           path: /tmp/test.txt
+          permissions: '0755'
         '''
 
         image = context.client.compute.find_image(name_or_id=context.vm_image)
