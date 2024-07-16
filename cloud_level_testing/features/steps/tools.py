@@ -5,8 +5,6 @@ from functools import wraps
 from libs.loggerClass import Logger
 from concurrent.futures import ThreadPoolExecutor
 import os
-
-
 import yaml
 
 
@@ -350,6 +348,38 @@ def delete_wait_script(testname):
     return assertline
 
 
+def create_wait_script(conn_test,testname):
+        """
+            creates temp script locally and makes it executable 
+            script checks if the command $1 exists, waits for the system boot to finish 
+            if necessary and retries for up to 100 seconds if the command is not found
+        """
+        assertline = None
+        script_path = f'{testname}wait'
+        secondary = None
+        if "iperf" in conn_test:
+            secondary = "iperf"
+
+        script_content = f"""
+            #!/bin/bash
+            let MAXW=100
+            if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 5; sync; fi
+            while test \$MAXW -ge 1; do
+            if type -p "{conn_test}">/dev/null || type -p "{secondary}">/dev/null; then exit 0; fi
+            let MAXW-=1
+            sleep 1
+            if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 1; fi
+            done
+            exit 1
+            """
+        try:
+            with open(script_path, 'w') as file:
+                    file.write(script_content)
+            os.chmod(script_path, 0o755)
+            #logger.log_info(f"Script file {script_path} created locally")
+        except:
+            assertline = "Failed to write script file"
+        return assertline
 
 def delete_vms(context, vm_ids: list = None):
     """Delete VMs based on list of IDs or VM IDs in collector.
