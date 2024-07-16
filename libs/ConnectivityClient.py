@@ -13,6 +13,20 @@ import subprocess
 import json
 from decimal import Decimal
 
+RPRE = 'your_rpre_value'
+REDIRS = ['your_redirs_value']
+NOAZS = 3  # Number of Availability Zones
+NONETS = 3  # Number of Networks
+NOVMS = 6  # Number of VMs
+IPS = ['ip1', 'ip2', 'ip3', 'ip4', 'ip5', 'ip6']
+FLOATS = ['float1', 'float2', 'float3']
+DEFLTUSER = 'default_user'
+DATADIR = 'your_data_directory'
+KEYPAIRS = ['keypair1', 'keypair2']
+LOGFILE = 'your_log_file.log'
+BOLD = '\033[1m'
+NORM = '\033[0m'
+BANDWIDTH = []
 
 class MetricLabels:
     STATUS_CODE = "status_code"
@@ -279,7 +293,6 @@ class SshClient:
     def check_server_readiness(self, attempts: int, timeout: int = 10) -> bool:
         """Check if server is ready for ssh connection defined amount of times.
 
-<<<<<<< HEAD
         Args:
             attempts: Number of attempts to check server readiness.
             timeout: Time to wait after each attempt.
@@ -298,64 +311,124 @@ class SshClient:
         return False
     
 ########################## iperf
+########################## iperf
 
-    def create_wait_script():
-=======
-    def create_wait_script(self,conn_test,testname):
->>>>>>> iperf functionalities in tools
+    # def create_wait_script(self,conn_test,testname):
+    #     """
+    #         creates temp script and makes it executable checks if the command $1 exists, waits for the system boot to finish if necessary and retries for up to 100 seconds if the command is not found
+    #     """
+    #     directory = self.execute_command("pwd")
+    #     script_path = f'{testname}wait'
+    #     self.execute_command(f"touch {script_path} | chmod 755 {directory}/{script_path}")
+    #     peek=self.execute_command("ls -la")        
+    #     print(f"peek: {peek}")
+    #     secondary = None
+    #     if "iperf" in conn_test:
+    #         secondary = "iperf"
+
+
+    #     script_content = f"""
+    #         #!/bin/bash
+    #         let MAXW=100
+    #         if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 5; sync; fi
+    #         while test \$MAXW -ge 1; do
+    #         if type -p "{conn_test}">/dev/null || type -p "{secondary}">/dev/null; then exit 0; fi
+    #         let MAXW-=1
+    #         sleep 1
+    #         if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 1; fi
+    #         done
+    #         exit 1
+    #         """
+    #     abs_path = f"{directory}/{script_path}"
+    #     create_wait_command = f"cat <<'EOF' > {directory}/{script_path}\n{script_content}\nEOF\nchmod 755 {directory}/{script_path}"
+    #     self.execute_command(create_wait_command)
+
+    #     result=self.execute_command(f"cat {directory}/{script_path}")
+    #     print(result)
+    #     self.logger.log_info(f"Script created on server {self.host}: {directory}/{script_path}")
+    #     return abs_path
+
+    def transfer_wait_script(self, FLT, pno, testname):
         """
-            creates temp script and makes it executable checks if the command $1 exists, waits for the system boot to finish if necessary and retries for up to 100 seconds if the command is not found
+            transfers temporary wait script from server to the target host and excecutes it
+            Args:
+                FLT: floating ip
+                pno: portnumber
+                testname: testname for namespace
+
+            Returns:
+                
+            Raises:
+                Exception:
+                    if file not found
         """
-        secondary = None
-        if "iperf" in conn_test:
-            secondary = "iperf"
+        # scp_command = f"scp -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
+        #             f"-o StrictHostKeyChecking=no -i {DATADIR}/{KEYPAIRS[1]} -P {pno} -p {testname}wait {DEFLTUSER}@{FLT}:"
+        # subprocess.run(scp_command, shell=True, stdout=subprocess.DEVNULL)
 
-        script_content = f"""
-        #!/bin/bash
-        let MAXW=100
-        if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 5; sync; fi
-        while test \$MAXW -ge 1; do
-        if type -p "{conn_test}">/dev/null || type -p "{secondary}">/dev/null; then exit 0; fi
-        let MAXW-=1
-        sleep 1
-        if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 1; fi
-        done
-        exit 1
-        """
+      
+        sftp = self.client.open_sftp()
+        directory = self.execute_command("pwd")
+        print(f"open sftp pwd {directory}")
+        sftp.put(f"{testname}wait",os.path.join("/home/ubuntu",f"{testname}wait"))
+        directory = self.execute_command("pwd")
+        peek=self.execute_command("ls -la")        
+        print(f"peek: {peek}")
+        print("File transfer completed successfully.")
+        if sftp:
+                sftp.close()
+        # try:            
+        #     # Transfer the file
+        #     sftp.put(f"{testname}wait", "213.131.230.87:/home/ubuntu")
+        #     print("File transfer completed successfully.")
 
-        script_path = f'{testname}wait' 
-        with open(script_path, 'w') as file:
-            file.write(script_content)
-        os.chmod(script_path, 0o755)
-        return script_path
+        # except Exception as e:
+        #     print(f"File transfer failed: {e}")
+
+        # finally:
+            # Close the SFTP session and SSH connection
+        #     if sftp:
+        #         sftp.close()
+        # #     # if ssh:
+        #     #     ssh.close()
+
+    #     pno="22"
+    #     scp_command = f"scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i {self.private_key} -P {pno} -p {testname}wait {self.username}@213.131.230.87: >/dev/null"
+    #     #scp_command = f"scp -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
+    #     #          f"-o StrictHostKeyChecking=no -i {self.private_key} -P {pno} -p {testname}wait {self.username}@{FLT}: >/dev/null"
+
+       
+    #     #self.logger.log_info(f"scp_command {scp_command}")
+    # #   subprocess.run(scp_command, shell=True, stdout=subprocess.DEVNULL)
+    #     subprocess.run(scp_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
-    def transfer_wait_script(FLT, pno, testname):
-        scp_command = f"scp -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
-                    f"-o StrictHostKeyChecking=no -i {DATADIR}/{KEYPAIRS[1]} -P {pno} -p {testname}wait {DEFLTUSER}@{FLT}:"
-        subprocess.run(scp_command, shell=True, stdout=subprocess.DEVNULL)
-
-
-    def iperf3_sub(SRC, TGT, FLT, pno, testname):
-
+    def iperf3_sub(self, SRC, TGT, FLT, pno, testname):
+        # iperf_command = f"echo hello world"
+        # print("iperf3 sub")
+        # iperf_command = f"ssh -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
+        #         f"-o StrictHostKeyChecking=no -i {self.private_key} -p {pno} {self.username}@{FLT} " \
+        #         f"./{testname}wait iperf3; iperf3 -t5 -J -c {TGT} &"
+        TGT="213.131.230.87"
+        pno="22"
         iperf_command = f"ssh -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
-                        f"-o StrictHostKeyChecking=no -i {DATADIR}/{KEYPAIRS[1]} -p {pno} {DEFLTUSER}@{FLT} " \
-                        f"./{testname}wait iperf3; iperf3 -t5 -J -c {TGT}"
+                        f"-o StrictHostKeyChecking=no -p {pno} {self.username}@{FLT} " \
+                        f"./{testname}wait iperf3; iperf3 -t5 -J -c {TGT} &"
         try:
-            IPJSON = subprocess.check_output(iperf_command, shell=True)
+            #IPJSON = subprocess.check_output(iperf_command, shell=True)
+            IPJSON = self.execute_command(iperf_command)
+
         except subprocess.CalledProcessError:
             print(" retry ", end='')
             time.sleep(16)
 
 
-    def parse_and_log_results(IPJSON, SRC, TGT, VM):
+    def parse_and_log_results(self,IPJSON, SRC, TGT, VM):
+        print("parse")
         BOLD = '\033[1m'
         NORM = '\033[0m'
         BANDWIDTH = []
-
-        # if LOGFILE:
-        #     with open(LOGFILE, 'a') as log:
-        #         log.write(f"{IPJSON}\n")
+        self.logger.log_info(f"{IPJSON}\n")
     
         ipjson_dict = json.loads(IPJSON)
         SENDBW = int(Decimal(ipjson_dict['end']['sum_sent']['bits_per_second']) / 1048576)
@@ -364,15 +437,15 @@ class SshClient:
         RUTIL = f"{ipjson_dict['end']['cpu_utilization_percent']['remote_total']:.1f}%"
     
         print(f" {SRC} <-> {TGT}: {BOLD}{SENDBW} Mbps {RECVBW} Mbps {HUTIL} {RUTIL}{NORM}")
-        # if LOGFILE:
-        #     with open(LOGFILE, 'a') as log:
-        #         log.write(f"IPerf3: {SRC}-{TGT}: {SENDBW} Mbps {RECVBW} Mbps {HUTIL} {RUTIL}\n")
+        self.logger.log_info(f"IPerf3: {SRC}-{TGT}: {SENDBW} Mbps {RECVBW} Mbps {HUTIL} {RUTIL}\n")
     
         BANDWIDTH.extend([SENDBW, RECVBW])
         SBW = float(Decimal(SENDBW) / 1000)
         RBW = float(Decimal(RECVBW) / 1000)
 
-    def get_last_non_empty_line(text):
+        self.logger.log_info(f"Bandwith: {BANDWIDTH} SBW: {SBW} RBW: {RBW}\n")
+
+    def get_last_non_empty_line(self,text):
         ''' 
         get the last non-empty line
         '''
@@ -380,7 +453,7 @@ class SshClient:
         non_empty_lines = [line for line in lines if line.strip()]
         return non_empty_lines[-1] if non_empty_lines else None
 
-    def extract_pno(text):
+    def extract_pno(self, text):
         '''
         extract pno from red
         '''
@@ -400,24 +473,26 @@ class SshClient:
         with open(logfile, 'a') as f:
             f.write(message + '\n')
 
-    def run_iperf_test(self,testname, IPS = ["192.168.0.1", "192.168.0.2", "192.168.0.3", "192.168.0.4", "192.168.0.5", "192.168.0.6"],REDIRS=["tcp,8080, value1", "tcp,9090, value1"], NOAZS=2, NONETS=3):
-        self.create_wait_script(self,"iperf3","default")
-        # Example values for the variables used in the shell script
-
+    def run_iperf_test(self, testname, IPS, NONETS: int=3, REDIRS=["tcp,8080, value1", "tcp,9090, value1"], NOAZS=2):
+        print(f"testname: {testname}, IPS: {IPS}, NONETS: {NONETS}")
+ 
+        self.print_working_directory()
+        # script_path=self.create_wait_script("iperf3",testname)
+        # print(f"scriptpath {script_path}")
         NOVMS = len(IPS)
-
-        FLOATS = ["float1", "float2"]
+        FLOATS = ["213.131.230.87", "213.131.230.10"]
 
         red = REDIRS[NOAZS - 1]
         red = self.get_last_non_empty_line(red)
         pno = self.extract_pno(red)
-
         print(f"Redirect: {REDIRS[0]} {red} {pno}")
-
-
+        print("...")
+        print(f"type(NONETS): {type(NONETS)}")
+        print("...")
         for VM in range(NONETS):
             TGT = IPS[VM] if IPS[VM] else IPS[VM + NONETS]
             SRC = IPS[VM + NOVMS - NONETS] if IPS[VM + NOVMS - NONETS] else IPS[VM + NOVMS - 2 * NONETS]
+            print(f"TGT: {TGT} SRC: {SRC}")
 
             if not SRC or not TGT or SRC == TGT:
                 error_message = f"#ERROR: Skip test {SRC} <-> {TGT}"
@@ -431,19 +506,20 @@ class SshClient:
             # scp_command = f"scp -P {pno} file {FLT}"
             # ssh_command = f"ssh -p {pno} {FLT} iperf3 -t5 -J -c {TGT}"
 
+            print(f"FLT {FLT}")
+            print("...")            
+            self.transfer_wait_script(FLT, pno, testname)
 
-            self.transfer_wait_script(FLT, pno)
-
-
-            self.logger.log_info(f"ssh -o \"UserKnownHostsFile=~/.ssh/known_hosts.{testname}\" -o \"PasswordAuthentication=no\" "
-                            f"-o \"StrictHostKeyChecking=no\" -i {DATADIR}/{KEYPAIRS[1]} -p {pno} {DEFLTUSER}@{FLT} "
-                            f"iperf3 -t5 -J -c {TGT}\n")
+            # self.logger.log_info(f"ssh -o \"UserKnownHostsFile=~/.ssh/known_hosts.{testname}\" -o \"PasswordAuthentication=no\" "
+            #                 f"-o \"StrictHostKeyChecking=no\" -i {self.private_key} -p {pno} {self.username}@{FLT} "
+            #                 f"iperf3 -t5 -J -c {TGT}\n")
     
-            IPJSON = self.iperf3_sub(SRC, TGT, FLT, pno)
+            IPJSON = self.iperf3_sub(SRC, TGT, FLT, pno, testname)
+
+            print(f"ipjson {IPJSON}")
 
             if IPJSON:
                 self.parse_and_log_results(IPJSON, SRC, TGT, VM)
     
-        os.remove(f'{testname}wait')
+        #os.remove(script_path)
         print("\b")
-    

@@ -555,6 +555,12 @@ class StepsDef:
     def initialize(context, jh_quantity):
         context.jh = tools.collect_jhs(context.client, context.test_name, context.logger)
         assert len(context.jh) >= jh_quantity, f"Not enough Jumphost with name found"
+
+#TODO: this is a proxy
+    @given("I have deployed hosts in {network_quantity:d} networks")
+    def initialize(context, network_quantity):
+        context.hosts=tools.collect_jhs(context.client,context.test_name, context.logger)
+        assert len(context.hosts) >= network_quantity, f"Not enough hosts in networks found"
     
     @given("I have a private key at {vm_private_ssh_key_path} for {username}")
     def check_private_key_exists(context, vm_private_ssh_key_path: str, username:str):
@@ -588,6 +594,7 @@ class StepsDef:
             context.logger.log_info(f"Server SSH connection failed to establish")
         ssh_client.connect()
         context.ssh_client = ssh_client
+        ssh_client.print_working_directory()
 
     @then("be able to communicate with the internet")
     def test_internet_connectivity(context):
@@ -647,3 +654,24 @@ class StepsDef:
         tools.parse_ping_output(results, context.logger)
         ping_server_ssh_client.close_conn()
         context.ssh_client.close_conn()
+
+    @then('I should be able to create a checkup script for {conn_test} locally')
+    def create_temp_script(context,conn_test):
+        assertline = tools.create_wait_script(conn_test,context.test_name)
+        assert assertline == None, assertline
+
+    @then('I should be able to SSH into {network_quantity:d} VMs and perform {conn_test} test')
+    def substeps(context,network_quantity, conn_test):
+        context.assertline=None
+        for i in range(0, network_quantity):
+            if not isinstance(context.hosts,str):
+                context.vm_ip_address = context.hosts[i]['ip']                      
+                context.execute_steps('''
+                    Then I should be able to SSH into the VM
+                    ''')
+                print(f"IPS: {context.ips}")
+                context.ssh_client.run_iperf_test(context.test_name,context.ips, 2)
+                #SshClient.run_iperf_test(SshClient,context.test_name,context.ips)
+            else:
+                context.assertline = f"No matching Jumphosts was found"
+        assert context.assertline == None, context.assertline
