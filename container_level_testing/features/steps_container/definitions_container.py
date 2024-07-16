@@ -3,6 +3,8 @@ from kubernetes import client, config
 import requests
 import time
 
+##TODO: pass the kubeconfig
+
 
 class KubernetesTestSteps:
     def __init__(self):
@@ -13,7 +15,6 @@ class KubernetesTestSteps:
 
     @given('a Kubernetes cluster')
     def step_given_kubernetes_cluster(self, context):
-        # Ensure we can connect to the cluster
         self.v1.list_node()
 
     @when('I create a container named "{container_name}"')
