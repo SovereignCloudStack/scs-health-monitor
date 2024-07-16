@@ -333,9 +333,9 @@ class SshClient:
                         f"-o StrictHostKeyChecking=no -p {pno} {self.username}@{float_ip} " \
                         f"./{testname}-wait iperf3; iperf3 -t5 -J -c {target_ip} &"
         try:
-            #IPJSON = subprocess.check_output(iperf_command, shell=True)
-            IPJSON = self.execute_command(iperf_command)
-            self.logger.log_info(f"iperf json {IPJSON}")
+            #iperf_json = subprocess.check_output(iperf_command, shell=True)
+            iperf_json = self.execute_command(iperf_command)
+            self.logger.log_info(f"iperf json {iperf_json}")
         except:
             self.logger.log_error(f"Iperf json retry")
             time.sleep(16)
@@ -343,18 +343,18 @@ class SshClient:
         # except subprocess.CalledProcessError:
         #     print(" retry ", end='')
         #     time.sleep(16)
-    def parse_and_log_results(self,IPJSON, source_ip, target_ip, vm):
+    def parse_and_log_results(self,iperf_json, source_ip, target_ip, vm):
         print("parse")
         BOLD = '\033[1m'
         NORM = '\033[0m'
         BANDWIDTH = []
-        self.logger.log_info(f"{IPJSON}\n")
+        self.logger.log_info(f"{iperf_json}\n")
     
-        ipjson_dict = json.loads(IPJSON)
-        SENDBW = int(Decimal(ipjson_dict['end']['sum_sent']['bits_per_second']) / 1048576)
-        RECVBW = int(Decimal(ipjson_dict['end']['sum_received']['bits_per_second']) / 1048576)
-        HUTIL = f"{ipjson_dict['end']['cpu_utilization_percent']['host_total']:.1f}%"
-        RUTIL = f"{ipjson_dict['end']['cpu_utilization_percent']['remote_total']:.1f}%"
+        iperf_json_dict = json.loads(iperf_json)
+        SENDBW = int(Decimal(iperf_json_dict['end']['sum_sent']['bits_per_second']) / 1048576)
+        RECVBW = int(Decimal(iperf_json_dict['end']['sum_received']['bits_per_second']) / 1048576)
+        HUTIL = f"{iperf_json_dict['end']['cpu_utilization_percent']['host_total']:.1f}%"
+        RUTIL = f"{iperf_json_dict['end']['cpu_utilization_percent']['remote_total']:.1f}%"
     
         print(f" {source_ip} <-> {target_ip}: {BOLD}{SENDBW} Mbps {RECVBW} Mbps {HUTIL} {RUTIL}{NORM}")
         self.logger.log_info(f"IPerf3: {source_ip}-{target_ip}: {SENDBW} Mbps {RECVBW} Mbps {HUTIL} {RUTIL}\n")
@@ -396,9 +396,7 @@ class SshClient:
     def run_iperf_test(self, testname, ips, network_quantity: int=3, redirs=["tcp,8080, value1", "tcp,9090, value1"], avail_zones=2):
         print(f"testname: {testname},  ips: { ips}, network_quantity: {network_quantity}") 
         self.print_working_directory()
-        # script_path=self.create_wait_script("iperf3",testname)
-        # print(f"scriptpath {script_path}")
-        NOVMS = len( ips)
+        vm_quantity = len( ips)
         floating_ips = ["213.131.230.87", "213.131.230.10"]
         red = redirs[avail_zones - 1]
         red = self.get_last_non_empty_line(red)
@@ -409,7 +407,7 @@ class SshClient:
         print("...")
         for vm in range(network_quantity):
             target_ip =  ips[vm] if  ips[vm] else  ips[vm + network_quantity]
-            source_ip =  ips[vm + NOVMS - network_quantity] if  ips[vm + NOVMS - network_quantity] else  ips[vm + NOVMS - 2 * network_quantity]
+            source_ip =  ips[vm + vm_quantity - network_quantity] if  ips[vm + vm_quantity - network_quantity] else  ips[vm + vm_quantity - 2 * network_quantity]
             print(f"target_ip: {target_ip} source_ip: {source_ip}")
 
             if not source_ip or not target_ip or source_ip == target_ip:
@@ -431,9 +429,12 @@ class SshClient:
             #                 f"-o \"StrictHostKeyChecking=no\" -i {self.private_key} -p {pno} {self.username}@{float_ip} "
             #                 f"iperf3 -t5 -J -c {target_ip}\n")
     
-            IPJSON = self.iperf3_sub(source_ip, target_ip, float_ip, pno, testname)
+            iperf_json = self.iperf3_sub(source_ip, target_ip, float_ip, pno, testname)
 
-            print(f"ipjson {IPJSON}")
+            print(f"iperf_json {iperf_json}")
 
-            if IPJSON:
-                self.parse_and_log_results(IPJSON, source_ip, target_ip, vm)
+            if iperf_json:
+                self.parse_and_log_results(iperf_json, source_ip, target_ip, vm)
+            else:
+                return f"no iperf json"
+        
