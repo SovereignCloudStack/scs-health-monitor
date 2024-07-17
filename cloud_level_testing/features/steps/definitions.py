@@ -496,15 +496,29 @@ class StepsDef:
         ping_sec_group_description = "Ping security group - allow ICMP"
         security_groups = ["ssh", "default", ping_sec_group_name]
         keypair_filename = f"{keypair_name}-private"
+        scriptname = f"{context.test_name}-wait"
 
-        user_data = '''#cloud-config
+        user_data = f'''#cloud-config
         write_files:
         - content: |
-            #testfile
+            #waitscript
 
-            Hello, World!
-          path: /tmp/test.txt
+           #!/bin/bash
+            let MAXW=100
+            if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 5; sync; fi
+            while test \$MAXW -ge 1; do
+            if type -p "iperf3">/dev/null; then exit 0; fi
+            let MAXW-=1
+            sleep 1
+            if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 1; fi
+            done
+            exit 1
+          path: /{scriptname}
           permissions: '0755'
+        packages:
+        - iperf3
+        runcmd:
+        - iperf3 -Ds
         '''
 
         image = context.client.compute.find_image(name_or_id=context.vm_image)
