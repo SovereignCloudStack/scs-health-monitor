@@ -407,7 +407,9 @@ class StepsDef:
 
     @then("I should be able to create {vms_quantity:d} VMs")
     def create_vm(context, vms_quantity: int):
-        security_groups = [{"name": "default"}, {"name": "ping-sg"}]
+        security_groups = ["default", "ping-sg"]
+        user_data = '''
+        '''
         network_count = 0
         for network in context.client.network.networks():
             if context.test_name in network.name:
@@ -420,12 +422,14 @@ class StepsDef:
                     assert flavor, f"Flavor with name {context.flavor_name} doesn't exist"
                     assert network, f"Network with name {network.name} doesn't exist"
                     try:
-                        server = context.client.compute.create_server(
+                        server = context.client.create_server(
                             name=vm_name,
-                            image_id=image.id,
-                            flavor_id=flavor.id,
-                            networks=[{"uuid": network.id}],
-                            security_groups=security_groups
+                            image=image.id,
+                            flavor=flavor.id,
+                            network=[network.id],
+                            auto_ip=False,
+                            security_groups=security_groups,
+                            userdata=user_data,
                         )
                         context.client.compute.wait_for_server(server)
                     except DuplicateResource as e:
@@ -490,13 +494,17 @@ class StepsDef:
         # config
         ping_sec_group_name = "ping-sg"
         ping_sec_group_description = "Ping security group - allow ICMP"
-        security_groups = [{"name": "ssh"}, {"name": "default"}, {"name": ping_sec_group_name}]
+        security_groups = ["ssh", "default", ping_sec_group_name]
         keypair_filename = f"{keypair_name}-private"
 
         user_data = '''#cloud-config
-        runcmd:
-          - echo "Hello, World!" > /tmp/hello.txt
-          - apt-get update
+        write_files:
+        - content: |
+            #testfile
+
+            Hello, World!
+          path: /tmp/test.txt
+          permissions: '0755'
         '''
 
         image = context.client.compute.find_image(name_or_id=context.vm_image)
@@ -519,19 +527,20 @@ class StepsDef:
             tools.create_security_group_rule(context, ping_sec_group.id, protocol="icmp")
 
         for security_group in security_groups:
-            security_group = tools.check_security_group_exists(context, security_group['name'])
-            assert security_group, f"Security Group with name {security_group['name']} doesn't exist"
+            security_group = tools.check_security_group_exists(context, security_group)
+            assert security_group, f"Security Group with name {security_group} doesn't exist"
 
-        server = context.client.compute.create_server(
+        server = context.client.create_server(
             name=jumphost_name,
-            image_id=image.id,
-            flavor_id=flavor.id,
-            networks=[{"uuid": network.id}],
+            image=image.id,
+            flavor=flavor.id,
+            network=[network.id],
+            auto_ip=False,
             key_name=keypair.name,
             security_groups=security_groups,
             wait=True,
             availability_zone="nova",
-            user_data=user_data,
+            userdata=user_data,
         )
         server = context.client.compute.wait_for_server(server)
         created_jumphost = context.client.compute.find_server(name_or_id=jumphost_name)
