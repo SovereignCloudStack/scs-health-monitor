@@ -16,6 +16,7 @@ class LabelNames:
     ENDPOINT_URL = "endpoint"
     STATUS_CODE = "status_code"
     METHOD = "method"
+    RESULT = "testresult"
 
 
 # Class is intended to be used only internally for prometheus exporter

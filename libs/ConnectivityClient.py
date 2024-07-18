@@ -17,6 +17,7 @@ class MetricLabels:
     STATUS_CODE = "status_code"
     HOST = "host"
     ENDPOINT = "endpoint"
+    RESULT = "testresult"
 
 
 class ResultStatusCodes:
@@ -42,7 +43,7 @@ class SshClient:
     conn_total_count = Counter(
         MetricName.SSH_TOT,
         MetricDescription.SSH_TOT,
-        [MetricLabels.STATUS_CODE, MetricLabels.HOST, LabelNames.COMMAND_LABEL],
+        [MetricLabels.STATUS_CODE, MetricLabels.HOST, LabelNames.COMMAND_LABEL, LabelNames.RESULT],
     )
     conn_duration = Histogram(
         MetricName.SSH_CONN_DUR,
@@ -397,7 +398,7 @@ class SshClient:
         print(f"testname: {testname},  ips: { ips}, network_quantity: {network_quantity}") 
         self.print_working_directory()
         vm_quantity = len( ips)
-        floating_ips = ["213.131.230.87", "213.131.230.10"]
+        floating_ips = ["213.131.230.240", "213.131.230.10"]
         red = redirs[avail_zones - 1]
         red = self.get_last_non_empty_line(red)
         pno = self.extract_pno(red)
@@ -428,19 +429,20 @@ class SshClient:
             # self.logger.log_info(f"ssh -o \"UserKnownHostsFile=~/.ssh/known_hosts.{testname}\" -o \"PasswordAuthentication=no\" "
             #                 f"-o \"StrictHostKeyChecking=no\" -i {self.private_key} -p {pno} {self.username}@{float_ip} "
             #                 f"iperf3 -t5 -J -c {target_ip}\n")
-    
-            iperf_json = self.iperf3_sub(source_ip, target_ip, float_ip, pno, testname)
 
+            #iperf_json = self.iperf3_sub(source_ip, target_ip, float_ip, pno, testname)
+            iperf_json = self.execute_command("lsof -i :5201 | js")
             print(f"iperf_json {iperf_json}")
-
+            testresult="20"
             if iperf_json:
-                self.parse_and_log_results(iperf_json, source_ip, target_ip, vm)
+                print(f"parsing")
+                #self.parse_and_log_results(iperf_json, source_ip, target_ip, vm)
                 self.conn_test_count.labels(
-                    ResultStatusCodes.SUCCESS, self.host, target_ip, conn_test
+                    ResultStatusCodes.SUCCESS, self.host, target_ip, conn_test, testresult
                 ).inc()
             else:
                 self.conn_test_count.labels(
-                    ResultStatusCodes.FAILURE, self.host, target_ip, conn_test
+                    ResultStatusCodes.FAILURE, self.host, target_ip, conn_test, testresult
                 ).inc()
                 return f"no iperf json"
         

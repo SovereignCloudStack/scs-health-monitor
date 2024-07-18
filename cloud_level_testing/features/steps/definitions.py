@@ -408,8 +408,30 @@ class StepsDef:
 
     @then("I should be able to create {vms_quantity:d} VMs")
     def create_vm(context, vms_quantity: int):
+       
+       # config
         security_groups = ["default", "ping-sg"]
-        user_data = '''
+        scriptname = f"{context.test_name}-wait"
+
+        user_data = f'''#cloud-config
+        write_files:
+        - content: |
+            #waitscript
+
+           #!/bin/bash
+            let MAXW=100
+            if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 5; sync; fi
+            while test \$MAXW -ge 1; do
+            if type -p "iperf3">/dev/null; then exit 0; fi
+            let MAXW-=1
+            sleep 1
+            if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 1; fi
+            done
+            exit 1
+          path: {scriptname}
+          permissions: '0755'
+        packages:
+        - iperf3
         '''
         network_count = 0
         for network in context.client.network.networks():
