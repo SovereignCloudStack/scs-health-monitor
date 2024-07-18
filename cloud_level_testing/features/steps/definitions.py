@@ -513,7 +513,7 @@ class StepsDef:
             if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 1; fi
             done
             exit 1
-          path: /{scriptname}
+          path: {scriptname}
           permissions: '0755'
         packages:
         - iperf3
@@ -684,7 +684,7 @@ class StepsDef:
                     Then I should be able to SSH into the VM
                     ''')
                 print(f"ips: {context.ips}")
-                context.assertline = context.ssh_client.run_iperf_test(context.test_name,context.ips, 2)
+                context.assertline = context.ssh_client.run_iperf_test(conn_test, context.test_name, context.ips, 2)
             else:
                 context.assertline = f"No matching hosts found"
         context.assertline = tools.delete_wait_script(context.test_name)        

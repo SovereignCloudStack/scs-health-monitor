@@ -331,7 +331,7 @@ class SshClient:
         pno="22"
         iperf_command = f"ssh -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
                         f"-o StrictHostKeyChecking=no -p {pno} {self.username}@{float_ip} " \
-                        f"./{testname}-wait iperf3; iperf3 -t5 -J -c {target_ip} &"
+                        f"./{testname}-wait iperf3; iperf3 -t5 -J -c {target_ip} | jq &"
         try:
             #iperf_json = subprocess.check_output(iperf_command, shell=True)
             iperf_json = self.execute_command(iperf_command)
@@ -393,7 +393,7 @@ class SshClient:
         with open(logfile, 'a') as f:
             f.write(message + '\n')
 
-    def run_iperf_test(self, testname, ips, network_quantity: int=3, redirs=["tcp,8080, value1", "tcp,9090, value1"], avail_zones=2):
+    def run_iperf_test(self, conn_test, testname, ips, network_quantity: int=3, redirs=["tcp,8080, value1", "tcp,9090, value1"], avail_zones=2):
         print(f"testname: {testname},  ips: { ips}, network_quantity: {network_quantity}") 
         self.print_working_directory()
         vm_quantity = len( ips)
@@ -435,6 +435,12 @@ class SshClient:
 
             if iperf_json:
                 self.parse_and_log_results(iperf_json, source_ip, target_ip, vm)
+                self.conn_test_count.labels(
+                    ResultStatusCodes.SUCCESS, self.host, target_ip, conn_test
+                ).inc()
             else:
+                self.conn_test_count.labels(
+                    ResultStatusCodes.FAILURE, self.host, target_ip, conn_test
+                ).inc()
                 return f"no iperf json"
         

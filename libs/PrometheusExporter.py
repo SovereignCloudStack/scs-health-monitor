@@ -5,7 +5,7 @@ import re
 
 class CommandTypes:
     API = "api-call"
-    IPERF = "iperf"
+    IPERF = "iperf3"
     SSH = "ssh"
     PING = "ping"
 
