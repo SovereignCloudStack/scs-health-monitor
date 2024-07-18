@@ -294,8 +294,9 @@ class StepsDef:
         for sec_group_id in context.collector.security_groups[:]:
             context.client.network.delete_security_group(sec_group_id)
             time.sleep(2)
-            assert not tools.check_security_group_exists(context,
-                                                         sec_group.id), f"Security group with id {sec_group_id} was not deleted"
+            assert not tools.check_security_group_exists(
+                context,
+                sec_group.id), f"Security group with id {sec_group_id} was not deleted"
             context.collector.security_groups.remove(sec_group_id)
         if context.collector.security_groups:
             for sec_group in context.client.network.security_groups():
@@ -443,7 +444,6 @@ class StepsDef:
         assert len(context.collector.virtual_machines) == vms_quantity * network_count,\
             f"Failed to create the desired amount of VMs"
 
-
     @then('I should be able to delete the VMs')
     def delete_vm(context):
         vms = context.collector.virtual_machines if len(context.collector.virtual_machines) else list()
@@ -575,7 +575,7 @@ class StepsDef:
                     ''')
             else:
                 context.assertline = f"No matching Jumphosts was found"
-        assert context.assertline == None, context.assertline
+        assert context.assertline is None, context.assertline
 
     @then("I should be able to SSH into the VM")
     def test_ssh_connection(context):
