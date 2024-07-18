@@ -11,5 +11,5 @@ Feature: Container management
 
   Examples:
     |container_name|
-#    |test-container|
+    |test-container|
     |web-server|
