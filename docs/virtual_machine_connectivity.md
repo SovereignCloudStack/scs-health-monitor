@@ -2,7 +2,7 @@
 
 1) You need to run `openstack_create_jumphost.feature` first, which sets up the jumphost in openstack and creates private ssh access key locally (name of ssh key, network and jumphost can be edited in the feature file):
 
-    `behave features/openstack_create_jumphost.feature`
+    `behave features/cloud_level_testing/openstack_create_jumphost.feature`
 
 2) After the feature run successfully passes, you need to get the public ip address of the jumphost by running `openstack server list` and reading it from the output for the desired jumphost under `networks` column.
 
