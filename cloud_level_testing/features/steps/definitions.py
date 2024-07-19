@@ -432,6 +432,7 @@ class StepsDef:
           permissions: '0755'
         packages:
         - iperf3
+        - jq
         '''
         network_count = 0
         for network in context.client.network.networks():
@@ -539,6 +540,7 @@ class StepsDef:
           permissions: '0755'
         packages:
         - iperf3
+        - jq
         runcmd:
         - iperf3 -Ds
         '''
@@ -711,6 +713,21 @@ class StepsDef:
                 context.assertline = f"No matching hosts found"
         context.assertline = tools.delete_wait_script(context.test_name)        
         assert context.assertline == None, context.assertline
+
+    @then('I should be able to test SSH into {network_quantity:d} VMs and perform {conn_test} test')
+    def substeps(context,network_quantity, conn_test):
+        context.assertline=None
+        ips=["213.131.230.11","213.131.230.240"]
+        for ip in ips:
+            context.vm_ip_address = ip                  
+            context.execute_steps('''
+                Then I should be able to SSH into the VM
+                ''')
+            context.assertline = context.ssh_client.run_iperf_test(conn_test, context.test_name, ips, 2)
+        
+        context.assertline = tools.delete_wait_script(context.test_name)        
+        assert context.assertline == None, context.assertline
+
 
 
     

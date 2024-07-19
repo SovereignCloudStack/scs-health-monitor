@@ -17,7 +17,7 @@ class MetricLabels:
     STATUS_CODE = "status_code"
     HOST = "host"
     ENDPOINT = "endpoint"
-    RESULT = "testresult"
+ #   RESULT = "testresult"
 
 
 class ResultStatusCodes:
@@ -43,7 +43,7 @@ class SshClient:
     conn_total_count = Counter(
         MetricName.SSH_TOT,
         MetricDescription.SSH_TOT,
-        [MetricLabels.STATUS_CODE, MetricLabels.HOST, LabelNames.COMMAND_LABEL, LabelNames.RESULT],
+        [MetricLabels.STATUS_CODE, MetricLabels.HOST, LabelNames.COMMAND_LABEL],
     )
     conn_duration = Histogram(
         MetricName.SSH_CONN_DUR,
@@ -314,7 +314,8 @@ class SshClient:
         sftp = self.client.open_sftp()
         directory = self.execute_command("pwd")
         print(f"open sftp pwd {directory}")
-        sftp.put(f"{testname}-wait",os.path.join("/home/ubuntu",f"{testname}-wait"))
+#        sftp.put(f"{testname}-wait",os.path.join("/home/ubuntu",f"{testname}-wait"))
+        sftp.put("response.json",os.path.join("/home/ubuntu",f"{testname}-wait"))
         directory = self.execute_command("pwd")
         peek=self.execute_command("ls -la")        
         print(f"peek: {peek}")
@@ -328,11 +329,12 @@ class SshClient:
         # iperf_command = f"ssh -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
         #         f"-o StrictHostKeyChecking=no -i {self.private_key} -p {pno} {self.username}@{float_ip} " \
         #         f"./{testname}-wait iperf3; iperf3 -t5 -J -c {target_ip} &"
-        target_ip="213.131.230.87"
-        pno="22"
-        iperf_command = f"ssh -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
-                        f"-o StrictHostKeyChecking=no -p {pno} {self.username}@{float_ip} " \
-                        f"./{testname}-wait iperf3; iperf3 -t5 -J -c {target_ip} | jq &"
+        target_ip="213.131.230.240"
+        pno="22" #"5201" #"22"
+        # iperf_command = f"ssh -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
+        #                 f"-o StrictHostKeyChecking=no -p {pno} {self.username}@{float_ip} " \
+        #                 f"./{testname}-wait iperf3; iperf3 -t5 -J -c {target_ip} | jq &"
+        iperf_command = f"cat response.json"
         try:
             #iperf_json = subprocess.check_output(iperf_command, shell=True)
             iperf_json = self.execute_command(iperf_command)
@@ -430,19 +432,22 @@ class SshClient:
             #                 f"-o \"StrictHostKeyChecking=no\" -i {self.private_key} -p {pno} {self.username}@{float_ip} "
             #                 f"iperf3 -t5 -J -c {target_ip}\n")
 
-            #iperf_json = self.iperf3_sub(source_ip, target_ip, float_ip, pno, testname)
-            iperf_json = self.execute_command("lsof -i :5201 | js")
+            iperf_json = self.iperf3_sub(source_ip, target_ip, float_ip, pno, testname)
+            #iperf_json = self.execute_command("lsof -i :5201")
             print(f"iperf_json {iperf_json}")
-            testresult="20"
+            
+            
+            
+            #testresult="20"
             if iperf_json:
                 print(f"parsing")
                 #self.parse_and_log_results(iperf_json, source_ip, target_ip, vm)
                 self.conn_test_count.labels(
-                    ResultStatusCodes.SUCCESS, self.host, target_ip, conn_test, testresult
+                    ResultStatusCodes.SUCCESS, self.host, target_ip, conn_test
                 ).inc()
             else:
                 self.conn_test_count.labels(
-                    ResultStatusCodes.FAILURE, self.host, target_ip, conn_test, testresult
+                    ResultStatusCodes.FAILURE, self.host, target_ip, conn_test
                 ).inc()
                 return f"no iperf json"
         
