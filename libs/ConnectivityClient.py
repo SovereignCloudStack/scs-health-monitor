@@ -314,8 +314,7 @@ class SshClient:
         sftp = self.client.open_sftp()
         directory = self.execute_command("pwd")
         print(f"open sftp pwd {directory}")
-#        sftp.put(f"{testname}-wait",os.path.join("/home/ubuntu",f"{testname}-wait"))
-        sftp.put("response.json",os.path.join("/home/ubuntu",f"{testname}-wait"))
+        sftp.put(f"{testname}-wait",os.path.join("/home/ubuntu",f"{testname}-wait"))
         directory = self.execute_command("pwd")
         peek=self.execute_command("ls -la")        
         print(f"peek: {peek}")
@@ -323,29 +322,50 @@ class SshClient:
         if sftp:
                 sftp.close()
 
+    # def iperf3_sub(self, source_ip, target_ip, float_ip, pno, testname):
+    #     print("iperf3 sub")
+    #     # iperf_command = f"ssh -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
+    #     #         f"-o StrictHostKeyChecking=no -i {self.private_key} -p {pno} {self.username}@{float_ip} " \
+    #     #         f"./{testname}-wait iperf3; iperf3 -t5 -J -c {target_ip} &"
+    #     iperf_command = f"ssh -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
+    #                     f"-o StrictHostKeyChecking=no -p {pno} {self.username}@{float_ip} " \
+    #                     f"./{testname}-wait iperf3; iperf3 -t5 -J -c {target_ip} | jq &"
+    #     try:
+    #         #iperf_json = subprocess.check_output(iperf_command, shell=True)
+    #         iperf_json = self.execute_command(iperf_command)
+    #         self.logger.log_info(f"iperf json {iperf_json}")
+    #     except:
+    #         self.logger.log_error(f"Iperf failed retry")
+    #         time.sleep(16)
+
+    #     # except subprocess.CalledProcessError:
+    #     #     print(" retry ", end='')
+    #     #     time.sleep(16)
+
     def iperf3_sub(self, source_ip, target_ip, float_ip, pno, testname):
+        target_ip="213.131.230.240"
+        pno="22" #"5201" #"22"
+
         # iperf_command = f"echo hello world"
         # print("iperf3 sub")
         # iperf_command = f"ssh -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
         #         f"-o StrictHostKeyChecking=no -i {self.private_key} -p {pno} {self.username}@{float_ip} " \
         #         f"./{testname}-wait iperf3; iperf3 -t5 -J -c {target_ip} &"
-        target_ip="213.131.230.240"
-        pno="22" #"5201" #"22"
-        # iperf_command = f"ssh -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
+        #TODO iperf_command = f"ssh -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
         #                 f"-o StrictHostKeyChecking=no -p {pno} {self.username}@{float_ip} " \
         #                 f"./{testname}-wait iperf3; iperf3 -t5 -J -c {target_ip} | jq &"
+
         iperf_command = f"cat response.json"
         try:
             #iperf_json = subprocess.check_output(iperf_command, shell=True)
             iperf_json = self.execute_command(iperf_command)
             self.logger.log_info(f"iperf json {iperf_json}")
         except:
-            self.logger.log_error(f"Iperf json retry")
+            self.logger.log_error(f"Iperf failed retry")
             time.sleep(16)
+ 
+        return iperf_json
 
-        # except subprocess.CalledProcessError:
-        #     print(" retry ", end='')
-        #     time.sleep(16)
     def parse_and_log_results(self,iperf_json, source_ip, target_ip, vm):
         print("parse")
         BOLD = '\033[1m'
@@ -404,44 +424,35 @@ class SshClient:
         red = redirs[avail_zones - 1]
         red = self.get_last_non_empty_line(red)
         pno = self.extract_pno(red)
+
         print(f"Redirect: {redirs[0]} red: {red} pno: {pno}")
         print("...")
         print(f"type(network_quantity): {type(network_quantity)}")
         print("...")
+        
         for vm in range(network_quantity):
             target_ip =  ips[vm] if  ips[vm] else  ips[vm + network_quantity]
             source_ip =  ips[vm + vm_quantity - network_quantity] if  ips[vm + vm_quantity - network_quantity] else  ips[vm + vm_quantity - 2 * network_quantity]
             print(f"target_ip: {target_ip} source_ip: {source_ip}")
 
             if not source_ip or not target_ip or source_ip == target_ip:
-                error_message = f"#ERROR: Skip test {source_ip} <-> {target_ip}"
-                print(error_message)
-                self.logger.log_info(f"IPerf3: {source_ip}-{target_ip}: skipped")
-
+                self.logger.log_info(f"IPerf3: {source_ip}<->{target_ip}: skipped")
 
             float_ip = floating_ips[vm % avail_zones]
-            # # Perform operations as in the shell script
-            # # SSH and SCP operations are placeholders here
-            # scp_command = f"scp -P {pno} file {float_ip}"
-            # ssh_command = f"ssh -p {pno} {float_ip} iperf3 -t5 -J -c {target_ip}"
-
             print(f"float_ip {float_ip}")
             print("...")            
             self.transfer_wait_script(float_ip, pno, testname)
+
             # self.logger.log_info(f"ssh -o \"UserKnownHostsFile=~/.ssh/known_hosts.{testname}\" -o \"PasswordAuthentication=no\" "
             #                 f"-o \"StrictHostKeyChecking=no\" -i {self.private_key} -p {pno} {self.username}@{float_ip} "
             #                 f"iperf3 -t5 -J -c {target_ip}\n")
 
             iperf_json = self.iperf3_sub(source_ip, target_ip, float_ip, pno, testname)
-            #iperf_json = self.execute_command("lsof -i :5201")
             print(f"iperf_json {iperf_json}")
             
-            
-            
-            #testresult="20"
             if iperf_json:
                 print(f"parsing")
-                #self.parse_and_log_results(iperf_json, source_ip, target_ip, vm)
+                self.parse_and_log_results(iperf_json, source_ip, target_ip, vm)
                 self.conn_test_count.labels(
                     ResultStatusCodes.SUCCESS, self.host, target_ip, conn_test
                 ).inc()
@@ -450,4 +461,63 @@ class SshClient:
                     ResultStatusCodes.FAILURE, self.host, target_ip, conn_test
                 ).inc()
                 return f"no iperf json"
+
+
+
+
+
+
+
+    # def run_iperf_test(self, conn_test, testname, ips, network_quantity: int=3, redirs=["tcp,8080, value1", "tcp,9090, value1"], avail_zones=2):
+    #     print(f"testname: {testname},  ips: { ips}, network_quantity: {network_quantity}") 
+    #     self.print_working_directory()
+    #     vm_quantity = len( ips)
+    #     floating_ips = ["213.131.230.240", "213.131.230.10"]
+    #     red = redirs[avail_zones - 1]
+    #     red = self.get_last_non_empty_line(red)
+    #     pno = self.extract_pno(red)
+    #     print(f"Redirect: {redirs[0]} red: {red} pno: {pno}")
+    #     print("...")
+    #     print(f"type(network_quantity): {type(network_quantity)}")
+    #     print("...")
+    #     for vm in range(network_quantity):
+    #         target_ip =  ips[vm] if  ips[vm] else  ips[vm + network_quantity]
+    #         source_ip =  ips[vm + vm_quantity - network_quantity] if  ips[vm + vm_quantity - network_quantity] else  ips[vm + vm_quantity - 2 * network_quantity]
+    #         print(f"target_ip: {target_ip} source_ip: {source_ip}")
+
+    #         if not source_ip or not target_ip or source_ip == target_ip:
+    #             self.logger.log_info(f"IPerf3: {source_ip}<->{target_ip}: skipped")
+
+
+    #         float_ip = floating_ips[vm % avail_zones]
+    #         # # Perform operations as in the shell script
+    #         # # SSH and SCP operations are placeholders here
+    #         # scp_command = f"scp -P {pno} file {float_ip}"
+    #         # ssh_command = f"ssh -p {pno} {float_ip} iperf3 -t5 -J -c {target_ip}"
+
+    #         print(f"float_ip {float_ip}")
+    #         print("...")            
+    #         self.transfer_wait_script(float_ip, pno, testname)
+    #         # self.logger.log_info(f"ssh -o \"UserKnownHostsFile=~/.ssh/known_hosts.{testname}\" -o \"PasswordAuthentication=no\" "
+    #         #                 f"-o \"StrictHostKeyChecking=no\" -i {self.private_key} -p {pno} {self.username}@{float_ip} "
+    #         #                 f"iperf3 -t5 -J -c {target_ip}\n")
+
+    #         iperf_json = self.iperf3_sub(source_ip, target_ip, float_ip, pno, testname)
+    #         #iperf_json = self.execute_command("lsof -i :5201")
+    #         print(f"iperf_json {iperf_json}")
+            
+            
+            
+    #         #testresult="20"
+    #         if iperf_json:
+    #             print(f"parsing")
+    #             #self.parse_and_log_results(iperf_json, source_ip, target_ip, vm)
+    #             self.conn_test_count.labels(
+    #                 ResultStatusCodes.SUCCESS, self.host, target_ip, conn_test
+    #             ).inc()
+    #         else:
+    #             self.conn_test_count.labels(
+    #                 ResultStatusCodes.FAILURE, self.host, target_ip, conn_test
+    #             ).inc()
+    #             return f"no iperf json"
         
