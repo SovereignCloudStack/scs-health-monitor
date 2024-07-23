@@ -322,31 +322,27 @@ class SshClient:
         if sftp:
                 sftp.close()
 
-    # def iperf3_sub(self, source_ip, target_ip, float_ip, pno, testname):
-    #     print("iperf3 sub")
-    #     # iperf_command = f"ssh -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
-    #     #         f"-o StrictHostKeyChecking=no -i {self.private_key} -p {pno} {self.username}@{float_ip} " \
-    #     #         f"./{testname}-wait iperf3; iperf3 -t5 -J -c {target_ip} &"
-    #     iperf_command = f"ssh -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
-    #                     f"-o StrictHostKeyChecking=no -p {pno} {self.username}@{float_ip} " \
-    #                     f"./{testname}-wait iperf3; iperf3 -t5 -J -c {target_ip} | jq &"
-    #     try:
-    #         #iperf_json = subprocess.check_output(iperf_command, shell=True)
-    #         iperf_json = self.execute_command(iperf_command)
-    #         self.logger.log_info(f"iperf json {iperf_json}")
-    #     except:
-    #         self.logger.log_error(f"Iperf failed retry")
-    #         time.sleep(16)
-
-    #     # except subprocess.CalledProcessError:
-    #     #     print(" retry ", end='')
-    #     #     time.sleep(16)
+    def iperf3_sub(self, source_ip, target_ip, float_ip, pno, testname):
+        print("iperf3 sub")
+        # iperf_command = f"ssh -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
+        #         f"-o StrictHostKeyChecking=no -i {self.private_key} -p {pno} {self.username}@{float_ip} " \
+        #         f"./{testname}-wait iperf3; iperf3 -t5 -J -c {target_ip} &"
+        iperf_command = f"ssh -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
+                        f"-o StrictHostKeyChecking=no -p {pno} {self.username}@{float_ip} " \
+                        f"./{testname}-wait iperf3; iperf3 -t5 -J -c {target_ip} | jq &"
+        try:
+            #iperf_json = subprocess.check_output(iperf_command, shell=True)
+            iperf_json = self.execute_command(iperf_command)
+            self.logger.log_info(f"iperf json {iperf_json}")
+        except:
+            self.logger.log_error(f"Iperf failed retry")
+            time.sleep(16)
+        return iperf_json
 
     def iperf3_sub(self, source_ip, target_ip, float_ip, pno, testname):
         target_ip="213.131.230.240"
         pno="22" #"5201" #"22"
 
-        # iperf_command = f"echo hello world"
         # print("iperf3 sub")
         # iperf_command = f"ssh -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
         #         f"-o StrictHostKeyChecking=no -i {self.private_key} -p {pno} {self.username}@{float_ip} " \
@@ -363,7 +359,12 @@ class SshClient:
         except:
             self.logger.log_error(f"Iperf failed retry")
             time.sleep(16)
- 
+    #     # try:
+    #        # iperf_json = subprocess.check_output(iperf_command, shell=True)
+    #     # except subprocess.CalledProcessError:
+    #     #     print(" retry ", end='')
+    #     #     time.sleep(16)
+
         return iperf_json
 
     def parse_and_log_results(self,iperf_json, source_ip, target_ip, vm):

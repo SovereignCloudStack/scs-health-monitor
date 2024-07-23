@@ -614,7 +614,7 @@ class StepsDef:
                 context.vm_ip_address = context.jh[i]['ip']                      
                 context.execute_steps('''
                     Then I should be able to SSH into the VM
-                    Then I should be able to collect all VM IPs
+                    Then I should be able to collect all Floating IPs
                     And be able to ping all IPs to test {conn_test} connectivity
                     ''')
             else:
@@ -638,7 +638,7 @@ class StepsDef:
     def test_internet_connectivity(context):
         context.ssh_client.test_internet_connectivity()
 
-    @then("I should be able to collect all VM IPs")
+    @then("I should be able to collect all Floating IPs")
     def collect_ips(context):
         context.ips, assertline = tools.collect_ips(context.client, context.logger)
         if assertline != None:

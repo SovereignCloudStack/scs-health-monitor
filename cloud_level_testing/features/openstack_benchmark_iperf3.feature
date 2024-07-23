@@ -7,7 +7,8 @@ Feature: Benchmark Iperf3 VMs
     Given I have deployed hosts in <network_quantity> networks
     And I have a private key at <vm_private_ssh_key_path> for <username>
     Then I should be able to create a checkup script for <conn_test> locally
-    Then I should be able to collect all VM IPs
+    Then I should be able to collect all Floating IPs
+    Then I should be able to collect all VM IPs and ports
     Then I should be able to SSH into <network_quantity> VMs and perform <conn_test> test
    
    
