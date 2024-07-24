@@ -355,7 +355,7 @@ class SshClient:
         try:
             #iperf_json = subprocess.check_output(iperf_command, shell=True)
             iperf_json = self.execute_command(iperf_command)
-            self.logger.log_info(f"iperf json {iperf_json}")
+            self.logger.log_info(f"iperf json received")
         except:
             self.logger.log_error(f"Iperf failed retry")
             time.sleep(16)
@@ -368,11 +368,18 @@ class SshClient:
         return iperf_json
 
     def parse_and_log_results(self,iperf_json, source_ip, target_ip, vm):
-        print("parse")
+        '''
+            Parses the result from iperf3
+            Args:
+                iperf_json: response from iperf formatted as json (string)
+            Returns:
+                Bandwith
+        '''
+        print("parsing func")
         BOLD = '\033[1m'
         NORM = '\033[0m'
         BANDWIDTH = []
-        self.logger.log_info(f"{iperf_json}\n")
+        #self.logger.log_info(f"{iperf_json}\n")
     
         iperf_json_dict = json.loads(iperf_json)
         SENDBW = int(Decimal(iperf_json_dict['end']['sum_sent']['bits_per_second']) / 1048576)
@@ -380,8 +387,7 @@ class SshClient:
         HUTIL = f"{iperf_json_dict['end']['cpu_utilization_percent']['host_total']:.1f}%"
         RUTIL = f"{iperf_json_dict['end']['cpu_utilization_percent']['remote_total']:.1f}%"
     
-        print(f" {source_ip} <-> {target_ip}: {BOLD}{SENDBW} Mbps {RECVBW} Mbps {HUTIL} {RUTIL}{NORM}")
-        self.logger.log_info(f"IPerf3: {source_ip}-{target_ip}: {SENDBW} Mbps {RECVBW} Mbps {HUTIL} {RUTIL}\n")
+        self.logger.log_info(f"IPerf3: {source_ip}-{target_ip}: sendbw: {SENDBW} Mbps receivebw: {RECVBW} Mbps cpuhost {HUTIL} cpuremote {RUTIL}\n")
     
         BANDWIDTH.extend([SENDBW, RECVBW])
         SBW = float(Decimal(SENDBW) / 1000)
@@ -417,29 +423,35 @@ class SshClient:
         with open(logfile, 'a') as f:
             f.write(message + '\n')
 
-    def run_iperf_test(self, conn_test, testname, ips, network_quantity: int=3, redirs=["tcp,8080, value1", "tcp,9090, value1"], avail_zones=2):
-        print(f"testname: {testname},  ips: { ips}, network_quantity: {network_quantity}") 
-        self.print_working_directory()
-        vm_quantity = len( ips)
-        floating_ips = ["213.131.230.240", "213.131.230.10"]
-        red = redirs[avail_zones - 1]
-        red = self.get_last_non_empty_line(red)
-        pno = self.extract_pno(red)
-
-        print(f"Redirect: {redirs[0]} red: {red} pno: {pno}")
-        print("...")
-        print(f"type(network_quantity): {type(network_quantity)}")
-        print("...")
+    def run_iperf_test(self, conn_test, testname, float_ips, redirs, network_quantity: int=2, avail_zones=2):
         
-        for vm in range(network_quantity):
-            target_ip =  ips[vm] if  ips[vm] else  ips[vm + network_quantity]
-            source_ip =  ips[vm + vm_quantity - network_quantity] if  ips[vm + vm_quantity - network_quantity] else  ips[vm + vm_quantity - 2 * network_quantity]
+        # red = redirs[avail_zones - 1]
+        # red = self.get_last_non_empty_line(red)
+        # pno = self.extract_pno(red)
+        
+        for jh in range(network_quantity):
+            #TODO: change name
+            vm_quantity = len(redirs[f'{testname}-infra-jh{jh}']['vms'])
+            red = redirs[f'{testname}-infra-jh{jh}']['vms'][0]['addr']
+            pno = redirs[f'{testname}-infra-jh{jh}']['vms'][0]['port']
+            target_ip = red
+            source_ip = redirs[f'{testname}-infra-jh0']['fip']
+            print(f"Redirect: {source_ip} red: {red} pno: {pno}")
+            print("...")
+            print(f"vm_quantity {vm_quantity}")
+            print("...")
+
+            print(f"testname: {testname},  ips: {float_ips}, network_quantity: {network_quantity}") 
+
+            # target_ip = float_ips[vm] if float_ips[vm] else float_ips[vm + network_quantity]
+            # source_ip = float_ips[vm + vm_quantity - network_quantity] if float_ips[vm + vm_quantity - network_quantity] else float_ips[vm + vm_quantity - 2 * network_quantity]
+            
             print(f"target_ip: {target_ip} source_ip: {source_ip}")
 
             if not source_ip or not target_ip or source_ip == target_ip:
                 self.logger.log_info(f"IPerf3: {source_ip}<->{target_ip}: skipped")
 
-            float_ip = floating_ips[vm % avail_zones]
+            float_ip = float_ips[jh % avail_zones]
             print(f"float_ip {float_ip}")
             print("...")            
             self.transfer_wait_script(float_ip, pno, testname)
@@ -449,11 +461,8 @@ class SshClient:
             #                 f"iperf3 -t5 -J -c {target_ip}\n")
 
             iperf_json = self.iperf3_sub(source_ip, target_ip, float_ip, pno, testname)
-            print(f"iperf_json {iperf_json}")
-            
             if iperf_json:
-                print(f"parsing")
-                self.parse_and_log_results(iperf_json, source_ip, target_ip, vm)
+                self.parse_and_log_results(iperf_json, source_ip, target_ip, jh)
                 self.conn_test_count.labels(
                     ResultStatusCodes.SUCCESS, self.host, target_ip, conn_test
                 ).inc()
@@ -462,63 +471,5 @@ class SshClient:
                     ResultStatusCodes.FAILURE, self.host, target_ip, conn_test
                 ).inc()
                 return f"no iperf json"
-
-
-
-
-
-
-
-    # def run_iperf_test(self, conn_test, testname, ips, network_quantity: int=3, redirs=["tcp,8080, value1", "tcp,9090, value1"], avail_zones=2):
-    #     print(f"testname: {testname},  ips: { ips}, network_quantity: {network_quantity}") 
-    #     self.print_working_directory()
-    #     vm_quantity = len( ips)
-    #     floating_ips = ["213.131.230.240", "213.131.230.10"]
-    #     red = redirs[avail_zones - 1]
-    #     red = self.get_last_non_empty_line(red)
-    #     pno = self.extract_pno(red)
-    #     print(f"Redirect: {redirs[0]} red: {red} pno: {pno}")
-    #     print("...")
-    #     print(f"type(network_quantity): {type(network_quantity)}")
-    #     print("...")
-    #     for vm in range(network_quantity):
-    #         target_ip =  ips[vm] if  ips[vm] else  ips[vm + network_quantity]
-    #         source_ip =  ips[vm + vm_quantity - network_quantity] if  ips[vm + vm_quantity - network_quantity] else  ips[vm + vm_quantity - 2 * network_quantity]
-    #         print(f"target_ip: {target_ip} source_ip: {source_ip}")
-
-    #         if not source_ip or not target_ip or source_ip == target_ip:
-    #             self.logger.log_info(f"IPerf3: {source_ip}<->{target_ip}: skipped")
-
-
-    #         float_ip = floating_ips[vm % avail_zones]
-    #         # # Perform operations as in the shell script
-    #         # # SSH and SCP operations are placeholders here
-    #         # scp_command = f"scp -P {pno} file {float_ip}"
-    #         # ssh_command = f"ssh -p {pno} {float_ip} iperf3 -t5 -J -c {target_ip}"
-
-    #         print(f"float_ip {float_ip}")
-    #         print("...")            
-    #         self.transfer_wait_script(float_ip, pno, testname)
-    #         # self.logger.log_info(f"ssh -o \"UserKnownHostsFile=~/.ssh/known_hosts.{testname}\" -o \"PasswordAuthentication=no\" "
-    #         #                 f"-o \"StrictHostKeyChecking=no\" -i {self.private_key} -p {pno} {self.username}@{float_ip} "
-    #         #                 f"iperf3 -t5 -J -c {target_ip}\n")
-
-    #         iperf_json = self.iperf3_sub(source_ip, target_ip, float_ip, pno, testname)
-    #         #iperf_json = self.execute_command("lsof -i :5201")
-    #         print(f"iperf_json {iperf_json}")
-            
-            
-            
-    #         #testresult="20"
-    #         if iperf_json:
-    #             print(f"parsing")
-    #             #self.parse_and_log_results(iperf_json, source_ip, target_ip, vm)
-    #             self.conn_test_count.labels(
-    #                 ResultStatusCodes.SUCCESS, self.host, target_ip, conn_test
-    #             ).inc()
-    #         else:
-    #             self.conn_test_count.labels(
-    #                 ResultStatusCodes.FAILURE, self.host, target_ip, conn_test
-    #             ).inc()
-    #             return f"no iperf json"
+            return #TODO: delete if you have the right amount of jh
         

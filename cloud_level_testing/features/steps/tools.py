@@ -173,7 +173,7 @@ def check_volumes_created(client, test_name):
             return volume.status
 
 
-def collect_ips(client, logger: Logger):
+def collect_float_ips(client, logger: Logger):
     ips = []
     assertline = None
     floating_ips = client.network.ips()

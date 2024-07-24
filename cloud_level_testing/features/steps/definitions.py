@@ -639,11 +639,36 @@ class StepsDef:
         context.ssh_client.test_internet_connectivity()
 
     @then("I should be able to collect all Floating IPs")
-    def collect_ips(context):
-        context.ips, assertline = tools.collect_ips(context.client, context.logger)
+    def collect_float_ips(context):
+        context.ips, assertline = tools.collect_float_ips(context.client, context.logger)
         if assertline != None:
             context.assertline = assertline
-    
+
+    @then("I should be able to collect all VM IPs and ports")
+    def collect_redirs(context):
+        #TODO: this is just a proxy
+        context.redirs={
+          'scs-hm-infra-jh0': {
+            'addr': '10.250.255.25',
+            'fip': '213.131.230.205',
+            'vms': [
+              {
+                'port': 222,
+                'addr': '10.250.3.73',
+                'vm_name': 'scs-hm-infra-vm0'
+              },
+              {
+                'port': 223,
+                'addr': '10.250.0.8',
+                'vm_name': 'scs-hm-infra-vm1'
+              }
+            ]
+          }
+        }
+
+        context.logger.log_info(f"vm data {context.redirs}")
+        assert isinstance(context.redirs,dict), "redirs is no dictionary"
+
     @then("be able to ping all IPs to test {conn_test} connectivity") 
     def ping_ips_test(context, conn_test: str):
         tot_ips = len(context.ips)
@@ -708,26 +733,11 @@ class StepsDef:
                     Then I should be able to SSH into the VM
                     ''')
                 print(f"ips: {context.ips}")
-                context.assertline = context.ssh_client.run_iperf_test(conn_test, context.test_name, context.ips, 2)
+                context.assertline = context.ssh_client.run_iperf_test(conn_test, context.test_name, context.ips, context.redirs, 2)
             else:
                 context.assertline = f"No matching hosts found"
         context.assertline = tools.delete_wait_script(context.test_name)        
         assert context.assertline == None, context.assertline
-
-    @then('I should be able to test SSH into {network_quantity:d} VMs and perform {conn_test} test')
-    def substeps(context,network_quantity, conn_test):
-        context.assertline=None
-        ips=["213.131.230.11","213.131.230.240"]
-        for ip in ips:
-            context.vm_ip_address = ip                  
-            context.execute_steps('''
-                Then I should be able to SSH into the VM
-                ''')
-            context.assertline = context.ssh_client.run_iperf_test(conn_test, context.test_name, ips, 2)
-        
-        context.assertline = tools.delete_wait_script(context.test_name)        
-        assert context.assertline == None, context.assertline
-
 
 
     
