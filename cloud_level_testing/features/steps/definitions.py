@@ -603,6 +603,7 @@ class StepsDef:
     @then("I should be able to SSH into {jh_quantity:d} JHs and test their {conn_test} connectivity")
     def step_iterate_steps(context, jh_quantity, conn_test: str):
         context.assertline = None
+        context.pno = 22
         for i in range(0, jh_quantity):
             if not isinstance(context.jh, str):
                 context.vm_ip_address = context.jh[i]['ip']                      
@@ -617,7 +618,8 @@ class StepsDef:
 
     @then("I should be able to SSH into the VM")
     def test_ssh_connection(context):
-        context.pno = 22
+        print(f"ssh into: {context.vm_ip_address}/{context.pno}")
+        print("...")
         ssh_client = SshClient(context.vm_ip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger, context.pno)
         if not ssh_client:
             context.assertline = f"could not access VM {context.vm_ip_address}"
@@ -731,7 +733,7 @@ class StepsDef:
             jh_name=context.hosts[i]['name']
             print(f"context.hosts {i}: {jh_name}")
             target_ip, source_ip, pno = tools.target_source_calc(jh_name, context.redirs, context.logger,2)
-            context.vm_ip_address = f" source {source_ip}"
+            context.vm_ip_address = source_ip
             context.pno = pno
             # if not isinstance(context.hosts,str):
             #     context.vm_ip_address = context.hosts[i]['ip']    
@@ -739,8 +741,7 @@ class StepsDef:
             context.execute_steps('''
                 Then I should be able to SSH into the VM
                 ''')
-            print(f"ips: {context.ips}")
-            context.assertline = context.ssh_client.run_iperf_test(conn_test, context.test_name, context.ips, context.redirs, 2)
+            context.assertline = context.ssh_client.run_iperf_test(conn_test, context.test_name, target_ip, source_ip, pno)
             # else:
             #     context.assertline = f"No matching hosts found"
         context.assertline = tools.delete_wait_script(context.test_name)        

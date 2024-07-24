@@ -331,7 +331,9 @@ class SshClient:
         # iperf_command = f"ssh -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
         #                 f"-o StrictHostKeyChecking=no -p {pno} {self.username}@{float_ip} " \
         #                 f"./{testname}-wait iperf3; iperf3 -t5 -J -c {target_ip} | jq &"
-        iperf_command = f"cat response.json"
+
+        #iperf_command = f"cat response.json"
+        iperf_command = f"iperf3 -t5 -J -c {target_ip} | jq"
         try:
             #iperf_json = subprocess.check_output(iperf_command, shell=True)
             iperf_json = self.execute_command(iperf_command)

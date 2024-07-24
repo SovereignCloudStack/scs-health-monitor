@@ -187,7 +187,8 @@ def collect_float_ips(client, logger: Logger):
 
 def collect_jhs(client, test_name, logger: Logger):
     servers = client.compute.servers()
-    lookup = f"{test_name}-jh"#"default-jh"  # just for testing delete later
+    #test_name="default"# just for testing delete later
+    lookup = f"{test_name}-jh"
     jhs = []
     jh = None
     for name in servers:
@@ -566,9 +567,10 @@ def target_source_calc(jh_name, redirs, logger ,network_quantity=2):
         print(f"redirs {redirs}")
         vm_quantity = len(redirs[jh_name]['vms'])
         print(f"{vm_quantity} vms")
-        target_ip = redirs[jh_name]['vms'][vm_quantity-1]['addr']
-        pno = redirs[jh_name]['vms'][vm_quantity-1]['port']
+        #target_ip = redirs[jh_name]['vms'][vm_quantity-1]['addr']
+        target_ip = redirs[jh_name]['addr']
         source_ip = redirs[jh_name]['fip']
+        pno = redirs[jh_name]['vms'][vm_quantity-1]['port']
         print(f"Redirect: {source_ip} red: {target_ip} pno: {pno}")
         print(f"vm_quantity {vm_quantity}")
         print(f"target_ip: {target_ip} source_ip: {source_ip}")
