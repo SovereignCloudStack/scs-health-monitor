@@ -61,8 +61,9 @@ class SshClient:
         ],
     )
 
-    def __init__(self, host, username, key_path, logger: Logger):
+    def __init__(self, host, username, key_path, logger: Logger, port=22):
         self.host = host
+        self.port = port
         self.username = username
         self.client = paramiko.SSHClient()
         policy = paramiko.AutoAddPolicy()
@@ -141,7 +142,7 @@ class SshClient:
         # self.assertline=f"SSH connection to server {self.host} failed"
         TimeRecorder.record_time(
             lambda: self.client.connect(
-                self.host, username=self.username, pkey=self.private_key
+                self.host, port=self.port, username=self.username, pkey=self.private_key
             ),
             on_success=on_success,
             on_fail=on_fail,

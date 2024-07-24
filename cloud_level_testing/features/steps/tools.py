@@ -560,7 +560,7 @@ def run_parallel(tasks: list[tuple], timeout: int = 100) -> list[str]:
             results.append(res)
     return results
 
-def target_source_calc(jh_name, redirs, network_quantity=2):
+def target_source_calc(jh_name, redirs, logger ,network_quantity=2):
     for jh in range(0,network_quantity):
         #TODO: change name
         print(f"redirs {redirs}")
@@ -575,5 +575,5 @@ def target_source_calc(jh_name, redirs, network_quantity=2):
         print("...")
         
         if not source_ip or not target_ip or source_ip == target_ip:
-            self.logger.log_info(f"IPerf3: {source_ip}<->{target_ip}: skipped")
+            logger.log_info(f"IPerf3: {source_ip}<->{target_ip}: skipped")
         return target_ip, source_ip, pno
