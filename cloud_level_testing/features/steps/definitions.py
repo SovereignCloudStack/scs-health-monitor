@@ -593,12 +593,6 @@ class StepsDef:
     def initialize(context, jh_quantity):
         context.jh = tools.collect_jhs(context.client, context.test_name, context.logger)
         assert len(context.jh) >= jh_quantity, f"Not enough Jumphost with name found"
-
-#TODO: this is a proxy
-    @given("I have deployed hosts in {network_quantity:d} networks")
-    def initialize(context, network_quantity):
-        context.hosts=tools.collect_jhs(context.client,context.test_name, context.logger)
-        assert len(context.hosts) >= network_quantity, f"Not enough hosts in networks found"
     
     @given("I have a private key at {vm_private_ssh_key_path} for {username}")
     def check_private_key_exists(context, vm_private_ssh_key_path: str, username:str):
@@ -643,6 +637,12 @@ class StepsDef:
         context.ips, assertline = tools.collect_float_ips(context.client, context.logger)
         if assertline != None:
             context.assertline = assertline
+
+#TODO: this is a proxy
+    @given("I have deployed hosts in {network_quantity:d} networks")
+    def initialize(context, network_quantity):
+        context.hosts=tools.collect_jhs(context.client,f"{context.test_name}-infra", context.logger)
+        assert len(context.hosts) >= network_quantity, f"Not enough hosts in networks found"
 
     @then("I should be able to collect all VM IPs and ports")
     def collect_redirs(context):
@@ -726,16 +726,21 @@ class StepsDef:
     @then('I should be able to SSH into {network_quantity:d} VMs and perform {conn_test} test')
     def substeps(context,network_quantity, conn_test):
         context.assertline=None
-        for i in range(0, network_quantity):
-            if not isinstance(context.hosts,str):
-                context.vm_ip_address = context.hosts[i]['ip']                      
-                context.execute_steps('''
-                    Then I should be able to SSH into the VM
-                    ''')
-                print(f"ips: {context.ips}")
-                context.assertline = context.ssh_client.run_iperf_test(conn_test, context.test_name, context.ips, context.redirs, 2)
-            else:
-                context.assertline = f"No matching hosts found"
+        for i in range(0,len(context.hosts)):
+            jh_name=context.hosts[i]['name']
+            print(f"context.hosts {i}: {jh_name}")
+            target_ip, source_ip, pno = tools.target_source_calc(jh_name, context.redirs,2)
+            context.vm_ip_address = f"{source_ip}"
+            # if not isinstance(context.hosts,str):
+            #     context.vm_ip_address = context.hosts[i]['ip']    
+            #     print(f"context.vm_ip_addr {context.vm_ip_address}")
+            context.execute_steps('''
+                Then I should be able to SSH into the VM
+                ''')
+            print(f"ips: {context.ips}")
+            context.assertline = context.ssh_client.run_iperf_test(conn_test, context.test_name, context.ips, context.redirs, 2)
+            # else:
+            #     context.assertline = f"No matching hosts found"
         context.assertline = tools.delete_wait_script(context.test_name)        
         assert context.assertline == None, context.assertline
 

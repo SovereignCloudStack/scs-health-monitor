@@ -312,7 +312,7 @@ class SshClient:
         # subprocess.run(scp_command, shell=True, stdout=subprocess.DEVNULL)
 
         sftp = self.client.open_sftp()
-        directory = self.execute_command("pwd")
+        directory = self.execute_command("hostname -I && pwd")
         print(f"open sftp pwd {directory}")
         sftp.put(f"{testname}-wait",os.path.join("/home/ubuntu",f"{testname}-wait"))
         directory = self.execute_command("pwd")
@@ -327,47 +327,22 @@ class SshClient:
         # iperf_command = f"ssh -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
         #         f"-o StrictHostKeyChecking=no -i {self.private_key} -p {pno} {self.username}@{float_ip} " \
         #         f"./{testname}-wait iperf3; iperf3 -t5 -J -c {target_ip} &"
-        iperf_command = f"ssh -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
-                        f"-o StrictHostKeyChecking=no -p {pno} {self.username}@{float_ip} " \
-                        f"./{testname}-wait iperf3; iperf3 -t5 -J -c {target_ip} | jq &"
+        # iperf_command = f"ssh -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
+        #                 f"-o StrictHostKeyChecking=no -p {pno} {self.username}@{float_ip} " \
+        #                 f"./{testname}-wait iperf3; iperf3 -t5 -J -c {target_ip} | jq &"
+        iperf_command = f"cat response.json"
         try:
             #iperf_json = subprocess.check_output(iperf_command, shell=True)
             iperf_json = self.execute_command(iperf_command)
             self.logger.log_info(f"iperf json {iperf_json}")
         except:
             self.logger.log_error(f"Iperf failed retry")
+            iperf_json = None
             time.sleep(16)
         return iperf_json
 
-    def iperf3_sub(self, source_ip, target_ip, float_ip, pno, testname):
-        target_ip="213.131.230.240"
-        pno="22" #"5201" #"22"
 
-        # print("iperf3 sub")
-        # iperf_command = f"ssh -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
-        #         f"-o StrictHostKeyChecking=no -i {self.private_key} -p {pno} {self.username}@{float_ip} " \
-        #         f"./{testname}-wait iperf3; iperf3 -t5 -J -c {target_ip} &"
-        #TODO iperf_command = f"ssh -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
-        #                 f"-o StrictHostKeyChecking=no -p {pno} {self.username}@{float_ip} " \
-        #                 f"./{testname}-wait iperf3; iperf3 -t5 -J -c {target_ip} | jq &"
-
-        iperf_command = f"cat response.json"
-        try:
-            #iperf_json = subprocess.check_output(iperf_command, shell=True)
-            iperf_json = self.execute_command(iperf_command)
-            self.logger.log_info(f"iperf json received")
-        except:
-            self.logger.log_error(f"Iperf failed retry")
-            time.sleep(16)
-    #     # try:
-    #        # iperf_json = subprocess.check_output(iperf_command, shell=True)
-    #     # except subprocess.CalledProcessError:
-    #     #     print(" retry ", end='')
-    #     #     time.sleep(16)
-
-        return iperf_json
-
-    def parse_and_log_results(self,iperf_json, source_ip, target_ip, vm):
+    def parse_and_log_results(self,iperf_json, source_ip, target_ip):
         '''
             Parses the result from iperf3
             Args:
@@ -379,7 +354,6 @@ class SshClient:
         BOLD = '\033[1m'
         NORM = '\033[0m'
         BANDWIDTH = []
-        #self.logger.log_info(f"{iperf_json}\n")
     
         iperf_json_dict = json.loads(iperf_json)
         SENDBW = int(Decimal(iperf_json_dict['end']['sum_sent']['bits_per_second']) / 1048576)
@@ -394,82 +368,54 @@ class SshClient:
         RBW = float(Decimal(RECVBW) / 1000)
 
         self.logger.log_info(f"Bandwith: {BANDWIDTH} SBW: {SBW} RBW: {RBW}\n")
+# TODO: maybe not needed
+    # def get_last_non_empty_line(self,text):
+    #     ''' 
+    #     get the last non-empty line
+    #     '''
+    #     lines = text.split('\n')
+    #     non_empty_lines = [line for line in lines if line.strip()]
+    #     return non_empty_lines[-1] if non_empty_lines else None
 
-    def get_last_non_empty_line(self,text):
-        ''' 
-        get the last non-empty line
+    # def extract_pno(self, text):
+    #     '''
+    #     extract pno from red
+    #     '''
+    #     if 'tcp,' in text:
+    #         start_index = text.index('tcp,') + len('tcp,')
+    #         end_index = text.find(',', start_index)
+    #         if end_index == -1:
+    #             return text[start_index:]
+    #         return text[start_index:end_index]
+    #     return None
+    
+            
+    def run_iperf_test(self, conn_test, testname, target_ip, source_ip, pno):
         '''
-        lines = text.split('\n')
-        non_empty_lines = [line for line in lines if line.strip()]
-        return non_empty_lines[-1] if non_empty_lines else None
-
-    def extract_pno(self, text):
+            iterates through jh (one per network) picks the last vm accessable through jh and sets it as target
+            the jh is set as source
         '''
-        extract pno from red
-        '''
-        if 'tcp,' in text:
-            start_index = text.index('tcp,') + len('tcp,')
-            end_index = text.find(',', start_index)
-            if end_index == -1:
-                return text[start_index:]
-            return text[start_index:end_index]
-        return None
-
-        
-    def log_to_file(logfile, message):
-        '''
-        log to a file
-        '''
-        with open(logfile, 'a') as f:
-            f.write(message + '\n')
-
-    def run_iperf_test(self, conn_test, testname, float_ips, redirs, network_quantity: int=2, avail_zones=2):
-        
         # red = redirs[avail_zones - 1]
         # red = self.get_last_non_empty_line(red)
         # pno = self.extract_pno(red)
-        
-        for jh in range(network_quantity):
-            #TODO: change name
-            vm_quantity = len(redirs[f'{testname}-infra-jh{jh}']['vms'])
-            red = redirs[f'{testname}-infra-jh{jh}']['vms'][0]['addr']
-            pno = redirs[f'{testname}-infra-jh{jh}']['vms'][0]['port']
-            target_ip = red
-            source_ip = redirs[f'{testname}-infra-jh0']['fip']
-            print(f"Redirect: {source_ip} red: {red} pno: {pno}")
-            print("...")
-            print(f"vm_quantity {vm_quantity}")
-            print("...")
-
-            print(f"testname: {testname},  ips: {float_ips}, network_quantity: {network_quantity}") 
-
-            # target_ip = float_ips[vm] if float_ips[vm] else float_ips[vm + network_quantity]
-            # source_ip = float_ips[vm + vm_quantity - network_quantity] if float_ips[vm + vm_quantity - network_quantity] else float_ips[vm + vm_quantity - 2 * network_quantity]
-            
-            print(f"target_ip: {target_ip} source_ip: {source_ip}")
-
-            if not source_ip or not target_ip or source_ip == target_ip:
-                self.logger.log_info(f"IPerf3: {source_ip}<->{target_ip}: skipped")
-
-            float_ip = float_ips[jh % avail_zones]
-            print(f"float_ip {float_ip}")
-            print("...")            
-            self.transfer_wait_script(float_ip, pno, testname)
+            #float_ip = float_ips[jh % avail_zones]
+        float_ip = source_ip 
+        self.transfer_wait_script(float_ip, pno, testname)
 
             # self.logger.log_info(f"ssh -o \"UserKnownHostsFile=~/.ssh/known_hosts.{testname}\" -o \"PasswordAuthentication=no\" "
             #                 f"-o \"StrictHostKeyChecking=no\" -i {self.private_key} -p {pno} {self.username}@{float_ip} "
             #                 f"iperf3 -t5 -J -c {target_ip}\n")
 
-            iperf_json = self.iperf3_sub(source_ip, target_ip, float_ip, pno, testname)
-            if iperf_json:
-                self.parse_and_log_results(iperf_json, source_ip, target_ip, jh)
-                self.conn_test_count.labels(
-                    ResultStatusCodes.SUCCESS, self.host, target_ip, conn_test
-                ).inc()
-            else:
-                self.conn_test_count.labels(
-                    ResultStatusCodes.FAILURE, self.host, target_ip, conn_test
-                ).inc()
-                return f"no iperf json"
-            return #TODO: delete if you have the right amount of jh
+        iperf_json = self.iperf3_sub(source_ip, target_ip, float_ip, pno, testname)
+        if iperf_json:
+            self.parse_and_log_results(iperf_json, source_ip, target_ip)
+            self.conn_test_count.labels(
+                ResultStatusCodes.SUCCESS, self.host, target_ip, conn_test
+            ).inc()
+        else:
+            self.conn_test_count.labels(
+                ResultStatusCodes.FAILURE, self.host, target_ip, conn_test
+            ).inc()
+            return f"no iperf json"
+        return #TODO: delete if you have the right amount of jh
         

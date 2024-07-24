@@ -11,12 +11,6 @@ Feature: Benchmark Iperf3 VMs
     Then I should be able to collect all VM IPs and ports
     Then I should be able to SSH into <network_quantity> VMs and perform <conn_test> test
    
-   
-    ## substeps:
-    # Then I should be able to access one of <network_quantity> VMs / Then I should be able to SSH into the VM
-    # Then I should be able to create a wait-script and transfer that to the remote machine
-    # And run the <conn_test> test between two hosts and parse the test results to log
-
 
     Examples:
 	    | host_name    | vm_private_ssh_key_path  | username 	| network_quantity	| conn_test |

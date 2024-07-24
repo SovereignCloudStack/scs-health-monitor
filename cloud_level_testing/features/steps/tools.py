@@ -187,8 +187,7 @@ def collect_float_ips(client, logger: Logger):
 
 def collect_jhs(client, test_name, logger: Logger):
     servers = client.compute.servers()
-    test_name = f"{test_name}-jh"
-    lookup = "default-jh"  # just for testing delete later
+    lookup = f"{test_name}-jh"#"default-jh"  # just for testing delete later
     jhs = []
     jh = None
     for name in servers:
@@ -204,6 +203,7 @@ def collect_jhs(client, test_name, logger: Logger):
                         jhs.append(
                             {"name": name.name, "ip": jh.addresses[key][1]["addr"]}
                         )
+    logger.log_info(f"returning jhs: {jhs}")
     return jhs
 
 
@@ -559,3 +559,21 @@ def run_parallel(tasks: list[tuple], timeout: int = 100) -> list[str]:
             res = running_task.result(timeout=timeout)
             results.append(res)
     return results
+
+def target_source_calc(jh_name, redirs, network_quantity=2):
+    for jh in range(0,network_quantity):
+        #TODO: change name
+        print(f"redirs {redirs}")
+        vm_quantity = len(redirs[jh_name]['vms'])
+        print(f"{vm_quantity} vms")
+        target_ip = redirs[jh_name]['vms'][vm_quantity-1]['addr']
+        pno = redirs[jh_name]['vms'][vm_quantity-1]['port']
+        source_ip = redirs[jh_name]['fip']
+        print(f"Redirect: {source_ip} red: {target_ip} pno: {pno}")
+        print(f"vm_quantity {vm_quantity}")
+        print(f"target_ip: {target_ip} source_ip: {source_ip}")
+        print("...")
+        
+        if not source_ip or not target_ip or source_ip == target_ip:
+            self.logger.log_info(f"IPerf3: {source_ip}<->{target_ip}: skipped")
+        return target_ip, source_ip, pno
