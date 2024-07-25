@@ -192,10 +192,15 @@ runcmd:
             fip = context.collector.create_floating_ip(
                 BenchmarkInfra.calculate_jh_name_by_az(context, az)
             )
-            # Add jump host fip to port forwardings data structure
+            # Add jump host internal ip and fip to port forwardings data structure
             for jh_name, redir in context.redirs.items():
                 if jh_name == BenchmarkInfra.calculate_jh_name_by_az(context, az):
                     context.redirs[jh_name]["fip"] = str(fip)
+                # Also set fixed ip of network
+                if not context.redirs[jh_name]["addr"]:
+                    jh = context.collector.find_server(jh_name)
+                    context.redirs[jh_name]["addr"] = (
+                        tools.vm_extract_ip_by_type(jh, "fixed"))
 
     @then("I should be able to create {quantity:d} VMs with a key pair named {keypair_name} and "
           "strip them over the VM networks")
@@ -241,6 +246,7 @@ runcmd:
         The resulting dict looks like:
         {
           'scs-hm-infra-jh0': {
+            'addr': None,
             'fip': None,
             'vms': [
               {
@@ -271,7 +277,8 @@ runcmd:
                 if mapping["az"] == az:
                     if jh_name not in redirs:
                         redirs[jh_name] = {
-                            "fip": None, # Add after jump host created
+                            "fip": None,  # Add after jump host created
+                            "addr": None,
                             "vms": []
                         }
                     # Get next free port

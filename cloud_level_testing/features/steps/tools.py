@@ -214,18 +214,19 @@ def create_subnets(num):
             break
     return subnet_list
 
-def vm_extract_floating_ip(server):
+def vm_extract_ip_by_type(server, type: str):
     """
-    Iterate addresses of server object and return first floating ip we find
+    Iterate addresses of server object and return first floating ip we find.
+    Typical types are 'floating' or 'fixed'.
     @param server:
     @return: floating ip or None if not present
     """
     for vm_nets in server["addresses"].values():
         for vm_addr in vm_nets:
-            if vm_addr["OS-EXT-IPS:type"] == "floating":
-                # We found a floating ip attached to the jh.
-                # We take it and assume it's the only one.
+            if vm_addr["OS-EXT-IPS:type"] == type:
+                # We found an ip attached to the machine.
                 return vm_addr["addr"]
+    return None
 
 def delete_subent_ports(client, subnet_id=None):
     for port in client.network.ports(network_id=subnet_id):
