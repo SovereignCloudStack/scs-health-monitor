@@ -17,7 +17,7 @@ class BenchmarkInfra:
     * a router to which all networks are connected and
     * several VMs striped over the available vm networks
 
-    The jump hosts to a port forwarding to the vms.
+    The jump hosts do a port forwarding to the vms.
     TODO: Redirs!
      See usage of PORTS: collectPorts
     """
@@ -77,7 +77,7 @@ class BenchmarkInfra:
             no = context.vm_nets_ids.index(net)
             subnet = context.collector.create_subnet(name=f"{context.test_name}vm-{no}",
                                                      network_id=net,
-                                                     cidr=f"10.250.{(no + 1) * 4}.0/24")
+                                                     cidr=f"10.250.{no * 4}.0/22")
             context.vm_subnet_ids.append(subnet.id)
 
     @then("I should be able to connect the router to the jump host subnet")
