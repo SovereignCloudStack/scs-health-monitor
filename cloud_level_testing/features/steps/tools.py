@@ -8,11 +8,12 @@ import os
 
 import yaml
 from openstack.exceptions import DuplicateResource
+import openstack
 
 
 class Collector:
 
-    def __init__(self):
+    def __init__(self, client: openstack.connection.Connection = None):
         self.networks: list = list()
         self.subnets: list = list()
         self.routers: list = list()
@@ -24,9 +25,14 @@ class Collector:
         self.volumes: list = list()
         self.load_balancers: list = list()
         self.ports: list = list()
+        # TODO: ports vs. interfaces?
+        # List of routers and their subnets. dicts {"router": <router-id>, "subnet": <subnet-id>}
+        self.router_subnets: list[dict] = list()
         self.enabled_ports: list = ()
         self.disabled_ports: list = list()
         self.virtual_machines_ip: list = list()
+
+        self.client = client
 
     def __bool__(self):
         return any(
@@ -47,6 +53,47 @@ class Collector:
                 self.virtual_machines_ip,
             )
         )
+
+    def create_router(self, name, **kwargs):
+        router = create_router(self.client, name, **kwargs)
+        self.routers.append(router.id)
+        return router
+
+    def create_network(self, name, **kwargs):
+        net = create_network(self.client, name, **kwargs)
+        self.networks.append(net.id)
+        return net
+
+    def create_subnet(self, name, network_id, ip_version=4, **kwargs):
+        subnet = create_subnet(self.client, name, network_id, ip_version, **kwargs)
+        self.subnets.append(subnet.id)
+        return subnet
+
+    def add_interface_to_router(self, router, subnet_id):
+        router_update = add_interface_to_router(self.client, router, subnet_id)
+        self.router_subnets.append({"router": router.id, "subnet": subnet_id})
+        return router_update
+
+    def find_router(self, name_or_id):
+        return find_router(self.client, name_or_id)
+
+    def delete_interface_from_router(self, router, subnet_id):
+        res = self.client.network.remove_interface_from_router(router, subnet_id)
+        if not res:
+            # success
+            self.router_subnets.remove({"router": router.id, "subnet": subnet_id})
+
+    def create_jumphost(self, name, network_name, keypair_name, vm_image, flavor_name,
+                        security_groups, **kwargs):
+        vm = create_jumphost(self.client, name, network_name, keypair_name, vm_image, flavor_name,
+                             security_groups, **kwargs)
+        self.virtual_machines.append(vm.id)
+        return vm
+
+    def create_floating_ip(self, server_name):
+        fip = create_floating_ip(self.client, server_name)
+        self.floating_ips.append(fip)
+        return fip
 
 
 class Tools:
@@ -637,6 +684,13 @@ def find_router(client, name_or_id):
     return client.network.find_router(name_or_id=name_or_id)
 
 def add_interface_to_router(client, router, subnet_id):
+    """
+    Add interface to router
+    @param client:
+    @param router:
+    @param subnet_id:
+    @return: Router with changed attributes (id, tenant_id, port_id)
+    """
     return client.network.add_interface_to_router(router, subnet_id)
 
 def get_availability_zones(client) -> list:

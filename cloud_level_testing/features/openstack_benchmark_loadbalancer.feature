@@ -16,6 +16,14 @@ Feature: Test loadbalancer
     Then I should be able to attach floating ips to the jump hosts
     Then I should be able to create <quantity_vms> VMs with a key pair named <keypair_name> and strip them over the VM networks
 
+    # TODO: Just for testing
+    Then I sleep
+
+    Then I should be able to delete the VMs
+    Then I should be able to delete all subnets of routers
+    Then I should be able to delete routers
+    Then I should be able to delete a networks
+
     #Then I should be able to delete the ports associated with the router
 
 #    Then I should be able to create a loadbalancer
