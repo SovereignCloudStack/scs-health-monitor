@@ -34,7 +34,6 @@ class BenchmarkInfra:
         # Dict of router names with their corresponding port ids
         # { "router_name": ["id1", "id2"] }
         context.lb_router_port_ids: dict = {}
-        context.lb_jump_host_names: list = []
 
         # List of dicts in order of VM names (asc), az and containing VM ip addresses
         context.az_vm_port_mapping: list = []
@@ -47,6 +46,10 @@ class BenchmarkInfra:
     @staticmethod
     def derive_vm_name(context, num: int):
         return f"{context.test_name}vm{num}"
+
+    @staticmethod
+    def calculate_jh_name_by_az(context, az):
+        return f"{context.test_name}jh{context.azs.index(az)}"
 
     @then("I should be able to create a router connected to the external network named {ext_net}")
     def infra_create_router(context, ext_net):
@@ -140,8 +143,14 @@ class BenchmarkInfra:
 
     @then("I should be able to attach floating ips to the jump hosts")
     def infra_create_floating_ip(context):
-        for jh in context.lb_jump_host_names:
-            context.collector.create_floating_ip(jh)
+        for az in context.azs:
+            fip = context.collector.create_floating_ip(
+                BenchmarkInfra.calculate_jh_name_by_az(context, az)
+            )
+            # Add jump host fip to port forwardings data structure
+            for jh_name, redir in context.redirs.items():
+                if jh_name == BenchmarkInfra.calculate_jh_name_by_az(context, az):
+                    context.redirs[jh_name]["fip"] = str(fip)
 
     @then("I should be able to create {quantity:d} VMs with a key pair named {keypair_name} and "
           "strip them over the VM networks")
@@ -179,15 +188,15 @@ class BenchmarkInfra:
     def infra_calculate_port_forwardings(context, port_start: int, port_end: int):
         """
         Calculate port forwarding for jump hosts redirecting ssh to the actual vms.
-        The resulting dict contains the floating ips of the jump hosts. And for each jump host
-        there is a list of related vms (= vms located in the same az as the jump host) including
+        The resulting dict contains for each jump host (we didn't create them, yet)
+        a list of related vms (= vms located in the same az as the jump host) including
         their internal ips and an associated port inside the range [port_start, port_end]
         which the jump host will use for redirecting traffic to the vm.
 
         The resulting dict looks like:
         {
           'scs-hm-infra-jh0': {
-            'fip': '213.131.230.205',
+            'fip': None,
             'vms': [
               {
                 'port': 222,
@@ -207,27 +216,17 @@ class BenchmarkInfra:
         @param port_end: lost port the allocate for redirection
         @return:
         """
-        jhs = []
-        for jh_name in context.lb_jump_host_names:
-            jh = context.collector.find_server(jh_name)
-            jhs.append({
-                "name": jh["name"],
-                "az": jh["location"]["zone"],
-                "fip": tools.vm_extract_floating_ip(jh),
-            })
-
         # Mapping between the jump host ports and the VM ips
         redirs = {}
 
         for mapping in context.az_vm_port_mapping:
-            for jh in jhs:
-                jh_name = jh["name"]
-                jh_fip = jh["fip"]
-                # found a jump host in the same az as the vm
-                if mapping["az"] == jh["az"]:
+            for az in context.azs:
+                jh_name = BenchmarkInfra.calculate_jh_name_by_az(context, az)
+                # Assuming a jump host (we wil create them later) in the same az as the vm
+                if mapping["az"] == az:
                     if jh_name not in redirs:
                         redirs[jh_name] = {
-                            "fip": jh_fip,
+                            "fip": None, # Add after jump host created
                             "vms": []
                         }
                     # Get next free port
