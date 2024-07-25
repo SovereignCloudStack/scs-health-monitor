@@ -98,6 +98,50 @@ class Collector:
         self.floating_ips.append(fip)
         return fip
 
+    def create_security_group(self, sec_group_name: str, description: str):
+        """Create security group in openstack
+
+        Args:
+            sec_group_name (str): Name of security group
+            description (str): Description of security group
+
+        Returns:
+            ~openstack.network.v2.security_group.SecurityGroup: The new security group or None
+        """
+        security_group = self.client.network.create_security_group(
+            name=sec_group_name,
+            description=description
+        )
+        self.security_groups.append(security_group.id)
+        assert security_group is not None, f"Security group with name {security_group.name} was not found"
+        return security_group
+
+    def create_security_group_rule(self, sec_group_id: str, protocol: str,
+                                   port_range_min: int = None, port_range_max: int = None,
+                                   direction: str = 'ingress'):
+        """Create security group rule for specified security group
+
+        Args:
+            sec_group_id (str): ID of the security group for the rule
+            protocol (str): The protocol that is matched by the security group rule
+            port_range_min (int): The minimum port number in the range that is matched by the security group rule
+            port_range_max (int): The maximum port number in the range that is matched by the security group rule
+            direction (str): The direction in which the security group rule is applied
+
+        Returns:
+            ~openstack.network.v2.security_group_rule.SecurityGroupRule: The new security group rule
+        """
+        sec_group_rule = self.client.network.create_security_group_rule(
+            security_group_id=sec_group_id,
+            port_range_min=port_range_min,
+            port_range_max=port_range_max,
+            protocol=protocol,
+            direction=direction
+        )
+        self.security_groups_rules.append(sec_group_rule.id)
+        assert sec_group_rule is not None, f"Rule for security group {sec_group_id} was not created"
+        return sec_group_rule
+
 
 class Tools:
 

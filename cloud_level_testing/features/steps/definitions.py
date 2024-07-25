@@ -292,7 +292,7 @@ class StepsDef:
             time.sleep(2)
             assert not tools.check_security_group_exists(
                 context,
-                sec_group.id), f"Security group with id {sec_group_id} was not deleted"
+                sec_group_id), f"Security group with id {sec_group_id} was not deleted"
             context.collector.security_groups.remove(sec_group_id)
         if context.collector.security_groups:
             for sec_group in context.client.network.security_groups():
