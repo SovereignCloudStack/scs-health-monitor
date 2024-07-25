@@ -4,7 +4,7 @@ Feature: Test loadbalancer
 
   Scenario Outline: Create load balancers and check whether VMs can be reached through their endpoint
     Given I connect to OpenStack
-    Given I want to test loadbalancers by using resources having the postfix <test_postfix>
+    Given I want to build the benchmark infrastructure by using resources having the prefix <test_prefix>
     Then I should be able to create a router connected to the external network named <ext_net>
     # TODO: create secondary VM network (create2ndSubNets) and add network name to VMs
     Then I should be able to fetch availability zones
@@ -38,8 +38,8 @@ Feature: Test loadbalancer
     #Then I should be able to access VMs through loadbalancers
 
     Examples: Test loadbalancer
-    | test_postfix | ext_net | keypair_name | quantity_vms |
-    | lb           |    ext01    |    tf-id-rsa      | 2 |
+    | test_prefix | ext_net | keypair_name | quantity_vms |
+    | infra           |    ext01    |    tf-id-rsa      | 2 |
 
     # openstack loadbalancer create --name lb1 --vip-subnet-id public-subnet --wait
     # openstack loadbalancer listener create --name listener1 --protocol HTTP --protocol-port 80 --wait lb1

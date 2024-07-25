@@ -6,22 +6,25 @@ import tools
 DEFAULT_SECURITY_GROUPS = [{"name": "ssh"}, {"name": "default"}]
 
 
-class LbStepsDef:  # benchmark infra?
+class BenchmarkInfra:
     """
-    Build test infra
+    Build test infrastructure on which the benchmarks base on.
 
-    # TODO: Remove os commands
-    openstack server delete tf-lb-jh0 tf-lb-vm0 tf-lb-vm1
-    openstack router remove subnet tf-lb-router tf-lb-vm-0
-    openstack router remove subnet tf-lb-router tf-lb-jh
-    openstack router delete tf-lb-router
-    openstack network delete tf-lb-vm-0 tf-lb-jh
+    It consists of:
+
+    * a network with jump hosts (one for each availability zone) (jh network),
+    * a network for each availability zone (vm network),
+    * a router to which all networks are connected and
+    * several VMs striped over the available vm networks
+
+    The jump hosts to a port forwarding to the vms.
+    TODO: Redirs!
+     See usage of PORTS: collectPorts
     """
 
-    @given("I want to test loadbalancers by using resources having the postfix {postfix}")
-    def lbs_benchmark(context, postfix: str):
-        postfix = f"-{postfix}-"
-        context.test_name = f"tf{postfix}"
+    @given("I want to build the benchmark infrastructure by using resources having the prefix {prefix}")
+    def infra_benchmark(context, prefix: str):
+        context.test_name = f"{context.test_name}-{prefix}-"
         context.vm_nets_ids: list = []
         context.azs: list = []
         context.vm_subnet_ids: list = []
@@ -36,7 +39,7 @@ class LbStepsDef:  # benchmark infra?
         context.collector = tools.Collector(client=context.client)
 
     @then("I should be able to create a router connected to the external network named {ext_net}")
-    def lb_create_router(context, ext_net):
+    def infra_create_router(context, ext_net):
         nets = tools.list_networks(context.client, filter={"name": ext_net})
         assert len(nets) == 1, "Expecting to find exactly one external network."
 
@@ -44,7 +47,7 @@ class LbStepsDef:  # benchmark infra?
                                         external_gateway_info={'network_id': nets[0].id})
 
     @then("I should be able to fetch availability zones")
-    def lb_get_azs(context):
+    def infra_get_azs(context):
         azs = tools.get_availability_zones(context.client)
         assert len(azs) > 0, "Expecting presence of availability zones!"
         for az in azs:
@@ -52,7 +55,7 @@ class LbStepsDef:  # benchmark infra?
 
     @then(
         "I should be able to create networks for both the jump hosts and for each availability zone")
-    def lb_create_networks(context):
+    def infra_create_networks(context):
         context.jh_net_id = context.collector.create_network(f"{context.test_name}jh").id
         for az in context.azs:
             no = context.azs.index(az)
@@ -61,7 +64,7 @@ class LbStepsDef:  # benchmark infra?
             context.vm_nets_ids.append(net.id)
 
     @then("I should be able to create subnets for both the jump hosts and vms")
-    def lb_create_subnets(context):
+    def infra_create_subnets(context):
         """
         Create two kinds of subnets: One for the jump host and one for the VMs.
         For the latter we create one subnet for each AZ.
@@ -78,7 +81,7 @@ class LbStepsDef:  # benchmark infra?
             context.vm_subnet_ids.append(subnet.id)
 
     @then("I should be able to connect the router to the jump host subnet")
-    def lb_connect_router_to_jh_net(context):
+    def infra_connect_router_to_jh_net(context):
         router = tools.find_router(context.client, context.lb_router_name)
         router_update = context.collector.add_interface_to_router(router, context.jh_subnet_id)
 
@@ -87,7 +90,7 @@ class LbStepsDef:  # benchmark infra?
                                      router_update["port_id"])
 
     @then("I should be able to connect the router to the vm subnets")
-    def lb_connect_router_to_vm_net(context):
+    def infra_connect_router_to_vm_net(context):
         router = tools.find_router(context.client, context.lb_router_name)
         for vm_subnet_id in context.vm_subnet_ids:
             router_update = context.collector.add_interface_to_router(router, vm_subnet_id)
@@ -98,7 +101,7 @@ class LbStepsDef:  # benchmark infra?
 
     @then(
         "I should be able to create a jump host for each az using a key pair named {keypair_name}")
-    def lb_create_jumphosts(context, keypair_name: str):
+    def infra_create_jumphosts(context, keypair_name: str):
         # TODO: Support SNAT and port forwarding
         for az in context.azs:
             no = context.azs.index(az)
@@ -115,13 +118,13 @@ class LbStepsDef:  # benchmark infra?
             context.lb_jump_host_names.append(jh_name)
 
     @then("I should be able to attach floating ips to the jump hosts")
-    def lb_create_floating_ip(context):
+    def infra_create_floating_ip(context):
         for jh in context.lb_jump_host_names:
             context.collector.create_floating_ip(jh)
 
     @then(
         "I should be able to create {quantity:d} VMs with a key pair named {keypair_name} and strip them over the VM networks")
-    def lb_create_vms(context, quantity, keypair_name: str):
+    def infra_create_vms(context, quantity, keypair_name: str):
         for num in range(0, quantity):
             vm_name = f"{context.test_name}vm{num}"
             assert len(context.vm_nets_ids) > 0, "Number of VM networks has to be greater than 0"
@@ -139,7 +142,7 @@ class LbStepsDef:  # benchmark infra?
         time.sleep(60)
 
     @then("I should be able to delete all subnets of routers")
-    def router_delete_subnets(context):
+    def infra_router_delete_subnets(context):
         for router_subnet in context.collector.router_subnets:
             context.collector.delete_interface_from_router(router_subnet["router"],
                                                            router_subnet["subnet"])
