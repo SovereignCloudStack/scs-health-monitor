@@ -24,11 +24,10 @@ class BenchmarkInfra:
     """
 
     @given(
-        "I want to build the benchmark infrastructure by using resources having the prefix "
+        "I want to build the benchmark infrastructure by using resources having the infix "
         "{prefix}")
-    def infra_benchmark(context, prefix: str):
-        # TODO: Set new test name. Don't override.
-        context.test_name = f"{context.test_name}-{prefix}-"
+    def infra_benchmark(context, infix: str):
+        context.test_name = f"{context.test_name}-{infix}-"
         context.vm_nets_ids: list = []
         context.azs: list = []
         context.vm_subnet_ids: list = []
