@@ -550,7 +550,7 @@ def create_vm(client, name, image_name, flavor_name, network_id, **kwargs):
         server = None
     return server
 
-def create_jumphost(client, name, network_name, keypair_name, vm_image, flavor_name, **kwargs):
+def create_jumphost(client, name, network_name, keypair_name, vm_image, flavor_name, security_groups, **kwargs):
     image = client.compute.find_image(name_or_id=vm_image)
     assert image, f"Image with name {vm_image} doesn't exist"
     flavor = client.compute.find_flavor(name_or_id=flavor_name)
@@ -564,6 +564,7 @@ def create_jumphost(client, name, network_name, keypair_name, vm_image, flavor_n
         flavor_id=flavor.id,
         networks=[{"uuid": network.id}],
         key_name=keypair_name,
+        security_groups=security_groups,
         wait=True,
         **kwargs
     )
@@ -606,6 +607,11 @@ def create_subnet(client, name, network_id, ip_version=4, **kwargs):
     assert not client.network.find_network(name_or_id=subnet), \
         f"Failed to create subnet with name {subnet}"
     return subnet
+
+def create_floating_ip(client, server_name):
+    server = client.compute.find_server(name_or_id=server_name)
+    assert server, f"Server with name {server_name} not found"
+    return client.add_auto_ip(server=server, wait=True)
 
 def create_router(client, name, **kwargs):
     """
