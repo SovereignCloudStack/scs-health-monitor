@@ -83,6 +83,10 @@ def time_it(func):
 
     return wrapper
 
+def add_value_to_dict_list(d, key, value):
+    if key not in d:
+        d[key] = []
+    d[key] = value
 
 def create_subnets(num):
     subnet_list = []
@@ -622,6 +626,18 @@ def create_router(client, name, **kwargs):
     @return created router
     """
     return client.network.create_router(name=name, **kwargs)
+
+def find_router(client, name_or_id):
+    """
+    Search router and return it
+    @param client: OpenStack client
+    @param name_or_id: router name or id
+    @return:
+    """
+    return client.network.find_router(name_or_id=name_or_id)
+
+def add_interface_to_router(client, router, subnet_id):
+    return client.network.add_interface_to_router(router, subnet_id)
 
 def get_availability_zones(client) -> list:
     return list(client.network.availability_zones())
