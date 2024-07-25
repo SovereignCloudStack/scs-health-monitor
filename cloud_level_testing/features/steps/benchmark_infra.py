@@ -19,9 +19,8 @@ class BenchmarkInfra:
     * a router to which all networks are connected and
     * several VMs striped over the available vm networks
 
-    The jump hosts do a port forwarding to the vms.
-    TODO: Redirs!
-     See usage of PORTS: collectPorts
+    The jump hosts do a port forwarding to the vms. The first VM can be reached via port 222
+    on the jump host, the second VM via port 223 and so on.
     """
 
     @given("I want to build the benchmark infrastructure by using resources having the prefix {prefix}")
