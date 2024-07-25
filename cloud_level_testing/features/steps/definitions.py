@@ -411,7 +411,7 @@ class StepsDef:
         network_count = 0
         for network in context.client.network.networks():
             if context.test_name in network.name:
-                for num in range(1, int(vms_quantity) + 1):
+                for num in range(1, vms_quantity + 1):
                     vm_name = f"{context.test_name}-vm-{''.join(random.choices(string.ascii_letters + string.digits, k=10))}"
                     tools.create_vm(context.client, vm_name, context.vm_image, context.flavor_name, network.id, security_groups=security_groups)
                     time.sleep(5)
