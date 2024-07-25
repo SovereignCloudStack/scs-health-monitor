@@ -44,8 +44,9 @@ class LbStepsDef:
         context.jh_net_id = (
             tools.create_network(context.client, f"{context.test_name}jh").id)
         for az in context.azs:
+            no = context.azs.index(az)
             net = tools.create_network(context.client,
-                                       f"{context.test_name}{az}",
+                                       f"{context.test_name}vm-{no}",
                                        availability_zone_hints=[az])
             context.vm_nets_ids.append(net.id)
 
@@ -62,7 +63,7 @@ class LbStepsDef:
         for net in context.vm_nets_ids:
             no = context.vm_nets_ids.index(net)
             subnet = tools.create_subnet(context.client,
-                                         name=f"{context.test_name}vm{no}",
+                                         name=f"{context.test_name}vm-{no}",
                                          network_id=net,
                                          cidr=f"10.250.{(no + 1) * 4}.0/24")
             context.vm_subnet_ids.append(subnet.id)
