@@ -295,12 +295,10 @@ class SshClient:
         return False
     
 ########################## iperf
-    def transfer_wait_script(self, float_ip, pno, testname):
+    def transfer_script(self, scriptname):
         """
-            transfers temporary local wait script to the target host (and excecutes it?)
+            transfers temporary local script to the connected host via sftp
             Args:
-                float_ip: floating ip
-                pno: portnumber
                 testname: testname for namespace
             Returns:
                 
@@ -308,36 +306,23 @@ class SshClient:
                 Exception:
                     if file not found
         """
-        # scp_command = f"scp -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
-        #             f"-o StrictHostKeyChecking=no -i {DATADIR}/{KEYPAIRS[1]} -P {pno} -p {testname}-wait {DEFLTUSER}@{float_ip}:"
-        # subprocess.run(scp_command, shell=True, stdout=subprocess.DEVNULL)
 
         sftp = self.client.open_sftp()
-        directory = self.execute_command("hostname -I && pwd")
-        print(f"open sftp pwd {directory}")
-        sftp.put(f"{testname}-wait",os.path.join("/home/ubuntu",f"{testname}-wait"))
+        host = self.execute_command("hostname -I")
         directory = self.execute_command("pwd")
+        sftp.put(scriptname,os.path.join("/home/ubuntu",scriptname))
         peek=self.execute_command("ls -la")        
-        print(f"peek: {peek}")
-        print("File transfer completed successfully.")
+        self.logger.log_debug(f"peek: {peek}")
+        self.logger.log_info(f"{scriptname} transfer completed successfully to {host}: {directory}.")
         if sftp:
                 sftp.close()
 
-    def iperf3_sub(self, source_ip, target_ip, float_ip, pno, testname):
-        print("iperf3 sub")
-        # iperf_command = f"ssh -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
-        #         f"-o StrictHostKeyChecking=no -i {self.private_key} -p {pno} {self.username}@{float_ip} " \
-        #         f"./{testname}-wait iperf3; iperf3 -t5 -J -c {target_ip} &"
-        # iperf_command = f"ssh -o UserKnownHostsFile=~/.ssh/known_hosts.{testname} -o PasswordAuthentication=no " \
-        #                 f"-o StrictHostKeyChecking=no -p {pno} {self.username}@{float_ip} " \
-        #                 f"./{testname}-wait iperf3; iperf3 -t5 -J -c {target_ip} | jq &"
+    def get_iperf3(self, target_ip):
 
-        #iperf_command = f"cat response.json"
         iperf_command = f"iperf3 -t5 -J -c {target_ip} | jq"
         try:
-            #iperf_json = subprocess.check_output(iperf_command, shell=True)
             iperf_json = self.execute_command(iperf_command)
-            self.logger.log_info(f"iperf json {iperf_json}")
+            self.logger.log_info(f"received Iperf response as json")
         except:
             self.logger.log_error(f"Iperf failed retry")
             iperf_json = None
@@ -345,7 +330,7 @@ class SshClient:
         return iperf_json
 
 
-    def parse_and_log_results(self,iperf_json, source_ip, target_ip):
+    def parse_iperf_result(self,iperf_json, source_ip, target_ip):
         '''
             Parses the result from iperf3
             Args:
@@ -353,44 +338,25 @@ class SshClient:
             Returns:
                 Bandwith
         '''
-        print("parsing func")
-        BOLD = '\033[1m'
-        NORM = '\033[0m'
-        BANDWIDTH = []
+        bold = '\033[1m'
+        norm = '\033[0m'
+        bandwidth = []
     
         iperf_json_dict = json.loads(iperf_json)
-        SENDBW = int(Decimal(iperf_json_dict['end']['sum_sent']['bits_per_second']) / 1048576)
-        RECVBW = int(Decimal(iperf_json_dict['end']['sum_received']['bits_per_second']) / 1048576)
-        HUTIL = f"{iperf_json_dict['end']['cpu_utilization_percent']['host_total']:.1f}%"
-        RUTIL = f"{iperf_json_dict['end']['cpu_utilization_percent']['remote_total']:.1f}%"
+        sendBW = int(Decimal(iperf_json_dict['end']['sum_sent']['bits_per_second']) / 1048576)
+        recvBW = int(Decimal(iperf_json_dict['end']['sum_received']['bits_per_second']) / 1048576)
+        host_util = f"{iperf_json_dict['end']['cpu_utilization_percent']['host_total']:.1f}%"
+        remote_util = f"{iperf_json_dict['end']['cpu_utilization_percent']['remote_total']:.1f}%"
     
-        self.logger.log_info(f"IPerf3: {source_ip}-{target_ip}: sendbw: {SENDBW} Mbps receivebw: {RECVBW} Mbps cpuhost {HUTIL} cpuremote {RUTIL}\n")
+        self.logger.log_info(f"IPerf3: {source_ip}-{target_ip}: sendbw: {sendBW} Mbps receivebw: {recvBW} Mbps cpuhost {host_util} cpuremote {remote_util}\n")
     
-        BANDWIDTH.extend([SENDBW, RECVBW])
-        SBW = float(Decimal(SENDBW) / 1000)
-        RBW = float(Decimal(RECVBW) / 1000)
+        bandwidth.extend([sendBW, recvBW])
+        sBW = float(Decimal(sendBW) / 1000)
+        rBW = float(Decimal(recvBW) / 1000)
 
-        self.logger.log_info(f"Bandwith: {BANDWIDTH} SBW: {SBW} RBW: {RBW}\n")
-# TODO: maybe not needed
-    # def get_last_non_empty_line(self,text):
-    #     ''' 
-    #     get the last non-empty line
-    #     '''
-    #     lines = text.split('\n')
-    #     non_empty_lines = [line for line in lines if line.strip()]
-    #     return non_empty_lines[-1] if non_empty_lines else None
+        self.logger.log_info(f"Bandwith: {bandwidth} SBW: {sBW} RBW: {rBW}\n")
+        return sBW,rBW
 
-    # def extract_pno(self, text):
-    #     '''
-    #     extract pno from red
-    #     '''
-    #     if 'tcp,' in text:
-    #         start_index = text.index('tcp,') + len('tcp,')
-    #         end_index = text.find(',', start_index)
-    #         if end_index == -1:
-    #             return text[start_index:]
-    #         return text[start_index:end_index]
-    #     return None
     
             
     def run_iperf_test(self, conn_test, testname, target_ip, source_ip, pno):
@@ -398,20 +364,12 @@ class SshClient:
             iterates through jh (one per network) picks the last vm accessable through jh and sets it as target
             the jh is set as source
         '''
-        # red = redirs[avail_zones - 1]
-        # red = self.get_last_non_empty_line(red)
-        # pno = self.extract_pno(red)
-            #float_ip = float_ips[jh % avail_zones]
         float_ip = source_ip 
-        self.transfer_wait_script(float_ip, pno, testname)
+        self.transfer_script(f"{testname}-wait")
 
-            # self.logger.log_info(f"ssh -o \"UserKnownHostsFile=~/.ssh/known_hosts.{testname}\" -o \"PasswordAuthentication=no\" "
-            #                 f"-o \"StrictHostKeyChecking=no\" -i {self.private_key} -p {pno} {self.username}@{float_ip} "
-            #                 f"iperf3 -t5 -J -c {target_ip}\n")
-
-        iperf_json = self.iperf3_sub(source_ip, target_ip, float_ip, pno, testname)
+        iperf_json = self.get_iperf3(target_ip)
         if iperf_json:
-            self.parse_and_log_results(iperf_json, source_ip, target_ip)
+            self.parse_iperf_result(iperf_json, source_ip, target_ip)
             self.conn_test_count.labels(
                 ResultStatusCodes.SUCCESS, self.host, target_ip, conn_test
             ).inc()
