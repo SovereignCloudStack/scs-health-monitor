@@ -179,7 +179,7 @@ def collect_float_ips(client, logger: Logger):
     floating_ips = client.network.ips()
     for ip in floating_ips:
         ips.append(ip.floating_ip_address)
-        logger.log_info(f"found floating ip {ip.floating_ip_address}")
+        logger.log_debug(f"found floating ip {ip.floating_ip_address}")
     if len(ips) == 0:
         assertline = f"No ips found"
     return ips, assertline
@@ -187,12 +187,11 @@ def collect_float_ips(client, logger: Logger):
 
 def collect_jhs(client, test_name, logger: Logger):
     servers = client.compute.servers()
-    #test_name="default"# just for testing delete later
     lookup = f"{test_name}-jh"
     jhs = []
     jh = None
     for name in servers:
-        logger.log_info(f"found host {name.name}")
+        logger.log_debug(f"found host {name.name}")
         if lookup in name.name:
             logger.log_debug(f"String containing '{lookup}': {name.name}")
             jh = client.compute.find_server(name_or_id=name.name)
@@ -310,6 +309,8 @@ def create_wait_script(conn_test,testname):
             creates temp script locally and makes it executable 
             script checks if the command $1 exists, waits for the system boot to finish 
             if necessary and retries for up to 100 seconds if the command is not found
+        
+                not in use for now
         """
         assertline = None
         script_path = f'{testname}-wait'
@@ -333,7 +334,6 @@ def create_wait_script(conn_test,testname):
             with open(script_path, 'w') as file:
                     file.write(script_content)
             os.chmod(script_path, 0o755)
-            #context.logger.log_info(f"Script file {script_path} created locally")
         except:
             assertline = f"Failed to write script file {script_path}"
         return assertline
@@ -563,19 +563,11 @@ def run_parallel(tasks: list[tuple], timeout: int = 100) -> list[str]:
 
 def target_source_calc(jh_name, redirs, logger ,network_quantity=2):
     for jh in range(0,network_quantity):
-        #TODO: change name
-        print(f"redirs {redirs}")
         vm_quantity = len(redirs[jh_name]['vms'])
-        print(f"{vm_quantity} vms")
-        #target_ip = redirs[jh_name]['vms'][vm_quantity-1]['addr']
         target_ip = redirs[jh_name]['addr']
         source_ip = redirs[jh_name]['fip']
         pno = redirs[jh_name]['vms'][vm_quantity-1]['port']
-        print(f"Redirect: {source_ip} red: {target_ip} pno: {pno}")
-        print(f"vm_quantity {vm_quantity}")
-        print(f"target_ip: {target_ip} source_ip: {source_ip}")
-        print("...")
-        
+        logger.log_debug(f"{jh}: vm_quantity: {vm_quantity} target_ip: {target_ip} source_ip: {source_ip} pno: {pno}")        
         if not source_ip or not target_ip or source_ip == target_ip:
-            logger.log_info(f"IPerf3: {source_ip}<->{target_ip}: skipped")
+            logger.log_debug(f"IPerf3: {source_ip}<->{target_ip}: skipped")
         return target_ip, source_ip, pno

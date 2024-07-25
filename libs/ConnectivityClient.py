@@ -294,10 +294,9 @@ class SshClient:
                 time.sleep(timeout)
         return False
     
-########################## iperf
     def transfer_script(self, scriptname):
         """
-            transfers temporary local script to the connected host via sftp
+            transfers temporary local script to the connected host via sftp, not used for now
             Args:
                 testname: testname for namespace
             Returns:
@@ -310,7 +309,7 @@ class SshClient:
         sftp = self.client.open_sftp()
         host = self.execute_command("hostname -I")
         directory = self.execute_command("pwd")
-        sftp.put(scriptname,os.path.join("/home/ubuntu",scriptname))
+        sftp.put(scriptname,os.path.join(directory,scriptname))
         peek=self.execute_command("ls -la")        
         self.logger.log_debug(f"peek: {peek}")
         self.logger.log_info(f"{scriptname} transfer completed successfully to {host}: {directory}.")
@@ -359,13 +358,12 @@ class SshClient:
 
     
             
-    def run_iperf_test(self, conn_test, testname, target_ip, source_ip, pno):
+    def run_iperf_test(self, conn_test, testname, target_ip, source_ip):
         '''
             iterates through jh (one per network) picks the last vm accessable through jh and sets it as target
             the jh is set as source
         '''
-        float_ip = source_ip 
-        self.transfer_script(f"{testname}-wait")
+        #self.transfer_script(f"{testname}-wait")
 
         iperf_json = self.get_iperf3(target_ip)
         if iperf_json:
@@ -377,6 +375,5 @@ class SshClient:
             self.conn_test_count.labels(
                 ResultStatusCodes.FAILURE, self.host, target_ip, conn_test
             ).inc()
-            return f"no iperf json"
-        return #TODO: delete if you have the right amount of jh
+            return f"no iperf-response json"
         
