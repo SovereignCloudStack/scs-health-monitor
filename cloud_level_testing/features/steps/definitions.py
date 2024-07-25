@@ -603,7 +603,6 @@ class StepsDef:
     @then("I should be able to SSH into {jh_quantity:d} JHs and test their {conn_test} connectivity")
     def step_iterate_steps(context, jh_quantity, conn_test: str):
         context.assertline = None
-        context.pno = 22
         for i in range(0, jh_quantity):
             if not isinstance(context.jh, str):
                 context.vm_ip_address = context.jh[i]['ip']                      
@@ -618,15 +617,19 @@ class StepsDef:
 
     @then("I should be able to SSH into the VM")
     def test_ssh_connection(context):
-        print(f"ssh into: {context.vm_ip_address}/{context.pno}")
-        print("...")
-        ssh_client = SshClient(context.vm_ip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger, context.pno)
+        if hasattr(context, 'pno'):      
+            context.logger.log_info(f"ssh through portforwarding: {context.vm_ip_address}/{context.pno}")
+            ssh_client = SshClient(context.vm_ip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger, context.pno)
+        else:
+            ssh_client = SshClient(context.vm_ip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger)
+
         if not ssh_client:
             context.assertline = f"could not access VM {context.vm_ip_address}"
         if ssh_client.check_server_readiness(attempts=10):
             context.logger.log_info(f"Server ready for SSH connections")
         else:
             context.logger.log_info(f"Server SSH connection failed to establish")
+
         ssh_client.connect()
         context.ssh_client = ssh_client
         ssh_client.print_working_directory()
