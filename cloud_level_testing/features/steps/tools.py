@@ -558,7 +558,7 @@ def create_jumphost(client, name, network_name, keypair_name, vm_image, flavor_n
     network = client.network.find_network(network_name)
     assert network, f"Network with name {network_name} doesn't exist"
     
-    server = client.client.create_server(
+    server = client.create_server(
         name=name,
         image_id=image.id,
         flavor_id=flavor.id,
