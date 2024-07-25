@@ -5,7 +5,6 @@ import time
 import random
 import string
 
-from openstack.exceptions import DuplicateResource
 from libs.ConnectivityClient import SshClient
 import os
 from cloud_level_testing.features.steps import tools
@@ -132,10 +131,8 @@ class StepsDef:
     @then("I should be able to create {network_quantity:d} networks")
     def create_network(context, network_quantity: int):
         for num in range(1, network_quantity + 1):
-            network = context.client.network.create_network(name=f"{context.test_name}-network-{num}")
+            network = tools.create_network(context.client, name=f"{context.test_name}-network-{num}")
             context.collector.networks.append(network.id)
-            assert not context.client.network.find_network(
-                name_or_id=network), f"Network called {network} created"
         assert len(context.collector.networks) == network_quantity, \
             f"Failed to create the desired amount of networks"
 
@@ -414,27 +411,9 @@ class StepsDef:
         network_count = 0
         for network in context.client.network.networks():
             if context.test_name in network.name:
-                network_count += 1
-                for num in range(1, vms_quantity + 1):
+                for num in range(1, int(vms_quantity) + 1):
                     vm_name = f"{context.test_name}-vm-{''.join(random.choices(string.ascii_letters + string.digits, k=10))}"
-                    image = context.client.compute.find_image(name_or_id=context.vm_image)
-                    assert image, f"Image with name {context.vm_image} doesn't exist"
-                    flavor = context.client.compute.find_flavor(name_or_id=context.flavor_name)
-                    assert flavor, f"Flavor with name {context.flavor_name} doesn't exist"
-                    assert network, f"Network with name {network.name} doesn't exist"
-                    try:
-                        server = context.client.create_server(
-                            name=vm_name,
-                            image=image.id,
-                            flavor=flavor.id,
-                            network=[network.id],
-                            auto_ip=False,
-                            security_groups=security_groups,
-                            userdata=user_data,
-                        )
-                        context.client.compute.wait_for_server(server)
-                    except DuplicateResource as e:
-                        assert e, "Server already created!"
+                    tools.create_vm(context.client, vm_name, context.vm_image, context.flavor_name, network.id, security_groups=security_groups)
                     time.sleep(5)
                     context.collector.virtual_machines.append(server.id)
                     created_server = context.client.compute.find_server(name_or_id=vm_name)
