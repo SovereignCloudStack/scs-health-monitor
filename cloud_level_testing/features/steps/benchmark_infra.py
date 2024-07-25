@@ -1,9 +1,11 @@
 from behave import given, then
 import time
+import jinja2
+import base64
 
 import tools
 
-DEFAULT_SECURITY_GROUPS = [{"name": "ssh"}, {"name": "default"}]
+DEFAULT_SECURITY_GROUPS = ["ssh", "default"]
 
 
 class BenchmarkInfra:
@@ -124,22 +126,66 @@ class BenchmarkInfra:
     @then(
         "I should be able to create a jump host for each az using a key pair named {keypair_name}")
     def infra_create_jumphosts(context, keypair_name: str):
-        # TODO: Support SNAT and port forwarding
         for az in context.azs:
-            no = context.azs.index(az)
-            # TODO: Provide AZ, user data containing network config (snat, VIP, masq, packages, internal net),
-            #  keypair (pub key only!), jh ports (shouldn't be necessary; network configuration via SSH)
-            jh_name = f"{context.test_name}jh{no}"
+            jh_name = BenchmarkInfra.calculate_jh_name_by_az(context, az)
+
+            forwarding_script_tmpl = r"""#!/bin/bash
+set -e
+
+# Set masquerading + port forwardings to vms
+
+# determine default interface
+echo -n $(ip route show | grep ^default | head -n1 | sed 's@default via [^ ]* dev \([^ ]*\) .*@\1@g') > /tmp/iface
+# Outbound Masquerading
+iptables -t nat -A POSTROUTING -o $(cat /tmp/iface) -s 10.250/16 -j MASQUERADE
+iptables -P FORWARD DROP
+iptables -I FORWARD 1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+iptables -I FORWARD 2 -i $(cat /tmp/iface) -o $(cat /tmp/iface) -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+iptables -I FORWARD 3 -i $(cat /tmp/iface) -o $(cat /tmp/iface) -s 10.250/16 -j ACCEPT
+# Set ip_forward
+echo 1 > /proc/sys/net/ipv4/ip_forward
+# Inbound Masquerading
+iptables -I FORWARD 4 -i $(cat /tmp/iface) -o $(cat /tmp/iface) -d 10.250/16 -p tcp --dport 22 -j ACCEPT
+iptables -t nat -A POSTROUTING -o $(cat /tmp/iface) -d 10.250/16 -p tcp --dport 22 -j MASQUERADE
+# Forwardings to vms
+{%- for redir in redirs[jh_name]["vms"] %}
+iptables -t nat -A PREROUTING -s 0/0 -i $(cat /tmp/iface) -j DNAT -p tcp --dport {{ redir["port"] }} --to-destination {{ redir["addr"] ~ ":22" }}
+{% endfor %}
+"""
+
+            template = jinja2.Environment(loader=jinja2.BaseLoader).from_string(forwarding_script_tmpl)
+            forwarding_script = template.render(redirs=context.redirs, jh_name=jh_name)
+
+            user_data = f"""#cloud-config
+
+# A little bit hacky: We provide the script base64 encoded,
+# otherwise cloud-init complains about invalid characters.
+# We then execute the actual script after base64-decoding it.
+
+write_files:
+- content: { (base64.b64encode(str(forwarding_script).encode('ascii'))).decode('ascii') }
+  path: /tmp/set-ip-forwardings-base64
+  permissions: '0755'
+- content: ''
+  path: /tmp/set-ip-forwardings.sh
+  permissions: '0755'
+
+runcmd:
+- cat /tmp/set-ip-forwardings-base64 | base64 -d > /tmp/set-ip-forwardings.sh
+- /tmp/set-ip-forwardings.sh
+"""
+
             context.collector.create_jumphost(jh_name,
                                               context.jh_net_id,
                                               keypair_name,
                                               context.vm_image,
                                               context.flavor_name,
                                               DEFAULT_SECURITY_GROUPS + [
-                                                  {"name": context.jh_sg_group_name}
+                                                  context.jh_sg_group_name
                                               ],
-                                              availability_zone=az)
-            context.lb_jump_host_names.append(jh_name)
+                                              availability_zone=az,
+                                              userdata=user_data,
+                                              )
 
     @then("I should be able to attach floating ips to the jump hosts")
     def infra_create_floating_ip(context):

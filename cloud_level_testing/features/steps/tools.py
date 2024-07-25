@@ -667,13 +667,26 @@ def create_jumphost(client, name, network_name, keypair_name, vm_image, flavor_n
     assert flavor, f"Flavor with name {flavor_name} doesn't exist"
     network = client.network.find_network(network_name)
     assert network, f"Network with name {network_name} doesn't exist"
-    
+
+    keypair = check_keypair_exists(client, keypair_name=keypair_name)
+    if not keypair:
+        keypair = client.compute.create_keypair(name=keypair_name)
+        assert keypair, f"Keypair with name {keypair_name} doesn't exist"
+        with open(keypair_filename, 'w') as f:
+            f.write("%s" % keypair.private_key)
+        os.chmod(keypair_filename, 0o600)
+
+    for security_group in security_groups:
+        security_group = client.network.find_security_group(security_group)
+        assert security_group, f"Security Group with name {security_group} doesn't exist"
+
     server = client.create_server(
         name=name,
-        image_id=image.id,
-        flavor_id=flavor.id,
-        networks=[{"uuid": network.id}],
-        key_name=keypair_name,
+        image=image.id,
+        flavor=flavor.id,
+        network=[network.id],
+        auto_ip=False,
+        key_name=keypair.name,
         security_groups=security_groups,
         wait=True,
         **kwargs
