@@ -4,7 +4,7 @@ import datetime
 from functools import wraps
 from libs.loggerClass import Logger
 from concurrent.futures import ThreadPoolExecutor
-
+import os
 
 import yaml
 from openstack.exceptions import DuplicateResource
@@ -550,6 +550,28 @@ def create_vm(client, name, image_name, flavor_name, network_id, **kwargs):
         server = None
     return server
 
+def create_jumphost(client, name, network_name, keypair_name, vm_image, flavor_name, **kwargs):
+    image = client.compute.find_image(name_or_id=vm_image)
+    assert image, f"Image with name {vm_image} doesn't exist"
+    flavor = client.compute.find_flavor(name_or_id=flavor_name)
+    assert flavor, f"Flavor with name {flavor_name} doesn't exist"
+    network = client.network.find_network(network_name)
+    assert network, f"Network with name {network_name} doesn't exist"
+    
+    server = client.client.create_server(
+        name=name,
+        image_id=image.id,
+        flavor_id=flavor.id,
+        networks=[{"uuid": network.id}],
+        key_name=keypair_name,
+        wait=True,
+        **kwargs
+    )
+    server = client.compute.wait_for_server(server)
+    created_jumphost = client.compute.find_server(name_or_id=name)
+    assert created_jumphost, f"Jumphost with name {name} was not created successfully"
+    return created_jumphost
+
 def create_network(client, name, **kwargs):
     """
     Create network
@@ -563,31 +585,40 @@ def create_network(client, name, **kwargs):
         name_or_id=network), f"Network called {network} not present!"
     return network
 
-def create_subnet(client, name, **kwargs):
+def list_networks(client, filter: dict=None) -> list:
+    return list(client.list_networks(filter))
+
+def create_subnet(client, name, network_id, ip_version=4, **kwargs):
     """
     Create subnet and check whether it was created
+    @param network_id: network (UUID) the subnet should belong to
+    @param ip_version: ip version
     @param client: OpenStack client
     @param name: router name
     @param kwargs: additional arguments to be passed to resource create command
     @return: created subnet
     """
-    subnet = client.network.create_subnet(name=name, **kwargs)
+    subnet = client.network.create_subnet(name=name,
+                                          network_id=network_id,
+                                          ip_version=ip_version,
+                                          **kwargs)
     time.sleep(5)
     assert not client.network.find_network(name_or_id=subnet), \
         f"Failed to create subnet with name {subnet}"
     return subnet
 
-def create_router(client, name):
+def create_router(client, name, **kwargs):
     """
     Create router
+    @type kwargs: additional arguments to be passed to resource create command
     @param client: OpenStack client
     @param name: router name
     @return created router
     """
-    return client.network.create_router(name=name)
+    return client.network.create_router(name=name, **kwargs)
 
-def get_availability_zones(client):
-    return client.network.availability_zones()
+def get_availability_zones(client) -> list:
+    return list(client.network.availability_zones())
 
 def create_lb(client, name, **kwargs):
     """

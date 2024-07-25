@@ -237,7 +237,6 @@ class StepsDef:
                     subnet = tools.create_subnet(context.client,
                                                  f"{context.test_name}-subnet-{num}",
                                                  network_id=network.id,
-                                                 ip_version=4,
                                                  cidr=cidr[num - 1])
                     context.collector.subnets.append(subnet.id)
             else:
@@ -413,7 +412,7 @@ class StepsDef:
             if context.test_name in network.name:
                 for num in range(1, vms_quantity + 1):
                     vm_name = f"{context.test_name}-vm-{''.join(random.choices(string.ascii_letters + string.digits, k=10))}"
-                    tools.create_vm(context.client, vm_name, context.vm_image, context.flavor_name, network.id, security_groups=security_groups)
+                    tools.create_vm(context.client, vm_name, context.vm_image, context.flavor_name, network.id, security_groups=security_groups, user_data=user_data)
                     time.sleep(5)
                     context.collector.virtual_machines.append(server.id)
                     created_server = context.client.compute.find_server(name_or_id=vm_name)
@@ -486,12 +485,6 @@ class StepsDef:
           permissions: '0755'
         '''
 
-        image = context.client.compute.find_image(name_or_id=context.vm_image)
-        assert image, f"Image with name {context.vm_image} doesn't exist"
-        flavor = context.client.compute.find_flavor(name_or_id=context.flavor_name)
-        assert flavor, f"Flavor with name {context.flavor_name} doesn't exist"
-        network = context.client.network.find_network(network_name)
-        assert network, f"Network with name {network_name} doesn't exist"
         keypair = tools.check_keypair_exists(context, keypair_name=keypair_name)
         if not keypair:
             keypair = context.client.compute.create_keypair(name=keypair_name)
@@ -509,21 +502,16 @@ class StepsDef:
             security_group = tools.check_security_group_exists(context, security_group)
             assert security_group, f"Security Group with name {security_group} doesn't exist"
 
-        server = context.client.create_server(
-            name=jumphost_name,
-            image=image.id,
-            flavor=flavor.id,
-            network=[network.id],
-            auto_ip=False,
-            key_name=keypair.name,
-            security_groups=security_groups,
-            wait=True,
-            availability_zone="nova",
-            userdata=user_data,
-        )
-        server = context.client.compute.wait_for_server(server)
-        created_jumphost = context.client.compute.find_server(name_or_id=jumphost_name)
-        assert created_jumphost, f"Jumphost with name {jumphost_name} was not created successfully"
+        server = tools.create_jumphost(context.client,
+                                        jumphost_name,
+                                        network_name,
+                                        keypair_name,
+                                        context.vm_image,
+                                        context.flavor_name,
+                                        auto_ip=False,
+                                        security_groups=security_groups,
+                                        availability_zone="nova",
+                                        userdata=user_data,)
         context.collector.jumphosts.append(server.id)
 
     @given("I have deployed a VM with IP {vm_ip_address}")
