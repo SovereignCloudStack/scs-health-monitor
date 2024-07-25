@@ -8,8 +8,6 @@ import string
 from libs.ConnectivityClient import SshClient
 import os
 from cloud_level_testing.features.steps import tools
-from cloud_level_testing.features.steps import lb
-
 
 class StepsDef:
     PING_RETRIES = 60
@@ -412,7 +410,7 @@ class StepsDef:
             if context.test_name in network.name:
                 for num in range(1, vms_quantity + 1):
                     vm_name = f"{context.test_name}-vm-{''.join(random.choices(string.ascii_letters + string.digits, k=10))}"
-                    server = tools.create_vm(context.client, vm_name, context.vm_image, context.flavor_name, network.id, security_groups=security_groups, user_data=user_data)
+                    server = tools.create_vm(context.client, vm_name, context.vm_image, context.flavor_name, network.id, security_groups=security_groups, userdata=user_data)
                     time.sleep(5)
                     context.collector.virtual_machines.append(server)
                     created_server = context.client.compute.find_server(name_or_id=vm_name)
@@ -503,15 +501,14 @@ class StepsDef:
             assert security_group, f"Security Group with name {security_group} doesn't exist"
 
         server = tools.create_jumphost(context.client,
-                                        jumphost_name,
-                                        network_name,
-                                        keypair_name,
-                                        context.vm_image,
-                                        context.flavor_name,
-                                        auto_ip=False,
-                                        security_groups=security_groups,
-                                        availability_zone="nova",
-                                        userdata=user_data,)
+                                       jumphost_name,
+                                       network_name,
+                                       keypair_name,
+                                       context.vm_image,
+                                       context.flavor_name,
+                                       security_groups=security_groups,
+                                       availability_zone="nova",
+                                       userdata=user_data,)
         context.collector.jumphosts.append(server.id)
 
     @given("I have deployed a VM with IP {vm_ip_address}")

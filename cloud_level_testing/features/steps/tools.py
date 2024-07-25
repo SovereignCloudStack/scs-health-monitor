@@ -648,7 +648,7 @@ def create_vm(client, name, image_name, flavor_name, network_id, **kwargs):
     flavor = client.compute.find_flavor(name_or_id=flavor_name)
     assert flavor, f"Flavor with name {flavor_name} doesn't exist"
     try:
-        server = client.compute.create_server(
+        server = client.create_server(
             name=name,
             image_id=image.id,
             flavor_id=flavor.id,
@@ -662,6 +662,9 @@ def create_vm(client, name, image_name, flavor_name, network_id, **kwargs):
     return server
 
 def create_jumphost(client, name, network_name, keypair_name, vm_image, flavor_name, security_groups, **kwargs):
+    # config
+    keypair_filename = f"{keypair_name}-private"
+
     image = client.compute.find_image(name_or_id=vm_image)
     assert image, f"Image with name {vm_image} doesn't exist"
     flavor = client.compute.find_flavor(name_or_id=flavor_name)
@@ -686,10 +689,10 @@ def create_jumphost(client, name, network_name, keypair_name, vm_image, flavor_n
         image=image.id,
         flavor=flavor.id,
         network=[network.id],
-        auto_ip=False,
         key_name=keypair.name,
         security_groups=security_groups,
         wait=True,
+        auto_ip=False,
         **kwargs
     )
     server = client.compute.wait_for_server(server)
