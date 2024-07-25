@@ -239,17 +239,17 @@ def check_security_group_exists(context, sec_group_name: str):
     return context.client.network.find_security_group(name_or_id=sec_group_name)
 
 
-def check_keypair_exists(context, keypair_name: str):
+def check_keypair_exists(client, keypair_name: str):
     """Check if keypair exists.
 
     Args:
-        context: Behave context object.
+        client: OpenStack client
         keypair_name: Name of keypair to check.
 
     Returns:
         ~openstack.compute.v2.keypair.Keypair: Found keypair object or None.
     """
-    return context.client.compute.find_keypair(name_or_id=keypair_name)
+    return client.compute.find_keypair(name_or_id=keypair_name)
 
 
 def create_security_group(context, sec_group_name: str, description: str):

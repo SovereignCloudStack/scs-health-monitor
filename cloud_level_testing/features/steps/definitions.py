@@ -485,7 +485,7 @@ class StepsDef:
           permissions: '0755'
         '''
 
-        keypair = tools.check_keypair_exists(context, keypair_name=keypair_name)
+        keypair = tools.check_keypair_exists(context.client, keypair_name=keypair_name)
         if not keypair:
             keypair = context.client.compute.create_keypair(name=keypair_name)
             assert keypair, f"Keypair with name {keypair_name} doesn't exist"
