@@ -36,7 +36,14 @@ class BenchmarkInfra:
         context.lb_router_port_ids: dict = {}
         context.lb_jump_host_names: list = []
 
+        # List of dicts in order of VM names (asc), az and containing VM ip addresses
+        context.az_vm_port_mapping: list = []
+
         context.collector = tools.Collector(client=context.client)
+
+    @staticmethod
+    def derive_vm_name(context, num: int):
+        return f"{context.test_name}vm{num}"
 
     @then("I should be able to create a router connected to the external network named {ext_net}")
     def infra_create_router(context, ext_net):
@@ -122,12 +129,13 @@ class BenchmarkInfra:
         for jh in context.lb_jump_host_names:
             context.collector.create_floating_ip(jh)
 
-    @then(
-        "I should be able to create {quantity:d} VMs with a key pair named {keypair_name} and strip them over the VM networks")
-    def infra_create_vms(context, quantity, keypair_name: str):
+    @then("I should be able to create {quantity:d} VMs with a key pair named {keypair_name} and "
+          "strip them over the VM networks")
+    def infra_create_vms(context, quantity: int, keypair_name: str):
         for num in range(0, quantity):
-            vm_name = f"{context.test_name}vm{num}"
+            vm_name = BenchmarkInfra.derive_vm_name(context, num)
             assert len(context.vm_nets_ids) > 0, "Number of VM networks has to be greater than 0"
+            # Strip VMs over VM networks (basically round-robin)
             vm_net_id = context.vm_nets_ids[num % len(context.vm_nets_ids)]
             context.collector.create_jumphost(vm_name,
                                               vm_net_id,
@@ -136,10 +144,52 @@ class BenchmarkInfra:
                                               context.flavor_name,
                                               DEFAULT_SECURITY_GROUPS)
 
+    @then('I should be able to query the ip addresses of the created {quantity:d} VMs')
+    def infra_vms_query_ips(context, quantity: int):
+        for num in range(0, quantity):
+            vm_name = BenchmarkInfra.derive_vm_name(context, num)
+            vm = context.collector.find_server(vm_name)
+            assert vm, f"Expected that vm with name {vm_name} exists"
+            networks = vm["addresses"]
+            assert len(networks) == 1, (f"Expecting the VM has exactly one network. "
+                                        f"Found {len(networks)}.")
+            context.az_vm_port_mapping.append({
+                "az": vm["location"]["zone"],
+                "vm_name": vm_name,
+                "addr": list(networks.values())[0][0]["addr"]
+            })
+
+    @then("I should be able to calculate the port forwardings for the jump hosts by associating "
+          "the VM ip addresses with the jump hosts by az in the port range {port_start:d} to "
+          "{port_end:d}")
+    def infra_calculate_port_forwardings(context, port_start: int, port_end: int):
+        jhs = []
+        for jh_name in context.lb_jump_host_names:
+            jh = context.collector.find_server(jh_name)
+            jhs.append(jh)
+
+        # Mapping between the jump host ports and the VM ips
+        jh_port_mapping = {}
+
+        for mapping in context.az_vm_port_mapping:
+            for jh in jhs:
+                jh_name = jh["name"]
+                # found a jump host in the same az as the vm
+                if mapping["az"] == jh["location"]["zone"]:
+                    tools.add_value_to_dict_list(jh_port_mapping, jh_name, [])
+                    # Get next free port
+                    port = port_start + len(jh_port_mapping[jh_name])
+                    assert port <= port_end, "We exceed the supplied port range"
+                    jh_port_mapping[jh_name].append([port, mapping["addr"], mapping["vm_name"]])
+
+        # TODO: Test this!
+        print("!!!", jh_port_mapping)
+
+
     @then("I sleep")
     def sleep(context):
         # TODO: Just for testing
-        time.sleep(60)
+        time.sleep(600)
 
     @then("I should be able to delete all subnets of routers")
     def infra_router_delete_subnets(context):

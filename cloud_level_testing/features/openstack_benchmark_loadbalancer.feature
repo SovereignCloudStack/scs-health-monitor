@@ -12,9 +12,12 @@ Feature: Test loadbalancer
     Then I should be able to create subnets for both the jump hosts and vms
     Then I should be able to connect the router to the jump host subnet
     Then I should be able to connect the router to the vm subnets
+    # TODO: Create security group "scs-hm-infra-jumphost" with forwarding of tcp 222 to 229 for JH VM
     Then I should be able to create a jump host for each az using a key pair named <keypair_name>
     Then I should be able to attach floating ips to the jump hosts
     Then I should be able to create <quantity_vms> VMs with a key pair named <keypair_name> and strip them over the VM networks
+    Then I should be able to query the ip addresses of the created <quantity_vms> VMs
+    Then I should be able to calculate the port forwardings for the jump hosts by associating the VM ip addresses with the jump hosts by az in the port range <port_start> to <port_end>
 
     # TODO: Just for testing
     Then I sleep
@@ -38,8 +41,8 @@ Feature: Test loadbalancer
     #Then I should be able to access VMs through loadbalancers
 
     Examples: Test loadbalancer
-    | test_prefix | ext_net | keypair_name | quantity_vms |
-    | infra           |    ext01    |    tf-id-rsa      | 2 |
+    | test_prefix | ext_net | keypair_name | quantity_vms | port_start | port_end
+    | infra           |    ext01    |    tf-id-rsa      | 2 |      222    | 229
 
     # openstack loadbalancer create --name lb1 --vip-subnet-id public-subnet --wait
     # openstack loadbalancer listener create --name listener1 --protocol HTTP --protocol-port 80 --wait lb1
