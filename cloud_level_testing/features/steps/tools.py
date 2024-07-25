@@ -77,6 +77,9 @@ class Collector:
     def find_router(self, name_or_id):
         return find_router(self.client, name_or_id)
 
+    def find_server(self, name_or_id):
+        return self.client.compute.find_server(name_or_id=name_or_id)
+
     def delete_interface_from_router(self, router, subnet_id):
         res = self.client.network.remove_interface_from_router(router, subnet_id)
         if not res:
