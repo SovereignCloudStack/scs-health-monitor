@@ -4,6 +4,7 @@ import datetime
 from functools import wraps
 from libs.loggerClass import Logger
 from concurrent.futures import ThreadPoolExecutor
+from prometheus_client import Gauge
 import os
 
 import yaml
@@ -613,7 +614,7 @@ def delete_all_test_resources(context):
     context.collector.delete_security_groups()
 
 
-def parse_ping_output(data: list[str], logger: Logger):
+def parse_ping_output(context, data: list[str], logger: Logger):
     """Parse the outputs of the ping response test and print them to logger.
 
     Args:
@@ -637,6 +638,9 @@ def parse_ping_output(data: list[str], logger: Logger):
     logger.log_info(f"Calc start: {start_time}")
     logger.log_info(f"Calc ended: {end_time}")
     logger.log_info(f"Calc took approx {calc_time}")
+
+    response_gauge = Gauge('pi_calc_ping_response', 'Average ping response time for the 4000pi benchamrk test', registry=context.prometheusExporter.registry)
+    response_gauge.set(calc_average(response_times))
 
 
 def calc_average(values: list[float]) -> float:
