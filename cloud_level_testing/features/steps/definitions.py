@@ -644,10 +644,10 @@ class StepsDef:
         if assertline != None:
             context.assertline = assertline
 
-    @given("I have deployed hosts in {network_quantity:d} networks")
+    @given("I have deployed jhs in {network_quantity:d} networks")
     def initialize(context, network_quantity):
         context.hosts=tools.collect_jhs(context.client,f"{context.test_name}-infra", context.logger)
-        assert len(context.hosts) >= network_quantity, f"Not enough hosts in networks found"
+        assert len(context.hosts) >= network_quantity, f"Not enough jhs in networks found"
 
     @then("I should be able to collect all VM IPs and ports")
     def collect_redirs(context):

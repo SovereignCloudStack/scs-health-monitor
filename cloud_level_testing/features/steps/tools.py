@@ -561,13 +561,13 @@ def run_parallel(tasks: list[tuple], timeout: int = 100) -> list[str]:
             results.append(res)
     return results
 
-def target_source_calc(jh_name, redirs, logger ,network_quantity=2):
-    for jh in range(0,network_quantity):
-        vm_quantity = len(redirs[jh_name]['vms'])
-        target_ip = redirs[jh_name]['addr']
-        source_ip = redirs[jh_name]['fip']
-        pno = redirs[jh_name]['vms'][vm_quantity-1]['port']
-        logger.log_debug(f"{jh}: vm_quantity: {vm_quantity} target_ip: {target_ip} source_ip: {source_ip} pno: {pno}")        
-        if not source_ip or not target_ip or source_ip == target_ip:
-            logger.log_debug(f"IPerf3: {source_ip}<->{target_ip}: skipped")
-        return target_ip, source_ip, pno
+def target_source_calc(jh_name, redirs, logger):
+
+    vm_quantity = len(redirs[jh_name]['vms'])
+    target_ip = redirs[jh_name]['addr']
+    source_ip = redirs[jh_name]['fip']
+    pno = redirs[jh_name]['vms'][vm_quantity-1]['port']
+    logger.log_debug(f"{jh}: vm_quantity: {vm_quantity} target_ip: {target_ip} source_ip: {source_ip} pno: {pno}")        
+    if not source_ip or not target_ip or source_ip == target_ip:
+        logger.log_debug(f"IPerf3: {source_ip}<->{target_ip}: skipped")
+    return target_ip, source_ip, pno

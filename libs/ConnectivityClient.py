@@ -314,7 +314,7 @@ class SshClient:
         self.logger.log_debug(f"peek: {peek}")
         self.logger.log_info(f"{scriptname} transfer completed successfully to {host}: {directory}.")
         if sftp:
-                sftp.close()
+            sftp.close()
 
     def get_iperf3(self, target_ip):
 
