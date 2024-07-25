@@ -63,7 +63,7 @@ class StepsDef:
     @then("I should be able to create {router_quantity:d} routers")
     def create_router(context, router_quantity: int):
         for num in range(1, router_quantity + 1):
-            router = context.client.network.create_router(name=f"{context.test_name}-{num}")
+            router = tools.create_router(context.client, f"{context.test_name}-{num}")
             context.collector.routers.append(router.id)
             assert router is not None, f"Failed to create router with name {context.test_name}-{num}"
         assert len(context.collector.routers) == router_quantity, \
@@ -234,13 +234,12 @@ class StepsDef:
             if f"{context.test_name}-network" in network.name:
                 cidr = tools.create_subnets(num=subnet_quantity)
                 for num in range(1, subnet_quantity + 1):
-                    subnet = context.client.network.create_subnet(
-                        name=f"{context.test_name}-subnet-{num}",
-                        network_id=network.id, ip_version=4, cidr=cidr[num - 1])
-                    time.sleep(5)
+                    subnet = tools.create_subnet(context.client,
+                                                 f"{context.test_name}-subnet-{num}",
+                                                 network_id=network.id,
+                                                 ip_version=4,
+                                                 cidr=cidr[num - 1])
                     context.collector.subnets.append(subnet.id)
-                    assert not context.client.network.find_network(name_or_id=subnet), \
-                        f"Failed to create subnet with name {subnet}"
             else:
                 continue
         assert len(context.collector.subnets) == subnet_quantity, \

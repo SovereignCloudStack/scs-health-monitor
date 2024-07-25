@@ -523,8 +523,15 @@ def run_parallel(tasks: list[tuple], timeout: int = 100) -> list[str]:
 
 
 def create_vm(client, name, image_name, flavor_name, network_id, **kwargs):
-    # TODO: We can intercept here for the collector to register that a resource is created
-    #  -> Move those openstack client methods to their own class
+    """
+    Create virtual machine
+    @param client: OpenStack client
+    @param name: vm name
+    @param image_name: image name or id to use
+    @param flavor_name: flavor name or id to use
+    @param network_id: network id to attach to
+    @return: created vm
+    """
     image = client.compute.find_image(name_or_id=image_name)
     assert image, f"Image with name {image_name} doesn't exist"
     flavor = client.compute.find_flavor(name_or_id=flavor_name)
@@ -543,12 +550,41 @@ def create_vm(client, name, image_name, flavor_name, network_id, **kwargs):
         server = None
     return server
 
-def create_network(client, name):
-    # TODO: We can intercept here for the collector to register that a resource is created
-    network = client.network.create_network(name=name)
+def create_network(client, name, **kwargs):
+    """
+    Create network
+    @param client: OpenStack client
+    @param name: network name
+    @param kwargs: additional arguments to be passed to resource create command
+    @return: created network
+    """
+    network = client.network.create_network(name=name, **kwargs)
     assert not client.network.find_network(
         name_or_id=network), f"Network called {network} not present!"
     return network
+
+def create_subnet(client, name, **kwargs):
+    """
+    Create subnet and check whether it was created
+    @param client: OpenStack client
+    @param name: router name
+    @param kwargs: additional arguments to be passed to resource create command
+    @return: created subnet
+    """
+    subnet = client.network.create_subnet(name=name, **kwargs)
+    time.sleep(5)
+    assert not client.network.find_network(name_or_id=subnet), \
+        f"Failed to create subnet with name {subnet}"
+    return subnet
+
+def create_router(client, name):
+    """
+    Create router
+    @param client: OpenStack client
+    @param name: router name
+    @return created router
+    """
+    return client.network.create_router(name=name)
 
 def get_availability_zones(client):
     return client.network.availability_zones()
@@ -558,7 +594,8 @@ def create_lb(client, name, **kwargs):
     Create Loadbalancer and wait until it's in state active
     @param client: OpenStack client
     @param name: lb name
-    @param kwargs: Arguments to be passed to creation command
+    @param kwargs: additional arguments to be passed to resource create command
+    @return created lb
     """
     print(kwargs)
     assert (client.load_balancer.create_load_balancer(name=name, **kwargs).
