@@ -20,6 +20,7 @@ Feature: Build benchmark infrastructure
     # TODO: Just for testing
     Then I sleep
 
+    # TODO: Implement using collector
     Then I should be able to delete the VMs
     Then I should be able to delete all subnets of routers
     Then I should be able to delete routers

@@ -23,8 +23,11 @@ class BenchmarkInfra:
     on the jump host, the second VM via port 223 and so on.
     """
 
-    @given("I want to build the benchmark infrastructure by using resources having the prefix {prefix}")
+    @given(
+        "I want to build the benchmark infrastructure by using resources having the prefix "
+        "{prefix}")
     def infra_benchmark(context, prefix: str):
+        # TODO: Set new test name. Don't override.
         context.test_name = f"{context.test_name}-{prefix}-"
         context.vm_nets_ids: list = []
         context.azs: list = []
@@ -67,8 +70,8 @@ class BenchmarkInfra:
         for az in azs:
             context.azs.append(az["name"])
 
-    @then(
-        "I should be able to create networks for both the jump hosts and for each availability zone")
+    @then("I should be able to create networks for both the jump hosts and for each availability "
+          "zone")
     def infra_create_networks(context):
         context.jh_net_id = context.collector.create_network(f"{context.test_name}jh").id
         for az in context.azs:
@@ -152,7 +155,8 @@ iptables -t nat -A PREROUTING -s 0/0 -i $(cat /tmp/iface) -j DNAT -p tcp --dport
 {% endfor %}
 """
 
-            template = jinja2.Environment(loader=jinja2.BaseLoader).from_string(forwarding_script_tmpl)
+            template = jinja2.Environment(loader=jinja2.BaseLoader).from_string(
+                forwarding_script_tmpl)
             forwarding_script = template.render(redirs=context.redirs, jh_name=jh_name)
 
             user_data = f"""#cloud-config
@@ -162,7 +166,7 @@ iptables -t nat -A PREROUTING -s 0/0 -i $(cat /tmp/iface) -j DNAT -p tcp --dport
 # We then execute the actual script after base64-decoding it.
 
 write_files:
-- content: { (base64.b64encode(str(forwarding_script).encode('ascii'))).decode('ascii') }
+- content: {(base64.b64encode(str(forwarding_script).encode('ascii'))).decode('ascii')}
   path: /tmp/set-ip-forwardings-base64
   permissions: '0755'
 - content: ''
