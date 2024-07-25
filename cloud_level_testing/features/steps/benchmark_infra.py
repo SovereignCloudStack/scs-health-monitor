@@ -39,6 +39,9 @@ class BenchmarkInfra:
         # List of dicts in order of VM names (asc), az and containing VM ip addresses
         context.az_vm_port_mapping: list = []
 
+        # Security group name the jump hosts will use for port forwardings
+        context.jh_sg_group_name = f"{context.test_name}jumphost"
+
         context.collector = tools.Collector(client=context.client)
 
     @staticmethod
@@ -106,6 +109,15 @@ class BenchmarkInfra:
                                          context.lb_router_name,
                                          router_update["port_id"])
 
+    @then("I should be able to create a security group for the jump hosts allowing inbound tcp "
+          "connections for the port range {port_start:d} to {port_end:d}")
+    def create_security_group(context, port_start: int, port_end: int):
+        sg = context.collector.create_security_group(
+            context.jh_sg_group_name,
+            "Allow ssh redirection to vms"
+        )
+        context.collector.create_security_group_rule(sg["id"], "tcp", port_start, port_end)
+
     @then(
         "I should be able to create a jump host for each az using a key pair named {keypair_name}")
     def infra_create_jumphosts(context, keypair_name: str):
@@ -120,7 +132,9 @@ class BenchmarkInfra:
                                               keypair_name,
                                               context.vm_image,
                                               context.flavor_name,
-                                              DEFAULT_SECURITY_GROUPS,
+                                              DEFAULT_SECURITY_GROUPS + [
+                                                  {"name": context.jh_sg_group_name}
+                                              ],
                                               availability_zone=az)
             context.lb_jump_host_names.append(jh_name)
 
@@ -163,28 +177,69 @@ class BenchmarkInfra:
           "the VM ip addresses with the jump hosts by az in the port range {port_start:d} to "
           "{port_end:d}")
     def infra_calculate_port_forwardings(context, port_start: int, port_end: int):
+        """
+        Calculate port forwarding for jump hosts redirecting ssh to the actual vms.
+        The resulting dict contains the floating ips of the jump hosts. And for each jump host
+        there is a list of related vms (= vms located in the same az as the jump host) including
+        their internal ips and an associated port inside the range [port_start, port_end]
+        which the jump host will use for redirecting traffic to the vm.
+
+        The resulting dict looks like:
+        {
+          'scs-hm-infra-jh0': {
+            'fip': '213.131.230.205',
+            'vms': [
+              {
+                'port': 222,
+                'addr': '10.250.3.73',
+                'vm_name': 'scs-hm-infra-vm0'
+              },
+              {
+                'port': 223,
+                'addr': '10.250.0.8',
+                'vm_name': 'scs-hm-infra-vm1'
+              }
+            ]
+          }
+        }
+
+        @param port_start: first port to allocate for redirection
+        @param port_end: lost port the allocate for redirection
+        @return:
+        """
         jhs = []
         for jh_name in context.lb_jump_host_names:
             jh = context.collector.find_server(jh_name)
-            jhs.append(jh)
+            jhs.append({
+                "name": jh["name"],
+                "az": jh["location"]["zone"],
+                "fip": tools.vm_extract_floating_ip(jh),
+            })
 
         # Mapping between the jump host ports and the VM ips
-        jh_port_mapping = {}
+        redirs = {}
 
         for mapping in context.az_vm_port_mapping:
             for jh in jhs:
                 jh_name = jh["name"]
+                jh_fip = jh["fip"]
                 # found a jump host in the same az as the vm
-                if mapping["az"] == jh["location"]["zone"]:
-                    tools.add_value_to_dict_list(jh_port_mapping, jh_name, [])
+                if mapping["az"] == jh["az"]:
+                    if jh_name not in redirs:
+                        redirs[jh_name] = {
+                            "fip": jh_fip,
+                            "vms": []
+                        }
                     # Get next free port
-                    port = port_start + len(jh_port_mapping[jh_name])
+                    port = port_start + len(redirs[jh_name]["vms"])
                     assert port <= port_end, "We exceed the supplied port range"
-                    jh_port_mapping[jh_name].append([port, mapping["addr"], mapping["vm_name"]])
+                    redirs[jh_name]["vms"].append({
+                        "port": port,
+                        "addr": mapping["addr"],
+                        "vm_name": mapping["vm_name"]
+                    })
 
-        # TODO: Test this!
-        print("!!!", jh_port_mapping)
-
+        context.redirs = redirs
 
     @then("I sleep")
     def sleep(context):

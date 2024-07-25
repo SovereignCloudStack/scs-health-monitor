@@ -5,13 +5,13 @@ Feature: Build benchmark infrastructure
     Given I connect to OpenStack
     Given I want to build the benchmark infrastructure by using resources having the prefix <test_prefix>
     Then I should be able to create a router connected to the external network named <ext_net>
-    # TODO: create secondary VM network (create2ndSubNets) and add network name to VMs
     Then I should be able to fetch availability zones
     Then I should be able to create networks for both the jump hosts and for each availability zone
     Then I should be able to create subnets for both the jump hosts and vms
     Then I should be able to connect the router to the jump host subnet
     Then I should be able to connect the router to the vm subnets
     # TODO: Create security group "scs-hm-infra-jumphost" with forwarding of tcp 222 to 229 for JH VM
+    Then I should be able to create a security group for the jump hosts allowing inbound tcp connections for the port range <port_start> to <port_end>
     Then I should be able to create a jump host for each az using a key pair named <keypair_name>
     Then I should be able to attach floating ips to the jump hosts
     Then I should be able to create <quantity_vms> VMs with a key pair named <keypair_name> and strip them over the VM networks
