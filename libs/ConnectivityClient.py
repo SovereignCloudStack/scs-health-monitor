@@ -1,3 +1,4 @@
+
 import paramiko
 import paramiko.ssh_exception
 import time
@@ -7,11 +8,16 @@ from libs.PrometheusExporter import CommandTypes, LabelNames
 
 from libs.loggerClass import Logger
 
+import os
+import time
+import json
+from decimal import Decimal
 
 class MetricLabels:
     STATUS_CODE = "status_code"
     HOST = "host"
     ENDPOINT = "endpoint"
+ #   RESULT = "testresult"
 
 
 class ResultStatusCodes:
@@ -55,8 +61,9 @@ class SshClient:
         ],
     )
 
-    def __init__(self, host, username, key_path, logger: Logger):
+    def __init__(self, host, username, key_path, logger: Logger, port=22):
         self.host = host
+        self.port = port
         self.username = username
         self.client = paramiko.SSHClient()
         policy = paramiko.AutoAddPolicy()
@@ -135,7 +142,7 @@ class SshClient:
         # self.assertline=f"SSH connection to server {self.host} failed"
         TimeRecorder.record_time(
             lambda: self.client.connect(
-                self.host, username=self.username, pkey=self.private_key
+                self.host, port=self.port, username=self.username, pkey=self.private_key
             ),
             on_success=on_success,
             on_fail=on_fail,
@@ -175,7 +182,7 @@ class SshClient:
                     ResultStatusCodes.FAILURE, self.host, ip, conn_test
                 ).inc()
                 self.assertline = f"Failed to test internet connectivity for server {self.host}, Failures: {self.ping_stat[1]}/{self.ping_stat[2]}, Retries: {self.ping_stat[0]}"
-            self.logger.log_debug(
+            self.logger.log_info(
                 f"ping status [retries,failures,total] {self.ping_stat}"
             )
 
@@ -253,7 +260,6 @@ class SshClient:
 
     def check_ssh_ready(self) -> bool:
         """Check if ssh is ready on a provisioned server.
-
         Returns:
             True if server is ready to respond to ssh connection, else False.
         """
@@ -272,11 +278,9 @@ class SshClient:
 
     def check_server_readiness(self, attempts: int, timeout: int = 10) -> bool:
         """Check if server is ready for ssh connection defined amount of times.
-
         Args:
             attempts: Number of attempts to check server readiness.
             timeout: Time to wait after each attempt.
-
         Returns:
             True if server is ready to respond to ssh connection, else False.
         """
@@ -289,3 +293,87 @@ class SshClient:
                 )
                 time.sleep(timeout)
         return False
+    
+    def transfer_script(self, scriptname):
+        """
+            transfers temporary local script to the connected host via sftp, not used for now
+            Args:
+                testname: testname for namespace
+            Returns:
+                
+            Raises:
+                Exception:
+                    if file not found
+        """
+
+        sftp = self.client.open_sftp()
+        host = self.execute_command("hostname -I")
+        directory = self.execute_command("pwd")
+        sftp.put(scriptname,os.path.join(directory,scriptname))
+        peek=self.execute_command("ls -la")        
+        self.logger.log_debug(f"peek: {peek}")
+        self.logger.log_info(f"{scriptname} transfer completed successfully to {host}: {directory}.")
+        if sftp:
+            sftp.close()
+
+    def get_iperf3(self, target_ip):
+
+        iperf_command = f"iperf3 -t5 -J -c {target_ip} | jq"
+        try:
+            iperf_json = self.execute_command(iperf_command)
+            self.logger.log_info(f"received Iperf response as json")
+        except:
+            self.logger.log_error(f"Iperf failed retry")
+            iperf_json = None
+            time.sleep(16)
+        return iperf_json
+
+
+    def parse_iperf_result(self,iperf_json, source_ip, target_ip):
+        '''
+            Parses the result from iperf3
+            Args:
+                iperf_json: response from iperf formatted as json (string)
+            Returns:
+                Bandwith
+        '''
+        bold = '\033[1m'
+        norm = '\033[0m'
+        bandwidth = []
+    
+        iperf_json_dict = json.loads(iperf_json)
+        sendBW = int(Decimal(iperf_json_dict['end']['sum_sent']['bits_per_second']) / 1048576)
+        recvBW = int(Decimal(iperf_json_dict['end']['sum_received']['bits_per_second']) / 1048576)
+        host_util = f"{iperf_json_dict['end']['cpu_utilization_percent']['host_total']:.1f}%"
+        remote_util = f"{iperf_json_dict['end']['cpu_utilization_percent']['remote_total']:.1f}%"
+    
+        self.logger.log_info(f"IPerf3: {source_ip}-{target_ip}: sendbw: {sendBW} Mbps receivebw: {recvBW} Mbps cpuhost {host_util} cpuremote {remote_util}\n")
+    
+        bandwidth.extend([sendBW, recvBW])
+        sBW = float(Decimal(sendBW) / 1000)
+        rBW = float(Decimal(recvBW) / 1000)
+
+        self.logger.log_info(f"Bandwith: {bandwidth} SBW: {sBW} RBW: {rBW}\n")
+        return sBW,rBW
+
+    
+            
+    def run_iperf_test(self, conn_test, testname, target_ip, source_ip):
+        '''
+            iterates through jh (one per network) picks the last vm accessable through jh and sets it as target
+            the jh is set as source
+        '''
+        #self.transfer_script(f"{testname}-wait")
+
+        iperf_json = self.get_iperf3(target_ip)
+        if iperf_json:
+            self.parse_iperf_result(iperf_json, source_ip, target_ip)
+            self.conn_test_count.labels(
+                ResultStatusCodes.SUCCESS, self.host, target_ip, conn_test
+            ).inc()
+        else:
+            self.conn_test_count.labels(
+                ResultStatusCodes.FAILURE, self.host, target_ip, conn_test
+            ).inc()
+            return f"no iperf-response json"
+        

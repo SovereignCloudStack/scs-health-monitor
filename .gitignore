@@ -183,8 +183,7 @@ sshKey
 sshKey.pub
 cloud_level_testing/features/ssh_check_connectivity_katha.feature
 test-keypair-private
-jhSshKey-private
-jh_sshKey-private
+*-private
 *.prom
 
 # Local .terraform directories

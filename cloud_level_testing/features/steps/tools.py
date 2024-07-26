@@ -286,13 +286,13 @@ def check_volumes_created(client, test_name):
             return volume.status
 
 
-def collect_ips(client, logger: Logger):
+def collect_float_ips(client, logger: Logger):
     ips = []
     assertline = None
     floating_ips = client.network.ips()
     for ip in floating_ips:
         ips.append(ip.floating_ip_address)
-        logger.log_info(f"found {ip.floating_ip_address}")
+        logger.log_debug(f"found floating ip {ip.floating_ip_address}")
     if len(ips) == 0:
         assertline = f"No ips found"
     return ips, assertline
@@ -300,12 +300,11 @@ def collect_ips(client, logger: Logger):
 
 def collect_jhs(client, test_name, logger: Logger):
     servers = client.compute.servers()
-    test_name = f"{test_name}-jh"
-    lookup = "default-jh"  # just for testing delete later
+    lookup = f"{test_name}-jh"
     jhs = []
     jh = None
     for name in servers:
-        logger.log_info(f"found jh server {name.name}")
+        logger.log_debug(f"found host {name.name}")
         if lookup in name.name:
             logger.log_debug(f"String containing '{lookup}': {name.name}")
             jh = client.compute.find_server(name_or_id=name.name)
@@ -317,6 +316,7 @@ def collect_jhs(client, test_name, logger: Logger):
                         jhs.append(
                             {"name": name.name, "ip": jh.addresses[key][1]["addr"]}
                         )
+    logger.log_info(f"returning jhs: {jhs}")
     return jhs
 
 
@@ -417,7 +417,49 @@ def create_security_group_rule(
         sec_group_rule is not None
     ), f"Rule for security group {sec_group_id} was not created"
     return sec_group_rule
+def create_wait_script(conn_test,testname):
+        """
+            creates temp script locally and makes it executable 
+            script checks if the command $1 exists, waits for the system boot to finish 
+            if necessary and retries for up to 100 seconds if the command is not found
+        
+                not in use for now
+        """
+        assertline = None
+        script_path = f'{testname}-wait'
+        secondary = None
+        if "iperf" in conn_test:
+            secondary = "iperf"
 
+        script_content = f"""
+            #!/bin/bash
+            let MAXW=100
+            if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 5; sync; fi
+            while test \$MAXW -ge 1; do
+            if type -p "{conn_test}">/dev/null || type -p "{secondary}">/dev/null; then exit 0; fi
+            let MAXW-=1
+            sleep 1
+            if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 1; fi
+            done
+            exit 1
+            """
+        try:
+            with open(script_path, 'w') as file:
+                    file.write(script_content)
+            os.chmod(script_path, 0o755)
+        except:
+            assertline = f"Failed to write script file {script_path}"
+        return assertline
+
+def delete_wait_script(testname):
+    assertline = None
+    script_path = f'{testname}-wait'
+    try:
+        os.remove(script_path)
+        print("\b")
+    except:
+        assertline = f"Failed to delete script file {script_path}"
+    return assertline
 
 def delete_vms(context, vm_ids: list = None):
     """Delete VMs based on list of IDs or VM IDs in collector.
@@ -780,7 +822,6 @@ def create_lb(client, name, **kwargs):
     @param kwargs: additional arguments to be passed to resource create command
     @return created lb
     """
-    print(kwargs)
     assert (client.load_balancer.create_load_balancer(name=name, **kwargs).
             provisioning_status == "PENDING_CREATE"), f"Expected LB {name} not in creation"
     lb = client.load_balancer.wait_for_load_balancer(name_or_id=name,
@@ -790,3 +831,13 @@ def create_lb(client, name, **kwargs):
     assert lb.provisioning_status == "ACTIVE", f"Expected LB {name} not Active"
     assert lb.operating_status == "ONLINE", f"Expected LB {name} not Online"
     return lb
+
+def target_source_calc(jh_name, redirs, logger):
+    vm_quantity = len(redirs[jh_name]['vms'])
+    target_ip = redirs[jh_name]['addr']
+    source_ip = redirs[jh_name]['fip']
+    pno = redirs[jh_name]['vms'][vm_quantity-1]['port']
+    logger.log_debug(f"{jh}: vm_quantity: {vm_quantity} target_ip: {target_ip} source_ip: {source_ip} pno: {pno}")        
+    if not source_ip or not target_ip or source_ip == target_ip:
+        logger.log_debug(f"IPerf3: {source_ip}<->{target_ip}: skipped")
+    return target_ip, source_ip, pno
