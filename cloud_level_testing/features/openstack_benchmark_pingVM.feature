@@ -5,7 +5,7 @@ Feature: Benchmark ping VMs
   Scenario Outline: Collecting IPs of VMs can be reached through Openstack, ping them from remote accesses and track retries and failures
     Given I connect to OpenStack
     Given I have deployed <jh_quantity> JHs
-    and I have a private key at <vm_private_ssh_key_path> for <username>
+    And I have a private key at <vm_private_ssh_key_path> for <username>
     Then I should be able to SSH into <jh_quantity> JHs and test their <conn_test> connectivity
 
 
