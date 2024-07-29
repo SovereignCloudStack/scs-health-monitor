@@ -9,6 +9,7 @@ from libs.ConnectivityClient import SshClient
 import os
 from cloud_level_testing.features.steps import tools
 
+
 class StepsDef:
     PING_RETRIES = 60
     collector = tools.Collector()
