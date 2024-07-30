@@ -556,6 +556,7 @@ class StepsDef:
 
     @given("I have deployed {jh_quantity:d} JHs")
     def initialize(context, jh_quantity):
+        context.test_name = "default" # TODO: just for testing, delete if naming convention is clarified
         context.jh = tools.collect_jhs(context.client, context.test_name, context.logger)
         assert len(context.jh) >= jh_quantity, f"Not enough Jumphost with name found"
     
