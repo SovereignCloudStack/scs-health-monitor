@@ -698,7 +698,7 @@ class StepsDef:
         context.assertline=None
         for i in range(0,len(context.hosts)):
             jh_name=context.hosts[i]['name']
-            target_ip, source_ip, pno = tools.target_source_calc(jh_name, context.redirs, context.logger,2)
+            target_ip, source_ip, pno = tools.target_source_calc(jh_name, context.redirs, context.logger)
             context.vm_ip_address = source_ip
             context.pno = pno
             context.execute_steps('''
