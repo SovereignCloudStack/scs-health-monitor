@@ -5,7 +5,6 @@ import time
 import random
 import string
 
-from openstack.exceptions import DuplicateResource
 from libs.ConnectivityClient import SshClient
 import os
 from cloud_level_testing.features.steps import tools
@@ -63,7 +62,7 @@ class StepsDef:
     @then("I should be able to create {router_quantity:d} routers")
     def create_router(context, router_quantity: int):
         for num in range(1, router_quantity + 1):
-            router = context.client.network.create_router(name=f"{context.test_name}-{num}")
+            router = tools.create_router(context.client, f"{context.test_name}-{num}")
             context.collector.routers.append(router.id)
             assert router is not None, f"Failed to create router with name {context.test_name}-{num}"
         assert len(context.collector.routers) == router_quantity, \
@@ -132,10 +131,8 @@ class StepsDef:
     @then("I should be able to create {network_quantity:d} networks")
     def create_network(context, network_quantity: int):
         for num in range(1, network_quantity + 1):
-            network = context.client.network.create_network(name=f"{context.test_name}-network-{num}")
+            network = tools.create_network(context.client, name=f"{context.test_name}-network-{num}")
             context.collector.networks.append(network.id)
-            assert not context.client.network.find_network(
-                name_or_id=network), f"Network called {network} created"
         assert len(context.collector.networks) == network_quantity, \
             f"Failed to create the desired amount of networks"
 
@@ -236,13 +233,11 @@ class StepsDef:
             if f"{context.test_name}-network" in network.name:
                 cidr = tools.create_subnets(num=subnet_quantity)
                 for num in range(1, subnet_quantity + 1):
-                    subnet = context.client.network.create_subnet(
-                        name=f"{context.test_name}-subnet-{num}",
-                        network_id=network.id, ip_version=4, cidr=cidr[num - 1])
-                    time.sleep(5)
+                    subnet = tools.create_subnet(context.client,
+                                                 f"{context.test_name}-subnet-{num}",
+                                                 network_id=network.id,
+                                                 cidr=cidr[num - 1])
                     context.collector.subnets.append(subnet.id)
-                    assert not context.client.network.find_network(name_or_id=subnet), \
-                        f"Failed to create subnet with name {subnet}"
             else:
                 continue
         assert len(context.collector.subnets) == subnet_quantity, \
@@ -296,7 +291,7 @@ class StepsDef:
             time.sleep(2)
             assert not tools.check_security_group_exists(
                 context,
-                sec_group.id), f"Security group with id {sec_group_id} was not deleted"
+                sec_group_id), f"Security group with id {sec_group_id} was not deleted"
             context.collector.security_groups.remove(sec_group_id)
         if context.collector.security_groups:
             for sec_group in context.client.network.security_groups():
@@ -437,29 +432,11 @@ class StepsDef:
         network_count = 0
         for network in context.client.network.networks():
             if context.test_name in network.name:
-                network_count += 1
                 for num in range(1, vms_quantity + 1):
                     vm_name = f"{context.test_name}-vm-{''.join(random.choices(string.ascii_letters + string.digits, k=10))}"
-                    image = context.client.compute.find_image(name_or_id=context.vm_image)
-                    assert image, f"Image with name {context.vm_image} doesn't exist"
-                    flavor = context.client.compute.find_flavor(name_or_id=context.flavor_name)
-                    assert flavor, f"Flavor with name {context.flavor_name} doesn't exist"
-                    assert network, f"Network with name {network.name} doesn't exist"
-                    try:
-                        server = context.client.create_server(
-                            name=vm_name,
-                            image=image.id,
-                            flavor=flavor.id,
-                            network=[network.id],
-                            auto_ip=False,
-                            security_groups=security_groups,
-                            userdata=user_data,
-                        )
-                        context.client.compute.wait_for_server(server)
-                    except DuplicateResource as e:
-                        assert e, "Server already created!"
+                    server = tools.create_vm(context.client, vm_name, context.vm_image, context.flavor_name, network.id, security_groups=security_groups, userdata=user_data)
                     time.sleep(5)
-                    context.collector.virtual_machines.append(server.id)
+                    context.collector.virtual_machines.append(server)
                     created_server = context.client.compute.find_server(name_or_id=vm_name)
                     # context.collector.virtual_machines.append(created_server.ip)
                     assert created_server, f"VM with name {vm_name} was not created successfully"
@@ -545,13 +522,7 @@ class StepsDef:
         - iperf3 -Ds
         '''
 
-        image = context.client.compute.find_image(name_or_id=context.vm_image)
-        assert image, f"Image with name {context.vm_image} doesn't exist"
-        flavor = context.client.compute.find_flavor(name_or_id=context.flavor_name)
-        assert flavor, f"Flavor with name {context.flavor_name} doesn't exist"
-        network = context.client.network.find_network(network_name)
-        assert network, f"Network with name {network_name} doesn't exist"
-        keypair = tools.check_keypair_exists(context, keypair_name=keypair_name)
+        keypair = tools.check_keypair_exists(context.client, keypair_name=keypair_name)
         if not keypair:
             keypair = context.client.compute.create_keypair(name=keypair_name)
             assert keypair, f"Keypair with name {keypair_name} doesn't exist"
@@ -568,21 +539,15 @@ class StepsDef:
             security_group = tools.check_security_group_exists(context, security_group)
             assert security_group, f"Security Group with name {security_group} doesn't exist"
 
-        server = context.client.create_server(
-            name=jumphost_name,
-            image=image.id,
-            flavor=flavor.id,
-            network=[network.id],
-            auto_ip=False,
-            key_name=keypair.name,
-            security_groups=security_groups,
-            wait=True,
-            availability_zone="nova",
-            userdata=user_data,
-        )
-        server = context.client.compute.wait_for_server(server)
-        created_jumphost = context.client.compute.find_server(name_or_id=jumphost_name)
-        assert created_jumphost, f"Jumphost with name {jumphost_name} was not created successfully"
+        server = tools.create_jumphost(context.client,
+                                       jumphost_name,
+                                       network_name,
+                                       keypair_name,
+                                       context.vm_image,
+                                       context.flavor_name,
+                                       security_groups=security_groups,
+                                       availability_zone="nova",
+                                       userdata=user_data,)
         context.collector.jumphosts.append(server.id)
 
     @given("I have deployed a VM with IP {vm_ip_address}")
@@ -591,6 +556,7 @@ class StepsDef:
 
     @given("I have deployed {jh_quantity:d} JHs")
     def initialize(context, jh_quantity):
+        context.test_name = "default" # TODO: just for testing, delete if naming convention is clarified
         context.jh = tools.collect_jhs(context.client, context.test_name, context.logger)
         assert len(context.jh) >= jh_quantity, f"Not enough Jumphost with name found"
     
@@ -733,7 +699,7 @@ class StepsDef:
         context.assertline=None
         for i in range(0,len(context.hosts)):
             jh_name=context.hosts[i]['name']
-            target_ip, source_ip, pno = tools.target_source_calc(jh_name, context.redirs, context.logger,2)
+            target_ip, source_ip, pno = tools.target_source_calc(jh_name, context.redirs, context.logger)
             context.vm_ip_address = source_ip
             context.pno = pno
             context.execute_steps('''

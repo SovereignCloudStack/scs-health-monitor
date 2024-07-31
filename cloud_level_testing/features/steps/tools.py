@@ -5,12 +5,15 @@ from functools import wraps
 from libs.loggerClass import Logger
 from concurrent.futures import ThreadPoolExecutor
 import os
+
 import yaml
+from openstack.exceptions import DuplicateResource
+import openstack
 
 
 class Collector:
 
-    def __init__(self):
+    def __init__(self, client: openstack.connection.Connection = None):
         self.networks: list = list()
         self.subnets: list = list()
         self.routers: list = list()
@@ -22,9 +25,14 @@ class Collector:
         self.volumes: list = list()
         self.load_balancers: list = list()
         self.ports: list = list()
+        # TODO: ports vs. interfaces?
+        # List of routers and their subnets. dicts {"router": <router-id>, "subnet": <subnet-id>}
+        self.router_subnets: list[dict] = list()
         self.enabled_ports: list = ()
         self.disabled_ports: list = list()
         self.virtual_machines_ip: list = list()
+
+        self.client = client
 
     def __bool__(self):
         return any(
@@ -45,6 +53,94 @@ class Collector:
                 self.virtual_machines_ip,
             )
         )
+
+    def create_router(self, name, **kwargs):
+        router = create_router(self.client, name, **kwargs)
+        self.routers.append(router.id)
+        return router
+
+    def create_network(self, name, **kwargs):
+        net = create_network(self.client, name, **kwargs)
+        self.networks.append(net.id)
+        return net
+
+    def create_subnet(self, name, network_id, ip_version=4, **kwargs):
+        subnet = create_subnet(self.client, name, network_id, ip_version, **kwargs)
+        self.subnets.append(subnet.id)
+        return subnet
+
+    def add_interface_to_router(self, router, subnet_id):
+        router_update = add_interface_to_router(self.client, router, subnet_id)
+        self.router_subnets.append({"router": router.id, "subnet": subnet_id})
+        return router_update
+
+    def find_router(self, name_or_id):
+        return find_router(self.client, name_or_id)
+
+    def find_server(self, name_or_id):
+        return self.client.compute.find_server(name_or_id=name_or_id)
+
+    def delete_interface_from_router(self, router, subnet_id):
+        res = self.client.network.remove_interface_from_router(router, subnet_id)
+        if not res:
+            # success
+            self.router_subnets.remove({"router": router.id, "subnet": subnet_id})
+
+    def create_jumphost(self, name, network_name, keypair_name, vm_image, flavor_name,
+                        security_groups, **kwargs):
+        vm = create_jumphost(self.client, name, network_name, keypair_name, vm_image, flavor_name,
+                             security_groups, **kwargs)
+        self.virtual_machines.append(vm.id)
+        return vm
+
+    def create_floating_ip(self, server_name):
+        fip = create_floating_ip(self.client, server_name)
+        self.floating_ips.append(fip)
+        return fip
+
+    def create_security_group(self, sec_group_name: str, description: str):
+        """Create security group in openstack
+
+        Args:
+            sec_group_name (str): Name of security group
+            description (str): Description of security group
+
+        Returns:
+            ~openstack.network.v2.security_group.SecurityGroup: The new security group or None
+        """
+        security_group = self.client.network.create_security_group(
+            name=sec_group_name,
+            description=description
+        )
+        self.security_groups.append(security_group.id)
+        assert security_group is not None, f"Security group with name {security_group.name} was not found"
+        return security_group
+
+    def create_security_group_rule(self, sec_group_id: str, protocol: str,
+                                   port_range_min: int = None, port_range_max: int = None,
+                                   direction: str = 'ingress'):
+        """Create security group rule for specified security group
+
+        Args:
+            sec_group_id (str): ID of the security group for the rule
+            protocol (str): The protocol that is matched by the security group rule
+            port_range_min (int): The minimum port number in the range that is matched by the security group rule
+            port_range_max (int): The maximum port number in the range that is matched by the security group rule
+            direction (str): The direction in which the security group rule is applied
+
+        Returns:
+            ~openstack.network.v2.security_group_rule.SecurityGroupRule: The new security group rule
+        """
+        sec_group_rule = self.client.network.create_security_group_rule(
+            security_group_id=sec_group_id,
+            port_range_min=port_range_min,
+            port_range_max=port_range_max,
+            protocol=protocol,
+            direction=direction
+        )
+        self.security_groups_rules.append(sec_group_rule.id)
+        assert sec_group_rule is not None, f"Rule for security group {sec_group_id} was not created"
+        return sec_group_rule
 
 
 class Tools:
@@ -81,6 +177,10 @@ def time_it(func):
 
     return wrapper
 
+def add_value_to_dict_list(d, key, value):
+    if key not in d:
+        d[key] = []
+    d[key] = value
 
 def create_subnets(num):
     subnet_list = []
@@ -114,6 +214,19 @@ def create_subnets(num):
             break
     return subnet_list
 
+def vm_extract_ip_by_type(server, type: str):
+    """
+    Iterate addresses of server object and return first floating ip we find.
+    Typical types are 'floating' or 'fixed'.
+    @param server:
+    @return: floating ip or None if not present
+    """
+    for vm_nets in server["addresses"].values():
+        for vm_addr in vm_nets:
+            if vm_addr["OS-EXT-IPS:type"] == type:
+                # We found an ip attached to the machine.
+                return vm_addr["addr"]
+    return None
 
 def delete_subent_ports(client, subnet_id=None):
     for port in client.network.ports(network_id=subnet_id):
@@ -237,17 +350,17 @@ def check_security_group_exists(context, sec_group_name: str):
     return context.client.network.find_security_group(name_or_id=sec_group_name)
 
 
-def check_keypair_exists(context, keypair_name: str):
+def check_keypair_exists(client, keypair_name: str):
     """Check if keypair exists.
 
     Args:
-        context: Behave context object.
+        client: OpenStack client
         keypair_name: Name of keypair to check.
 
     Returns:
         ~openstack.compute.v2.keypair.Keypair: Found keypair object or None.
     """
-    return context.client.compute.find_keypair(name_or_id=keypair_name)
+    return client.compute.find_keypair(name_or_id=keypair_name)
 
 
 def create_security_group(context, sec_group_name: str, description: str):
@@ -561,13 +674,170 @@ def run_parallel(tasks: list[tuple], timeout: int = 100) -> list[str]:
             results.append(res)
     return results
 
-def target_source_calc(jh_name, redirs, logger):
 
+def create_vm(client, name, image_name, flavor_name, network_id, **kwargs):
+    """
+    Create virtual machine
+    @param client: OpenStack client
+    @param name: vm name
+    @param image_name: image name or id to use
+    @param flavor_name: flavor name or id to use
+    @param network_id: network id to attach to
+    @return: created vm
+    """
+    image = client.compute.find_image(name_or_id=image_name)
+    assert image, f"Image with name {image_name} doesn't exist"
+    flavor = client.compute.find_flavor(name_or_id=flavor_name)
+    assert flavor, f"Flavor with name {flavor_name} doesn't exist"
+    try:
+        server = client.create_server(
+            name=name,
+            image_id=image.id,
+            flavor_id=flavor.id,
+            networks=[{"uuid": network_id}],
+            **kwargs
+        )
+        client.compute.wait_for_server(server)
+    except DuplicateResource as e:
+        assert e, "Server already created!"
+        server = None
+    return server
+
+def create_jumphost(client, name, network_name, keypair_name, vm_image, flavor_name, security_groups, **kwargs):
+    # config
+    keypair_filename = f"{keypair_name}-private"
+
+    image = client.compute.find_image(name_or_id=vm_image)
+    assert image, f"Image with name {vm_image} doesn't exist"
+    flavor = client.compute.find_flavor(name_or_id=flavor_name)
+    assert flavor, f"Flavor with name {flavor_name} doesn't exist"
+    network = client.network.find_network(network_name)
+    assert network, f"Network with name {network_name} doesn't exist"
+
+    keypair = check_keypair_exists(client, keypair_name=keypair_name)
+    if not keypair:
+        keypair = client.compute.create_keypair(name=keypair_name)
+        assert keypair, f"Keypair with name {keypair_name} doesn't exist"
+        with open(keypair_filename, 'w') as f:
+            f.write("%s" % keypair.private_key)
+        os.chmod(keypair_filename, 0o600)
+
+    for security_group in security_groups:
+        security_group = client.network.find_security_group(security_group)
+        assert security_group, f"Security Group with name {security_group} doesn't exist"
+
+    server = client.create_server(
+        name=name,
+        image=image.id,
+        flavor=flavor.id,
+        network=[network.id],
+        key_name=keypair.name,
+        security_groups=security_groups,
+        wait=True,
+        auto_ip=False,
+        **kwargs
+    )
+    server = client.compute.wait_for_server(server)
+    created_jumphost = client.compute.find_server(name_or_id=name)
+    assert created_jumphost, f"Jumphost with name {name} was not created successfully"
+    return created_jumphost
+
+def create_network(client, name, **kwargs):
+    """
+    Create network
+    @param client: OpenStack client
+    @param name: network name
+    @param kwargs: additional arguments to be passed to resource create command
+    @return: created network
+    """
+    network = client.network.create_network(name=name, **kwargs)
+    assert not client.network.find_network(
+        name_or_id=network), f"Network called {network} not present!"
+    return network
+
+def list_networks(client, filter: dict=None) -> list:
+    return list(client.list_networks(filter))
+
+def create_subnet(client, name, network_id, ip_version=4, **kwargs):
+    """
+    Create subnet and check whether it was created
+    @param network_id: network (UUID) the subnet should belong to
+    @param ip_version: ip version
+    @param client: OpenStack client
+    @param name: router name
+    @param kwargs: additional arguments to be passed to resource create command
+    @return: created subnet
+    """
+    subnet = client.network.create_subnet(name=name,
+                                          network_id=network_id,
+                                          ip_version=ip_version,
+                                          **kwargs)
+    time.sleep(5)
+    assert not client.network.find_network(name_or_id=subnet), \
+        f"Failed to create subnet with name {subnet}"
+    return subnet
+
+def create_floating_ip(client, server_name):
+    server = client.compute.find_server(name_or_id=server_name)
+    assert server, f"Server with name {server_name} not found"
+    return client.add_auto_ip(server=server, wait=True)
+
+def create_router(client, name, **kwargs):
+    """
+    Create router
+    @type kwargs: additional arguments to be passed to resource create command
+    @param client: OpenStack client
+    @param name: router name
+    @return created router
+    """
+    return client.network.create_router(name=name, **kwargs)
+
+def find_router(client, name_or_id):
+    """
+    Search router and return it
+    @param client: OpenStack client
+    @param name_or_id: router name or id
+    @return:
+    """
+    return client.network.find_router(name_or_id=name_or_id)
+
+def add_interface_to_router(client, router, subnet_id):
+    """
+    Add interface to router
+    @param client:
+    @param router:
+    @param subnet_id:
+    @return: Router with changed attributes (id, tenant_id, port_id)
+    """
+    return client.network.add_interface_to_router(router, subnet_id)
+
+def get_availability_zones(client) -> list:
+    return list(client.network.availability_zones())
+
+def create_lb(client, name, **kwargs):
+    """
+    Create Loadbalancer and wait until it's in state active
+    @param client: OpenStack client
+    @param name: lb name
+    @param kwargs: additional arguments to be passed to resource create command
+    @return created lb
+    """
+    assert (client.load_balancer.create_load_balancer(name=name, **kwargs).
+            provisioning_status == "PENDING_CREATE"), f"Expected LB {name} not in creation"
+    lb = client.load_balancer.wait_for_load_balancer(name_or_id=name,
+                                                     status='ACTIVE',
+                                                     failures=['ERROR'], interval=2,
+                                                     wait=300)
+    assert lb.provisioning_status == "ACTIVE", f"Expected LB {name} not Active"
+    assert lb.operating_status == "ONLINE", f"Expected LB {name} not Online"
+    return lb
+
+def target_source_calc(jh_name, redirs, logger):
     vm_quantity = len(redirs[jh_name]['vms'])
     target_ip = redirs[jh_name]['addr']
     source_ip = redirs[jh_name]['fip']
     pno = redirs[jh_name]['vms'][vm_quantity-1]['port']
-    logger.log_debug(f"{jh}: vm_quantity: {vm_quantity} target_ip: {target_ip} source_ip: {source_ip} pno: {pno}")        
+    logger.log_debug(f"{jh_name}: vm_quantity: {vm_quantity} target_ip: {target_ip} source_ip: {source_ip} pno: {pno}")        
     if not source_ip or not target_ip or source_ip == target_ip:
         logger.log_debug(f"IPerf3: {source_ip}<->{target_ip}: skipped")
     return target_ip, source_ip, pno
