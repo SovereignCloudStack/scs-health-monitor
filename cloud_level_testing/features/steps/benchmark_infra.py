@@ -25,7 +25,7 @@ class BenchmarkInfra:
 
     @given(
         "I want to build the benchmark infrastructure by using resources having the infix "
-        "{prefix}")
+        "{infix}")
     def infra_benchmark(context, infix: str):
         context.test_name = f"{context.test_name}-{infix}-"
         context.vm_nets_ids: list = []
