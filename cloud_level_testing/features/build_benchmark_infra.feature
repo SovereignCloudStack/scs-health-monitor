@@ -1,4 +1,6 @@
 @benchmark
+@create
+@delete
 Feature: Build benchmark infrastructure
 
   Scenario Outline: Build the benchmark infrastructure used for benchmark tests

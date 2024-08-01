@@ -45,7 +45,7 @@ class BenchmarkInfra:
         # Security group name the jump hosts will use for port forwardings
         context.jh_sg_group_name = f"{context.test_name}jumphost"
 
-        context.collector = tools.Collector(client=context.client)
+        context.collector.client = context.client
 
     @staticmethod
     def derive_vm_name(context, num: int):

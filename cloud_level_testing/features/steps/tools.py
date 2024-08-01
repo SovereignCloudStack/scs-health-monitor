@@ -79,11 +79,19 @@ class Collector:
     def find_server(self, name_or_id):
         return self.client.compute.find_server(name_or_id=name_or_id)
 
-    def delete_interface_from_router(self, router, subnet_id):
-        res = self.client.network.remove_interface_from_router(router, subnet_id)
-        if not res:
-            # success
-            self.router_subnets.remove({"router": router.id, "subnet": subnet_id})
+    def delete_router_subnets(self):
+        for router_subnet in self.router_subnets:
+            router = router_subnet["router"]
+            subnet_id = router_subnet["subnet"]
+            res = self.client.network.remove_interface_from_router(router, subnet_id)
+            if not res:
+                # success
+                self.router_subnets.remove({"router": router.id, "subnet": subnet_id})
+
+    def delete_security_groups(self):
+        for security_group in self.security_groups:
+            self.client.network.delete_security_group(security_group)
+            self.security_groups.remove(security_group)
 
     def create_jumphost(self, name, network_name, keypair_name, vm_image, flavor_name,
                         security_groups, **kwargs):
@@ -596,10 +604,12 @@ def delete_all_test_resources(context):
     delete_vms(context)
     delete_jumphosts(context)
     delete_ports(context)
+    context.collector.delete_router_subnets()
     delete_floating_ips(context)
     delete_subnets(context)
     delete_networks(context)
     delete_routers(context)
+    context.collector.delete_security_groups()
 
 
 def parse_ping_output(data: list[str], logger: Logger):
