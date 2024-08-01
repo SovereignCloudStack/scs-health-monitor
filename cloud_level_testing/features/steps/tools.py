@@ -25,7 +25,6 @@ class Collector:
         self.volumes: list = list()
         self.load_balancers: list = list()
         self.ports: list = list()
-        # TODO: ports vs. interfaces?
         # List of routers and their subnets. dicts {"router": <router-id>, "subnet": <subnet-id>}
         self.router_subnets: list[dict] = list()
         self.enabled_ports: list = ()
@@ -118,7 +117,7 @@ class Collector:
 
     def create_security_group_rule(self, sec_group_id: str, protocol: str,
                                    port_range_min: int = None, port_range_max: int = None,
-                                   direction: str = 'ingress'):
+                                   direction: str = 'ingress', remote_ip_prefix: str = '0.0.0.0/0'):
         """Create security group rule for specified security group
 
         Args:
@@ -127,6 +126,7 @@ class Collector:
             port_range_min (int): The minimum port number in the range that is matched by the security group rule
             port_range_max (int): The maximum port number in the range that is matched by the security group rule
             direction (str): The direction in which the security group rule is applied
+            remote_ip_prefix (str): source IP address to be associated with the rule
 
         Returns:
             ~openstack.network.v2.security_group_rule.SecurityGroupRule: The new security group rule
@@ -136,7 +136,8 @@ class Collector:
             port_range_min=port_range_min,
             port_range_max=port_range_max,
             protocol=protocol,
-            direction=direction
+            direction=direction,
+            remote_ip_prefix=remote_ip_prefix,
         )
         self.security_groups_rules.append(sec_group_rule.id)
         assert sec_group_rule is not None, f"Rule for security group {sec_group_id} was not created"
