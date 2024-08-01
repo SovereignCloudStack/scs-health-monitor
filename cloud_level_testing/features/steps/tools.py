@@ -126,6 +126,7 @@ class Collector:
     def create_security_group_rule(self, sec_group_id: str, protocol: str,
                                    port_range_min: int = None, port_range_max: int = None,
                                    direction: str = 'ingress', remote_ip_prefix: str = '0.0.0.0/0'):
+
         """Create security group rule for specified security group
 
         Args:
