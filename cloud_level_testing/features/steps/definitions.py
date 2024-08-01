@@ -387,18 +387,24 @@ class StepsDef:
         "on {port}")
     def create_floating_ip(context, subnet=None, server=None, fixed_address=None, nat_destination=None, port=None,
                            wait=False, timeout=60, ):
+        EXCLUDE_TAG = 'gx-grafana-dashboard'
         ip = FloatingIPCloudMixin.create_floating_ip(
             network=subnet, server=server, fixed_address=fixed_address,
             nat_destination=nat_destination, port=port, wait=wait,
             timeout=timeout)
         floating_ip = FloatingIPCloudMixin.get_floating_ip(ip.id)
-        context.collector.floating_ips.append(floating_ip.id)
+        filtered_fips = [ip for ip in floating_ip if EXCLUDE_TAG not in ip.tags]
+        context.collector.floating_ips.append(filtered_fips.id)
         assert floating_ip is None, f"floating ip was not created"
 
     @then("I should be able to delete floating ip with id: {floating_ip_id}")
     def delete_floating_ip(context, floating_ip_id):
-        for ip_id in context.collector.floating_ips[:]:
+        EXCLUDE_TAG = 'gx-grafana-dashboard'
+        filtered_ip_id = [ip for ip in context.collector.floating_ips[:] if EXCLUDE_TAG not in ip.tags]
+        #for ip_id in context.collector.floating_ips[:]:
+        for ip_id in filtered_ip_id:
             FloatingIPCloudMixin.delete_floating_ip(floating_ip_id=ip_id)
+            print(f"delete {ip_id}")
             floating_ip = FloatingIPCloudMixin.get_floating_ip(ip_id)
             assert floating_ip is not None, f"floating ip with id {ip_id} was not deleted"
             context.collector.floating_ips.remove(ip_id)
