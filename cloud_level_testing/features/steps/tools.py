@@ -333,7 +333,6 @@ def collect_jhs(client, test_name, logger: Logger):
     logger.log_info(f"returning jhs: {jhs}")
     return jhs
 
-
 def get_floating_ip_id(context, floating_ip: str) -> str | None:
     """Get ID of floating IP based on its address.
 

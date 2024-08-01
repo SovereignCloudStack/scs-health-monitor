@@ -384,24 +384,18 @@ class StepsDef:
         "on {port}")
     def create_floating_ip(context, subnet=None, server=None, fixed_address=None, nat_destination=None, port=None,
                            wait=False, timeout=60, ):
-        EXCLUDE_TAG = 'gx-grafana-dashboard'
         ip = FloatingIPCloudMixin.create_floating_ip(
             network=subnet, server=server, fixed_address=fixed_address,
             nat_destination=nat_destination, port=port, wait=wait,
             timeout=timeout)
         floating_ip = FloatingIPCloudMixin.get_floating_ip(ip.id)
-        filtered_fips = [ip for ip in floating_ip if EXCLUDE_TAG not in ip.tags]
-        context.collector.floating_ips.append(filtered_fips.id)
+        context.collector.floating_ips.append(floating_ip.id)
         assert floating_ip is None, f"floating ip was not created"
 
     @then("I should be able to delete floating ip with id: {floating_ip_id}")
     def delete_floating_ip(context, floating_ip_id):
-        EXCLUDE_TAG = 'gx-grafana-dashboard'
-        filtered_ip_id = [ip for ip in context.collector.floating_ips[:] if EXCLUDE_TAG not in ip.tags]
-        #for ip_id in context.collector.floating_ips[:]:
-        for ip_id in filtered_ip_id:
+        for ip_id in context.collector.floating_ips[:]:
             FloatingIPCloudMixin.delete_floating_ip(floating_ip_id=ip_id)
-            print(f"delete {ip_id}")
             floating_ip = FloatingIPCloudMixin.get_floating_ip(ip_id)
             assert floating_ip is not None, f"floating ip with id {ip_id} was not deleted"
             context.collector.floating_ips.remove(ip_id)
@@ -559,18 +553,12 @@ class StepsDef:
     @given("I have deployed a VM with IP {vm_ip_address}")
     def initialize(context, vm_ip_address: str):
         context.vm_ip_address = vm_ip_address
-
-    @given("I have deployed {jh_quantity:d} JHs")
-    def initialize(context, jh_quantity):
-        context.test_name = "default" # TODO: just for testing, delete if naming convention is clarified
-        context.jh = tools.collect_jhs(context.client, context.test_name, context.logger)
-        assert len(context.jh) >= jh_quantity, f"Not enough Jumphost with name found"
     
-    @given("I have a private key at {vm_private_ssh_key_path} for {username}")
-    def check_private_key_exists(context, vm_private_ssh_key_path: str, username:str):
-        context.vm_private_ssh_key_path = vm_private_ssh_key_path
+    @given("I have a private key at {keypair_name} for {username}")
+    def check_private_key_exists(context, keypair_name: str, username:str):
+        context.vm_private_ssh_key_path = keypair_name
         context.vm_username = username
-        assert os.path.isfile(vm_private_ssh_key_path)
+        assert os.path.isfile(keypair_name)
     
     @then("I should be able to SSH into {jh_quantity:d} JHs and test their {conn_test} connectivity")
     def step_iterate_steps(context, jh_quantity, conn_test: str):
@@ -616,10 +604,20 @@ class StepsDef:
         if assertline != None:
             context.assertline = assertline
 
-    @given("I have deployed jhs in {network_quantity:d} networks")
-    def initialize(context, network_quantity):
-        context.hosts=tools.collect_jhs(context.client,f"{context.test_name}-infra", context.logger)
-        assert len(context.hosts) >= network_quantity, f"Not enough jhs in networks found"
+    @given("I have deployed {jh_quantity:d} JHs")
+    def initialize(context, jh_quantity):
+        context.test_name = "default" # TODO: just for testing, delete if naming convention is clarified
+        context.jh = tools.collect_jhs(context.client, context.test_name, context.logger)
+        assert len(context.jh) >= jh_quantity, f"Not enough Jumphost with name found"
+
+### TODO maybe obsolete
+    # @given("I have deployed {test_infix}-jhs in {network_quantity:d} networks")
+    # def initialize(context, test_infix, network_quantity):
+    #     print(f"sleep {context.test_name}-{test_infix}")
+    #     print(f"context.redirs {context.redirs}")
+    #     time.sleep(60)
+    #     context.hosts=tools.collect_jhs(context.client,f"{context.test_name}-{test_infix}", context.logger)
+    #     assert len(context.hosts) >= network_quantity, f"Not enough jhs in networks found"
 
     @then("I should be able to collect all VM IPs and ports")
     def collect_redirs(context):
@@ -647,6 +645,26 @@ class StepsDef:
 
         context.logger.log_info(f"vm data {context.redirs}")
         assert isinstance(context.redirs,dict), "redirs is no dictionary"
+
+    @then('I should be able to SSH into {network_quantity:d} VMs through all {test_infix}-jhs and perform {conn_test} test')
+    def substeps(context,network_quantity, test_infix, conn_test):
+        context.assertline=None
+        jh_count = sum(1 for key in context.redirs if 'scs-hm-infra-jh' in key)
+
+        print(f"count {jh_count}")
+
+        for i in range(0,jh_count):
+            jh_name=f'scs-hm-infra-jh{i}'
+            target_ip, source_ip, pno = tools.target_source_calc(jh_name, context.redirs, context.logger)
+            context.vm_ip_address = source_ip
+            context.pno = pno
+            context.execute_steps('''
+                Then I should be able to SSH into the VM
+                ''')
+            context.assertline = context.ssh_client.run_iperf_test(conn_test, context.test_name, target_ip, source_ip)
+
+        # context.assertline = tools.delete_wait_script(context.test_name)        
+        assert context.assertline == None, context.assertline
 
     @then("be able to ping all IPs to test {conn_test} connectivity") 
     def ping_ips_test(context, conn_test: str):
@@ -697,26 +715,6 @@ class StepsDef:
         ping_server_ssh_client.close_conn()
         context.ssh_client.close_conn()
 
-    # @then('I should be able to create a checkup script for {conn_test} locally')
-    # def create_temp_script(context,conn_test):
-    #     assertline = tools.create_wait_script(conn_test,context.test_name)
-    #     assert assertline == None, assertline
-
-    @then('I should be able to SSH into {network_quantity:d} VMs and perform {conn_test} test')
-    def substeps(context,network_quantity, conn_test):
-        context.assertline=None
-        for i in range(0,len(context.hosts)):
-            jh_name=context.hosts[i]['name']
-            target_ip, source_ip, pno = tools.target_source_calc(jh_name, context.redirs, context.logger)
-            context.vm_ip_address = source_ip
-            context.pno = pno
-            context.execute_steps('''
-                Then I should be able to SSH into the VM
-                ''')
-            context.assertline = context.ssh_client.run_iperf_test(conn_test, context.test_name, target_ip, source_ip)
-
-        # context.assertline = tools.delete_wait_script(context.test_name)        
-        assert context.assertline == None, context.assertline
 
 
     
