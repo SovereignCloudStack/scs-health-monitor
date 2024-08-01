@@ -6,6 +6,7 @@ Feature: SSH into VM
 		Given I have deployed a VM with IP <vm_ip_address>
 		And I have a private key at <keypair_name> for <username>
 		Then I should be able to SSH into the VM
+
 		And close the connection
 
 		Examples: Test security groups
