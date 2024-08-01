@@ -1,6 +1,6 @@
 @loadbalancer
 @benchmark
-Feature: Benchmar loadbalancer
+Feature: Benchmark loadbalancer
 
   Scenario Outline: Create load balancers and check whether VMs can be reached through their endpoint
 #    Then I should be able to create a loadbalancer

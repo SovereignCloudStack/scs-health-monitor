@@ -6,6 +6,7 @@ import base64
 import tools
 
 DEFAULT_SECURITY_GROUPS = ["ssh", "default"]
+DEFAULT_IPERF3_PORT = 5201
 
 
 class BenchmarkInfra:
@@ -44,7 +45,7 @@ class BenchmarkInfra:
         # Security group name the jump hosts will use for port forwardings
         context.jh_sg_group_name = f"{context.test_name}jumphost"
 
-        context.collector = tools.Collector(client=context.client)
+        context.collector.client = context.client
 
     @staticmethod
     def derive_vm_name(context, num: int):
@@ -120,9 +121,16 @@ class BenchmarkInfra:
     def create_security_group(context, port_start: int, port_end: int):
         sg = context.collector.create_security_group(
             context.jh_sg_group_name,
-            "Allow ssh redirection to vms"
+            "Allow ssh redirection to vms and iperf3"
         )
         context.collector.create_security_group_rule(sg["id"], "tcp", port_start, port_end)
+        context.collector.create_security_group_rule(
+            sg["id"],
+            "tcp",
+            DEFAULT_IPERF3_PORT,
+            DEFAULT_IPERF3_PORT,
+            remote_ip_prefix="10.0.0.0/8",
+        )
 
     @then(
         "I should be able to create a jump host for each az using a key pair named {keypair_name}")
@@ -328,3 +336,4 @@ runcmd:
         context.client.load_balancer.create_member(pool_id, name="member-1",
                                                    subnet="scs-hm-subnet-1",
                                                    address="10.30.40.139", protocol_port=80)
+
