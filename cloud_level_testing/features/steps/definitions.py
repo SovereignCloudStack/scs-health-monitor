@@ -622,27 +622,7 @@ class StepsDef:
     @then("I should be able to collect all VM IPs and ports")
     def collect_redirs(context):
         assert hasattr(context, 'redirs'), f"No redirs found infrastructure not completely built yet"
-       #TODO: this is just a proxy delete when everything is working:
-        if not hasattr(context, 'redirs'):
-            context.redirs={
-            'scs-hm-infra-jh0': {
-                'addr': '10.250.255.25',
-                'fip': '213.131.230.205',
-                'vms': [
-                {
-                    'port': 222,
-                    'addr': '10.250.3.73',
-                    'vm_name': 'scs-hm-infra-vm0'
-                },
-                {
-                    'port': 223,
-                    'addr': '10.250.0.8',
-                    'vm_name': 'scs-hm-infra-vm1'
-                }
-                ]
-            }
-            }
-
+        
         context.logger.log_info(f"vm data {context.redirs}")
         assert isinstance(context.redirs,dict), "redirs is no dictionary"
 
