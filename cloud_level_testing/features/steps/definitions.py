@@ -488,7 +488,6 @@ class StepsDef:
         ping_sec_group_description = "Ping security group - allow ICMP"
         security_groups = ["ssh", "default", ping_sec_group_name]
         keypair_filename = f"{context.keypair_name}-private"
-
         user_data = f'''#cloud-config
         packages:
         - iperf3
@@ -611,15 +610,18 @@ class StepsDef:
             context.assertline = context.ssh_client.run_iperf_test(conn_test, context.test_name, target_ip, source_ip=context.fip_address)      
         assert context.assertline == None, context.assertline
 
-    @then('I should be able to SSH into {network_quantity:d} VMs through all {test_infix}-jhs and perform {conn_test} test')
-    def substeps(context,network_quantity, test_infix, conn_test):
+    @then('I should be able to SSH into {network_quantity:d} VMs and perform {conn_test} test')
+    def substeps(context,network_quantity, conn_test):
         context.assertline=None
-        jh_count = sum(1 for key in context.redirs if 'scs-hm-infra-jh' in key)
+        jh_count = sum(1 for key in context.redirs if f'{context.test_name}jh' in key)
 
-        print(f"count {jh_count}")
-
+        context.logger.log_info(f"{jh_count} jump hosts and iterations")
+        context.logger.log_info(f"test name: {context.test_name}")
+        timeout =120
+        context.logger.log_info(f"sleeping {timeout}s")
+        time.sleep(timeout)
         for i in range(0,jh_count):
-            jh_name=f'scs-hm-infra-jh{i}'
+            jh_name=f'{context.test_name}jh{i}'
             target_ip, source_ip, pno = tools.target_source_calc(jh_name, context.redirs, context.logger)
             context.vm_ip_address = source_ip
             context.pno = pno
