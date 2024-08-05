@@ -100,8 +100,14 @@ class Collector:
         self.virtual_machines.append(vm.id)
         return vm
 
+    # def create_floating_ip(self, server_name):
+    #     fip = create_floating_ip(self.client, server_name)
+    #     self.floating_ips.append(fip)
+    #     return fip
     def create_floating_ip(self, server_name):
-        fip = create_floating_ip(self.client, server_name)
+        server = self.client.compute.find_server(name_or_id=server_name)
+        assert server, f"Server with name {server_name} not found"
+        fip = self.client.add_auto_ip(server=server, wait=True, reuse=False)
         self.floating_ips.append(fip)
         return fip
 
@@ -800,11 +806,10 @@ def create_subnet(client, name, network_id, ip_version=4, **kwargs):
         f"Failed to create subnet with name {subnet}"
     return subnet
 
-
-def create_floating_ip(client, server_name):
-    server = client.compute.find_server(name_or_id=server_name)
-    assert server, f"Server with name {server_name} not found"
-    return client.add_auto_ip(server=server, wait=True)
+# def create_floating_ip(client, server_name):
+#     server = client.compute.find_server(name_or_id=server_name)
+#     assert server, f"Server with name {server_name} not found"
+#     return client.add_auto_ip(server=server, wait=True)
 
 
 def create_router(client, name, **kwargs):
