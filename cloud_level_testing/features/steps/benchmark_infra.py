@@ -131,6 +131,8 @@ class BenchmarkInfra:
             DEFAULT_IPERF3_PORT,
             remote_ip_prefix="10.0.0.0/8",
         )
+        context.collector.create_security_group_rule(sg["id"], "icmp", remote_ip_prefix="0.0.0.0/0")
+        #TODO only inner network maybe rewrite pingVM feature to ping only inner network remote_ip_prefix="10.0.0.0/8"
 
     @then(
         "I should be able to create a jump host for each az using a key pair named {keypair_name}")
@@ -167,6 +169,9 @@ iptables -t nat -A PREROUTING -s 0/0 -i $(cat /tmp/iface) -j DNAT -p tcp --dport
             forwarding_script = template.render(redirs=context.redirs, jh_name=jh_name)
 
             user_data = f"""#cloud-config
+packages:
+- iperf3
+- jq
 
 # A little bit hacky: We provide the script base64 encoded,
 # otherwise cloud-init complains about invalid characters.
@@ -179,10 +184,12 @@ write_files:
 - content: ''
   path: /tmp/set-ip-forwardings.sh
   permissions: '0755'
-
+        
 runcmd:
 - cat /tmp/set-ip-forwardings-base64 | base64 -d > /tmp/set-ip-forwardings.sh
 - /tmp/set-ip-forwardings.sh
+# run iperf3 as deamon from server
+- iperf3 -Ds 
 """
 
             context.collector.create_jumphost(jh_name,
@@ -216,6 +223,13 @@ runcmd:
     @then("I should be able to create {quantity:d} VMs with a key pair named {keypair_name} and "
           "strip them over the VM networks")
     def infra_create_vms(context, quantity: int, keypair_name: str):
+        user_data = f'''#cloud-config
+packages:
+- iperf3
+- jq
+runcmd:
+- iperf3 -Ds
+        '''
         for num in range(0, quantity):
             vm_name = BenchmarkInfra.derive_vm_name(context, num)
             assert len(context.vm_nets_ids) > 0, "Number of VM networks has to be greater than 0"
@@ -226,7 +240,8 @@ runcmd:
                                               keypair_name,
                                               context.vm_image,
                                               context.flavor_name,
-                                              DEFAULT_SECURITY_GROUPS)
+                                              DEFAULT_SECURITY_GROUPS,
+                                              userdata=user_data,)
 
     @then('I should be able to query the ip addresses of the created {quantity:d} VMs')
     def infra_vms_query_ips(context, quantity: int):

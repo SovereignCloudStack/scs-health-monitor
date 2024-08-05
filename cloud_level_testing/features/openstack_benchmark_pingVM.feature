@@ -11,5 +11,5 @@ Feature: Benchmark ping VMs
 
     Examples:
 	  |jh_name        | keypair_name  | username 	| jh_quantity	| conn_test |
-	  |default-jh      | test-keypair-private	  | ubuntu	  | 1	          | ping			|
+	  |default-jh      | test-keypair	  | ubuntu	  | 1	          | ping			|
   #  |localhost      | sshKey	                  | katha			| 1	          | ping			|

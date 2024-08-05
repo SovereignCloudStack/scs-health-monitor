@@ -406,25 +406,7 @@ class StepsDef:
        
        # config
         security_groups = ["default", "ping-sg"]
-        scriptname = f"{context.test_name}-wait"
-
         user_data = f'''#cloud-config
-        write_files:
-        - content: |
-            #waitscript
-
-           #!/bin/bash
-            let MAXW=100
-            if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 5; sync; fi
-            while test \$MAXW -ge 1; do
-            if type -p "iperf3">/dev/null; then exit 0; fi
-            let MAXW-=1
-            sleep 1
-            if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 1; fi
-            done
-            exit 1
-          path: {scriptname}
-          permissions: '0755'
         packages:
         - iperf3
         - jq
@@ -499,22 +481,6 @@ class StepsDef:
         scriptname = f"{context.test_name}-wait"
 
         user_data = f'''#cloud-config
-        write_files:
-        - content: |
-            #waitscript
-
-           #!/bin/bash
-            let MAXW=100
-            if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 5; sync; fi
-            while test \$MAXW -ge 1; do
-            if type -p "iperf3">/dev/null; then exit 0; fi
-            let MAXW-=1
-            sleep 1
-            if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 1; fi
-            done
-            exit 1
-          path: {scriptname}
-          permissions: '0755'
         packages:
         - iperf3
         - jq
@@ -556,9 +522,9 @@ class StepsDef:
     
     @given("I have a private key at {keypair_name} for {username}")
     def check_private_key_exists(context, keypair_name: str, username:str):
-        context.vm_private_ssh_key_path = keypair_name
+        context.vm_private_ssh_key_path = f"{keypair_name}-private"
         context.vm_username = username
-        assert os.path.isfile(keypair_name)
+        assert os.path.isfile(context.vm_private_ssh_key_path), f"{context.vm_private_ssh_key_path} is no file "
     
     @then("I should be able to SSH into {jh_quantity:d} JHs and test their {conn_test} connectivity")
     def step_iterate_steps(context, jh_quantity, conn_test: str):
@@ -610,15 +576,6 @@ class StepsDef:
         context.jh = tools.collect_jhs(context.client, context.test_name, context.logger)
         assert len(context.jh) >= jh_quantity, f"Not enough Jumphost with name found"
 
-### TODO maybe obsolete
-    # @given("I have deployed {test_infix}-jhs in {network_quantity:d} networks")
-    # def initialize(context, test_infix, network_quantity):
-    #     print(f"sleep {context.test_name}-{test_infix}")
-    #     print(f"context.redirs {context.redirs}")
-    #     time.sleep(60)
-    #     context.hosts=tools.collect_jhs(context.client,f"{context.test_name}-{test_infix}", context.logger)
-    #     assert len(context.hosts) >= network_quantity, f"Not enough jhs in networks found"
-
     @then("I should be able to collect all VM IPs and ports")
     def collect_redirs(context):
         assert hasattr(context, 'redirs'), f"No redirs found infrastructure not completely built yet"
@@ -641,9 +598,7 @@ class StepsDef:
             context.execute_steps('''
                 Then I should be able to SSH into the VM
                 ''')
-            context.assertline = context.ssh_client.run_iperf_test(conn_test, context.test_name, target_ip, source_ip)
-
-        # context.assertline = tools.delete_wait_script(context.test_name)        
+            context.assertline = context.ssh_client.run_iperf_test(conn_test, context.test_name, target_ip, source_ip)      
         assert context.assertline == None, context.assertline
 
     @then("be able to ping all IPs to test {conn_test} connectivity") 
