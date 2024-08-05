@@ -547,6 +547,7 @@ class StepsDef:
             context.logger.log_info(f"ssh through portforwarding: {context.vm_ip_address}/{context.pno}")
             ssh_client = SshClient(context.vm_ip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger, context.pno)
         else:
+            context.logger.log_info(f"ssh into: {context.vm_ip_address}")
             ssh_client = SshClient(context.vm_ip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger)
 
         if not ssh_client:
