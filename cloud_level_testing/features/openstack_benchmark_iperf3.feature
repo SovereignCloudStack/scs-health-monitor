@@ -13,5 +13,3 @@ Feature: Benchmark Iperf3 VMs
     Examples: Build benchmark infrastructure
     | keypair_name          | username | conn_test |
     | test-keypair          | ubuntu	 | iperf3    |
- 
-

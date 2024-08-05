@@ -625,9 +625,7 @@ class StepsDef:
             context.execute_steps('''
                 Then I should be able to SSH into the VM
                 ''')
-            context.assertline = context.ssh_client.run_iperf_test(conn_test, context.test_name, target_ip, source_ip)
-
-        # context.assertline = tools.delete_wait_script(context.test_name)        
+            context.assertline = context.ssh_client.run_iperf_test(conn_test, context.test_name, target_ip, source_ip)      
         assert context.assertline == None, context.assertline
 
     @then("be able to ping all IPs to test {conn_test} connectivity") 
