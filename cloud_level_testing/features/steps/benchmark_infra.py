@@ -227,8 +227,6 @@ runcmd:
 packages:
 - iperf3
 - jq
-runcmd:
-- iperf3 -Ds
         '''
         for num in range(0, quantity):
             vm_name = BenchmarkInfra.derive_vm_name(context, num)
