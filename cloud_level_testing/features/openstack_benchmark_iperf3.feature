@@ -20,11 +20,11 @@ Feature: Benchmark Iperf3 VMs
     Then I should be able to create a security group for the jump hosts allowing inbound tcp connections for the port range <port_start> to <port_end>
     Then I should be able to create a jump host for each az using a key pair named <keypair_name>
     Then I should be able to attach floating ips to the jump hosts
-    #Given I have deployed <test_infix>-jhs in <network_quantity> networks
+  
     Given I have a private key at <keypair_name> for <username>
     Then I should be able to collect all Floating IPs
     Then I should be able to collect all VM IPs and ports
-    Then I should be able to SSH into <network_quantity> VMs through all <test_infix>-jhs and perform <conn_test> test
+    Then I should be able to SSH into <network_quantity> VMs and perform <conn_test> test
    
     Examples: Build benchmark infrastructure
     | test_infix | ext_net  | keypair_name          | quantity_vms  | port_start | port_end | username 	| network_quantity	| conn_test |
