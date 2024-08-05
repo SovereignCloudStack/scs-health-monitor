@@ -4,8 +4,8 @@ Feature: SSH into VM and test internet connectivity
 
 	Scenario Outline: Connect to a VM using SSH and test internet connectivity
 		Given I have deployed a VM with IP <vm_ip_address>
-		And I have a private key at <keypair_name>
-		Then I should be able to SSH into the VM as user <username>
+		And I have a private key at <keypair_name> for <username>
+		Then I should be able to SSH into the VM
 		And be able to communicate with the internet to test <conn_test> connectivity 
 		And close the connection
 
