@@ -590,7 +590,7 @@ class StepsDef:
 
         context.logger.log_info(f"{jh_count} jump hosts and iterations")
         context.logger.log_info(f"test name: {context.test_name}")
-        timeout =120
+        timeout =10
         context.logger.log_info(f"sleeping {timeout}s")
         time.sleep(timeout)
         for i in range(0,jh_count):
