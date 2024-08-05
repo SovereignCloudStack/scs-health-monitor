@@ -558,6 +558,7 @@ class StepsDef:
             context.logger.log_info(f"ssh through portforwarding: {context.fip_address}/{context.pno}")
             ssh_client = SshClient(context.fip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger, context.pno)
         else:
+
             context.logger.log_info(f"ssh into: {context.fip_address}")
             ssh_client = SshClient(context.fip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger)
 
