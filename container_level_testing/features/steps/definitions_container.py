@@ -22,7 +22,7 @@ class KubernetesTestSteps:
 
     @when('I create a container named {container_name}')
     def create_container(context, container_name):
-        pod = tools.create_conainer(container_name=container_name)
+        pod = tools.create_container(container_name=container_name)
         context.v1.create_namespaced_pod(namespace="default", body=pod)
         time.sleep(10)
 

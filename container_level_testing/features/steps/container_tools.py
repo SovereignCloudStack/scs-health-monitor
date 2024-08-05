@@ -6,7 +6,7 @@ def check_if_container_running(client, container_name):
     assert pod.status.phase == "Running"
 
 
-def create_conainer(container_name):
+def create_container(container_name):
     client.V1Pod(
         metadata=client.V1ObjectMeta(name=container_name),
         spec=client.V1PodSpec(
