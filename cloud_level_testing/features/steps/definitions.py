@@ -617,9 +617,9 @@ class StepsDef:
 
         context.logger.log_info(f"{jh_count} jump hosts and iterations")
         context.logger.log_info(f"test name: {context.test_name}")
-        timeout =10
-        context.logger.log_info(f"sleeping {timeout}s")
-        time.sleep(timeout)
+        # timeout = 60
+        # context.logger.log_info(f"sleeping {timeout}s")
+        # time.sleep(timeout)
         for i in range(0,jh_count):
             jh_name=f'{context.test_name}jh{i}'
             target_ip, source_ip, pno = tools.target_source_calc(jh_name, context.redirs, context.logger)
