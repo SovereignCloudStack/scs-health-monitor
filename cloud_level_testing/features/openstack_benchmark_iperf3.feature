@@ -28,5 +28,5 @@ Feature: Benchmark Iperf3 VMs
    
     Examples: Build benchmark infrastructure
     | test_infix | ext_net  | keypair_name          | quantity_vms  | port_start | port_end | username 	| network_quantity	| conn_test |
-    | infra      | ext01    | test-keypair-private  | 2             |      222   | 229      | ubuntu	    | 1	                | iperf3    |
+    | infra      | ext01    | test-keypair          | 2             |      222   | 229      | ubuntu	    | 1	                | iperf3    |
     #| infra           |    ext01    |    tf-id-rsa      | 2 |      222    | 229 | ubuntu	    | 1	                | iperf3    |
