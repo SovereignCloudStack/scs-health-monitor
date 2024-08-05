@@ -4,6 +4,7 @@
 @delete
 Feature: Benchmark ping VMs
 
+
   Scenario Outline: Collecting IPs of VMs can be reached through Openstack, ping them from remote accesses and track retries and failures   
     Given I can get the shared context from previouse feature
     Given I have deployed JHs
@@ -12,4 +13,3 @@ Feature: Benchmark ping VMs
     Examples: Build benchmark infrastructure
     | keypair_name   | username | conn_test |
     | test-keypair   | ubuntu	  | ping			|
-
