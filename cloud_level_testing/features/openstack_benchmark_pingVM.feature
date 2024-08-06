@@ -19,12 +19,12 @@ Feature: Benchmark ping VMs
     Then I should be able to calculate the port forwardings for the jump hosts by associating the VM ip addresses with the jump hosts by az in the port range <port_start> to <port_end>
     Then I should be able to create a jump host for each az using a key pair named <keypair_name>
     Then I should be able to attach floating ips to the jump hosts
-   
+    
     Given I have deployed <jh_quantity> JHs
     And I have a private key at <keypair_name> for <username>
     Then I should be able to SSH into <jh_quantity> JHs and test their <conn_test> connectivity
 
     Examples: Build benchmark infrastructure
-    | test_infix | ext_net  | keypair_name          | quantity_vms  | port_start | port_end | username 	|jh_quantity	| conn_test |
-    | infra      | ext01    | test-keypair          | 2             |      222   | 229      | ubuntu	  |1	          | ping			|
+    | test_infix | ext_net  | keypair_name   | quantity_vms  | port_start | port_end | username |jh_quantity	| conn_test |
+    | infra      | ext01    | test-keypair   | 2             |      222   | 229      | ubuntu	  |1	          | ping			|
  

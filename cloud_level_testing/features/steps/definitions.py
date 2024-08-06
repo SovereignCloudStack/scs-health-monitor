@@ -531,11 +531,11 @@ class StepsDef:
         for i in range(0, jh_quantity):
             if not isinstance(context.jh, str):
                 context.vm_ip_address = context.jh[i]['ip']                      
-                context.execute_steps('''
+                context.execute_steps(f"""
                     Then I should be able to SSH into the VM
                     Then I should be able to collect all network IPs
                     And be able to ping all IPs to test {conn_test} connectivity
-                    ''')
+                    """)
             else:
                 context.assertline = f"No matching Jumphosts was found"
         assert context.assertline is None, context.assertline
@@ -636,8 +636,8 @@ class StepsDef:
 
     @then('I attach a floating ip to server {server_name}')
     def attach_floating_ip_to_server(context, server_name):
-        fip = tools.attach_floating_ip_to_server(context, server_name)
-        assert len(fip) > 0, f"failed to attach floating ips to {server_name}" 
+        fip,assertline = tools.attach_floating_ip_to_server(context, server_name)
+        assert assertline == None, assertline
 
     @then('I start calculating 4000 digits of pi on VM and check the ping response')
     def calculate_pi_on_vm(context):
