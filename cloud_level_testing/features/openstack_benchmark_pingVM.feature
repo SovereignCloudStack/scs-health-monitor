@@ -4,7 +4,6 @@
 @delete
 Feature: Benchmark ping VMs
 
-
   Scenario Outline: Collecting IPs of VMs can be reached through Openstack, ping them from remote accesses and track retries and failures   
     Given I can get the shared context from previouse feature
     Given I have deployed JHs
