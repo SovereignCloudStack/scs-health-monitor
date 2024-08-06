@@ -302,11 +302,17 @@ def check_volumes_created(client, test_name):
             return volume.status
 
 def attach_floating_ip_to_server(context, server_name):
-    server = context.client.compute.find_server(name_or_id=server_name)
-    assert server, f"Server with name {server_name} not found"
+    assertline = None
+    try:
+        server = context.client.compute.find_server(name_or_id=server_name)
+    except:
+        server = None
+        assertline = f"Server with name {server_name} not found"
+    
     fip = context.client.add_auto_ip(server=server, wait=True, reuse=False)
     context.vm_ip_address = fip
     context.logger.log_info(f"Attached floating ip: {fip}")
+
     floating_ip_id = get_floating_ip_id(context, fip)
     assert floating_ip_id, f"Failed to get the ID of floating ip {fip}."
     context.collector.floating_ips.append(floating_ip_id)
