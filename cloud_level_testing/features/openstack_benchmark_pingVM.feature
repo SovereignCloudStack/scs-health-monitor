@@ -5,7 +5,7 @@
 Feature: Benchmark ping VMs
 
   Scenario Outline: Collecting IPs of VMs can be reached through Openstack, ping them from remote accesses and track retries and failures
-   Given I connect to OpenStack
+    Given I connect to OpenStack
     Given I want to build the benchmark infrastructure by using resources having the infix <test_infix>
     Then I should be able to create a router connected to the external network named <ext_net>
     Then I should be able to fetch availability zones
