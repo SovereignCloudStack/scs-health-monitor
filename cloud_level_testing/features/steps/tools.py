@@ -100,10 +100,6 @@ class Collector:
         self.virtual_machines.append(vm.id)
         return vm
 
-    # def create_floating_ip(self, server_name):
-    #     fip = create_floating_ip(self.client, server_name)
-    #     self.floating_ips.append(fip)
-    #     return fip
     def create_floating_ip(self, server_name):
         server = self.client.compute.find_server(name_or_id=server_name)
         assert server, f"Server with name {server_name} not found"
@@ -305,6 +301,15 @@ def check_volumes_created(client, test_name):
             assert volume.status == "available", f"Volume {volume.name} not available"
             return volume.status
 
+def attach_floating_ip_to_server(context, server_name):
+    server = context.client.compute.find_server(name_or_id=server_name)
+    assert server, f"Server with name {server_name} not found"
+    ip = context.client.add_auto_ip(server=server, wait=True, reuse=False)
+    context.vm_ip_address = ip
+    context.logger.log_info(f"Attached floating ip: {ip}")
+    floating_ip_id = get_floating_ip_id(context, ip)
+    assert floating_ip_id, f"Failed to get the ID of floating ip {ip}."
+    context.collector.floating_ips.append(floating_ip_id)
 
 def collect_float_ips(client, logger: Logger):
     ips = []
@@ -317,16 +322,22 @@ def collect_float_ips(client, logger: Logger):
         assertline = f"No ips found"
     return ips, assertline
 
+def collect_ips(redirs, test_name, logger: Logger):
+    assertline = None
+    ips = [vm["addr"] for vm in redirs[f"{test_name}jh0"]["vms"]]
+    if len(ips) == 0:
+        assertline = f"No ips found"
+    return ips, assertline
 
 def collect_jhs(client, test_name, logger: Logger):
     servers = client.compute.servers()
-    lookup = f"{test_name}-jh"
+    lookup = f"{test_name}jh"
     jhs = []
     jh = None
     for name in servers:
-        logger.log_debug(f"found host {name.name}")
+        logger.log_info(f"found host {name.name}")
         if lookup in name.name:
-            logger.log_debug(f"String containing '{lookup}': {name.name}")
+            logger.log_info(f"String containing '{lookup}': {name.name}")
             jh = client.compute.find_server(name_or_id=name.name)
             assert jh, f"No Jumphosts with {lookup} in name found"
             if jh:

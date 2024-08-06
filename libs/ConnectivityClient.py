@@ -181,9 +181,9 @@ class SshClient:
                 self.conn_test_count.labels(
                     ResultStatusCodes.FAILURE, self.host, ip, conn_test
                 ).inc()
-                self.assertline = f"Failed to test internet connectivity for server {self.host}, Failures: {self.ping_stat[1]}/{self.ping_stat[2]}, Retries: {self.ping_stat[0]}"
+                self.assertline = f"Failed to test connectivity for server {self.host}, Failures: {self.ping_stat[1]}/{self.ping_stat[2]}, Retries: {self.ping_stat[0]}"
             self.logger.log_info(
-                f"ping status [retries,failures,total] {self.ping_stat}"
+                f"ping status {ip} [retries,failures,total] {self.ping_stat}"
             )
 
         test_connectivity()

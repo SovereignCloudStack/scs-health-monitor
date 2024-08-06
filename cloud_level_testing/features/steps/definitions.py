@@ -533,7 +533,7 @@ class StepsDef:
                 context.vm_ip_address = context.jh[i]['ip']                      
                 context.execute_steps('''
                     Then I should be able to SSH into the VM
-                    Then I should be able to collect all Floating IPs
+                    Then I should be able to collect all network IPs
                     And be able to ping all IPs to test {conn_test} connectivity
                     ''')
             else:
@@ -563,16 +563,28 @@ class StepsDef:
     @then("be able to communicate with the internet")
     def test_internet_connectivity(context):
         context.ssh_client.test_internet_connectivity()
+    
+    @then("I should be able to collect all network IPs")
+    def collect_network_ips(context):
+        assert hasattr(context, 'redirs'), f"No redirs found infrastructure not completely built yet"        
+        context.logger.log_info(f"vm data {context.redirs}")
+        assert isinstance(context.redirs,dict), "redirs is no dictionary"
+        context.ips, assertline = tools.collect_ips(context.redirs, context.test_name, context.logger)
+        if assertline != None:
+            context.assertline = assertline
 
     @then("I should be able to collect all Floating IPs")
     def collect_float_ips(context):
+        """
+        returns all floating ips (might not be needed)
+        """
         context.ips, assertline = tools.collect_float_ips(context.client, context.logger)
         if assertline != None:
             context.assertline = assertline
 
     @given("I have deployed {jh_quantity:d} JHs")
     def initialize(context, jh_quantity):
-        context.test_name = "default" # TODO: just for testing, delete if naming convention is clarified
+        #context.test_name = "default" # TODO: just for testing, delete if naming convention is clarified
         context.jh = tools.collect_jhs(context.client, context.test_name, context.logger)
         assert len(context.jh) >= jh_quantity, f"Not enough Jumphost with name found"
 
