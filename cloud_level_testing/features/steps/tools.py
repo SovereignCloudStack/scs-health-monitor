@@ -305,18 +305,19 @@ def attach_floating_ip_to_server(context, server_name):
     assertline = None
     try:
         server = context.client.compute.find_server(name_or_id=server_name)
+        fip = context.client.add_auto_ip(server=server, wait=True, reuse=False)
+        context.vm_ip_address = fip
+        context.logger.log_info(f"Attached floating ip: {fip}")
     except:
-        server = None
+        fip = None
         assertline = f"Server with name {server_name} not found"
     
-    fip = context.client.add_auto_ip(server=server, wait=True, reuse=False)
-    context.vm_ip_address = fip
-    context.logger.log_info(f"Attached floating ip: {fip}")
-
-    floating_ip_id = get_floating_ip_id(context, fip)
-    assert floating_ip_id, f"Failed to get the ID of floating ip {fip}."
-    context.collector.floating_ips.append(floating_ip_id)
-    return fip
+    try:
+        floating_ip_id = get_floating_ip_id(context, fip)
+        context.collector.floating_ips.append(floating_ip_id)
+    except: 
+        assertline = f"Failed to get the ID of floating ip {fip}."
+    return fip, assertline
 
 def collect_float_ips(client, logger: Logger):
     ips = []
