@@ -25,6 +25,6 @@ Feature: Benchmark ping VMs
     Then I should be able to SSH into <jh_quantity> JHs and test their <conn_test> connectivity
 
     Examples: Build benchmark infrastructure
-    | test_infix | ext_net  | keypair_name          | quantity_vms  | port_start | port_end | username 	|jh_name        | jh_quantity	| conn_test |
-    | infra      | ext01    | test-keypair          | 2             |      222   | 229      | ubuntu	  |default-jh     | 1	          | ping			|
+    | test_infix | ext_net  | keypair_name          | quantity_vms  | port_start | port_end | username 	|jh_quantity	| conn_test |
+    | infra      | ext01    | test-keypair          | 2             |      222   | 229      | ubuntu	  |1	          | ping			|
  

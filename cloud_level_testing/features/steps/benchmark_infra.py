@@ -207,9 +207,10 @@ runcmd:
     @then("I should be able to attach floating ips to the jump hosts")
     def infra_create_floating_ip(context):
         for az in context.azs:
-            fip = context.collector.create_floating_ip(
-                BenchmarkInfra.calculate_jh_name_by_az(context, az)
-            )
+            # fip = context.collector.create_floating_ip(
+            #     BenchmarkInfra.calculate_jh_name_by_az(context, az)
+            # )
+            fip = tools.attach_floating_ip_to_server(context, BenchmarkInfra.calculate_jh_name_by_az(context, az))
             # Add jump host internal ip and fip to port forwardings data structure
             for jh_name, redir in context.redirs.items():
                 if jh_name == BenchmarkInfra.calculate_jh_name_by_az(context, az):
