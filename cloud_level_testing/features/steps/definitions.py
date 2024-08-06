@@ -577,6 +577,15 @@ class StepsDef:
     @then("be able to communicate with the internet")
     def test_internet_connectivity(context):
         context.ssh_client.test_internet_connectivity()
+    
+    @then("I should be able to collect all network IPs")
+    def collect_network_ips(context):
+        assert hasattr(context, 'redirs'), f"No redirs found infrastructure not completely built yet"        
+        context.logger.log_info(f"vm data {context.redirs}")
+        assert isinstance(context.redirs,dict), "redirs is no dictionary"
+        context.ips, assertline = tools.collect_ips(context.redirs, context.test_name, context.logger)
+        if assertline != None:
+            context.assertline = assertline
 
     @then("I should be able to collect all network IPs")
     def collect_network_ips(context):

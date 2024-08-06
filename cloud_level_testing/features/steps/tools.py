@@ -101,10 +101,6 @@ class Collector:
         self.virtual_machines.append(vm.id)
         return vm
 
-    # def create_floating_ip(self, server_name):
-    #     fip = create_floating_ip(self.client, server_name)
-    #     self.floating_ips.append(fip)
-    #     return fip
     def create_floating_ip(self, server_name):
         server = self.client.compute.find_server(name_or_id=server_name)
         assert server, f"Server with name {server_name} not found"
@@ -341,7 +337,6 @@ def collect_ips(redirs, test_name, logger: Logger):
     if len(ips) == 0:
         assertline = f"No ips found"
     return ips, assertline
-
 
 def collect_jhs(redirs, test_name, logger: Logger):
     ip_pattern = re.compile(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
