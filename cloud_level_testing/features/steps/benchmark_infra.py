@@ -43,7 +43,7 @@ class BenchmarkInfra:
         context.az_vm_port_mapping: list = []
 
         # Security group name the jump hosts will use for port forwardings
-        context.jh_sg_group_name = f"{context.test_name}jumphost"
+        context.host_sec_group_name = f"{context.test_name}jumphost"
 
         context.collector.client = context.client
 
@@ -116,12 +116,12 @@ class BenchmarkInfra:
                                          context.lb_router_name,
                                          router_update["port_id"])
 
-    @then("I should be able to create a security group for the jump hosts allowing inbound tcp "
+    @then("I should be able to create a security group for the hosts allowing inbound tcp "
           "connections for the port range {port_start:d} to {port_end:d}")
     def create_security_group(context, port_start: int, port_end: int):
         sg = context.collector.create_security_group(
-            context.jh_sg_group_name,
-            "Allow ssh redirection to vms and iperf3"
+            context.host_sec_group_name,
+            "Allow ssh redirection inside network and iperf3"
         )
         context.collector.create_security_group_rule(sg["id"], "tcp", port_start, port_end)
         context.collector.create_security_group_rule(
@@ -198,7 +198,7 @@ runcmd:
                                               context.vm_image,
                                               context.flavor_name,
                                               DEFAULT_SECURITY_GROUPS + [
-                                                  context.jh_sg_group_name
+                                                  context.host_sec_group_name
                                               ],
                                               availability_zone=az,
                                               userdata=user_data,
@@ -239,7 +239,9 @@ packages:
                                               keypair_name,
                                               context.vm_image,
                                               context.flavor_name,
-                                              DEFAULT_SECURITY_GROUPS,
+                                              DEFAULT_SECURITY_GROUPS + [
+                                                  context.host_sec_group_name
+                                              ],
                                               userdata=user_data,)
 
     @then('I should be able to query the ip addresses of the created {quantity:d} VMs')
