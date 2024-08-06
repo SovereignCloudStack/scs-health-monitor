@@ -658,10 +658,10 @@ class StepsDef:
     def close_connection(context):
         context.ssh_client.close_conn()
 
+
     @then("I attach a floating ip to server {server_name}")
     def attach_floating_ip_to_server(context, server_name: str):
         """Create new floating IP and attach it to the server.
-
         Args:
             context: Behave context object.
             server_name: Name of the server for floating IP.

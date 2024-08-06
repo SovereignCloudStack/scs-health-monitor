@@ -23,4 +23,5 @@ Feature: Build benchmark infrastructure
     Examples: Build benchmark infrastructure
     | test_infix | ext_net  | keypair_name          | quantity_vms  | port_start | port_end |
     | infra      | ext01    | test-keypair          | 2             |      222   | 229      |
+
   
