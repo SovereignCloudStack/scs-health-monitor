@@ -1,13 +1,14 @@
-from prometheus_client import push_to_gateway, REGISTRY
-from steps.tools import Tools, Collector
+from cloud_level_testing.features.steps.tools import Tools, Collector, delete_all_test_resources
 from libs.loggerClass import Logger
 from libs.PrometheusExporter import PrometheusExporter, LabelNames
 from libs.DateTimeProvider import DateTimeProvider
 from libs.Formatter import Formatter
 
+import openstack
+
 DEFAULT_PROMETHEUS_BATCH_NAME = "SCS-Health-Monitor"
 DEFAULT_CLOUD_NAME = "gx"
-DEFAULT_LOG_LEVEL = "DEBUG"
+DEFAULT_LOG_LEVEL = "INFO"
 
 
 class SetupClass:
@@ -26,8 +27,7 @@ class TeardownClass:
     def teardown(self):
         # Your teardown logic here
         pass
-
-
+   
 def before_all(context):
     context.start_time = DateTimeProvider.get_current_utc_time()
 
@@ -43,8 +43,43 @@ def before_all(context):
     context.collector = Collector()
 
 
+def after_feature(context, feature):
+    """
+        behave framework hook: code will run after each feature
+        checks if the feature has failed and if it belongs to the creational or deletional features
+        then it would perform a cleanup
+        
+        Args:
+            context(object): context
+            feature: current feature
+
+        Returns:
+            call for cleanup
+    """
+    feature_failed = any(scenario.status == 'failed' for scenario in feature.scenarios)
+    context.logger.log_info(f"feature tag {feature.tags}")
+    if feature_failed:
+        context.logger.log_info(f"Feature '{feature.name}' failed: performing cleanup or additional actions")
+        if "create" in feature.tags or "delete" in feature.tag:
+            if context.collector:
+                context.logger.log_info(f"Feature '{feature.name}' is a deletion or creation feature: performing cleanup")
+                cloud_name = context.env.get("CLOUD_NAME")
+                context.client = openstack.connect(cloud=cloud_name)
+                delete_all_test_resources(context) 
+    else:
+        context.logger.log_info(f"Feature '{feature.name}' passed")
+    context.logger.log_info(f"Feature completed: performing additional actions")
+    if context.collector:
+        context.logger.log_info(f"this is in the collector {context.collector}")
+
+
 def after_all(context):
     context.stop_time = DateTimeProvider.get_current_utc_time()
+    
+    if context.collector:
+        cloud_name = context.env.get("CLOUD_NAME")
+        context.client = openstack.connect(cloud=cloud_name)
+        delete_all_test_resources(context)
 
     formattedDuration = f"from_{Formatter.format_date_time(context.start_time)}_to_{Formatter.format_date_time(context.stop_time)}"
     teardown_class = TeardownClass()

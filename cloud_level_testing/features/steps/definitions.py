@@ -1,5 +1,3 @@
-from pprint import pprint
-
 from behave import given, when, then
 import openstack
 from openstack.cloud._floating_ip import FloatingIPCloudMixin
@@ -7,18 +5,19 @@ import time
 import random
 import string
 
-from openstack.exceptions import DuplicateResource
-
-import tools
+from libs.ConnectivityClient import SshClient
+import os
+from cloud_level_testing.features.steps import tools
 
 
 class StepsDef:
+    PING_RETRIES = 60
     collector = tools.Collector()
 
     @given("I connect to OpenStack")
     def given_i_connect_to_openstack(context):
         cloud_name = context.env.get("CLOUD_NAME")
-        context.test_name = context.env.get("TESTS_NAME_IDENTIFICATION","scs-hm")
+        context.test_name = context.env.get("TESTS_NAME_IDENTIFICATION")
         context.vm_image = context.env.get("VM_IMAGE")
         context.flavor_name = context.env.get("FLAVOR_NAME")
         context.client = openstack.connect(cloud=cloud_name)
@@ -60,13 +59,13 @@ class StepsDef:
         routers = context.client.network.routers()
         assert routers, "Failed to list routers. No routers found."
 
-    @then("I should be able to create {router_quantity} routers")
-    def create_router(context, router_quantity: str):
-        for num in range(1, int(router_quantity) + 1):
-            router = context.client.network.create_router(name=f"{context.test_name}-{num}")
+    @then("I should be able to create {router_quantity:d} routers")
+    def create_router(context, router_quantity: int):
+        for num in range(1, router_quantity + 1):
+            router = tools.create_router(context.client, f"{context.test_name}-{num}")
             context.collector.routers.append(router.id)
             assert router is not None, f"Failed to create router with name {context.test_name}-{num}"
-        assert len(context.collector.routers) == int(router_quantity),\
+        assert len(context.collector.routers) == router_quantity, \
             f"Failed to create the desired amount of routers"
 
     @then("I should be able to create port for networks")
@@ -85,7 +84,7 @@ class StepsDef:
     @when(
         "A security group rule for {security_group_name} with direction {direction} protocol {protocol} and port "
         "range {port_range_min} to {port_range_max} exists")
-    def create_security_group_rule(context, security_group_name: str, direction: str, protocol: str,
+    def security_group_rule_exists(context, security_group_name: str, direction: str, protocol: str,
                                    port_range_min: int, port_range_max: int):
         security_group = context.client.network.find_security_group(name_or_id=security_group_name)
         assert security_group, f"Security group with name {security_group_name} does not exist"
@@ -129,35 +128,33 @@ class StepsDef:
         networks = context.client.network.networks()
         assert networks, "Failed to list networks. No networks found."
 
-    @then("I should be able to create {network_quantity} networks")
-    def create_network(context, network_quantity: str):
-        for num in range(1, int(network_quantity) + 1):
-            network = context.client.network.create_network(name=f"{context.test_name}-network-{num}")
+    @then("I should be able to create {network_quantity:d} networks")
+    def create_network(context, network_quantity: int):
+        for num in range(1, network_quantity + 1):
+            network = tools.create_network(context.client, name=f"{context.test_name}-network-{num}")
             context.collector.networks.append(network.id)
-            assert not context.client.network.find_network(
-                name_or_id=network), f"Network called {network} created"
-        assert len(context.collector.networks) == int(network_quantity), \
+        assert len(context.collector.networks) == network_quantity, \
             f"Failed to create the desired amount of networks"
 
-    @then("I should be able to create {lb_quantity} loadbalancers for {subnet_name} in network {network_name}")
-    def create_lb(context, lb_quantity: str, subnet_name: str, network_name: str):
+    @then("I should be able to create {lb_quantity:d} loadbalancers for {subnet_name} in network {network_name}")
+    def create_lb(context, lb_quantity: int, subnet_name: str, network_name: str):
         network = context.client.network.find_network(name_or_id=network_name)
         assert network is not None, f"Network with name {network_name} does not exist"
         subnet = context.client.network.find_subnet(name_or_id=subnet_name)
         assert (
                 subnet is not None
-        ), f"Subnet with name {subnet_name} does not exist in network {network_name}"       
-        for num in range(1, int(lb_quantity) + 1):
+        ), f"Subnet with name {subnet_name} does not exist in network {network_name}"
+        for num in range(1, lb_quantity + 1):
             lb_name = f"{context.test_name}-loadbalancer-{num}"
             assert context.client.load_balancer.create_load_balancer(
-                name=lb_name, vip_subnet_id=subnet.id).provisioning_status == "PENDING_CREATE",\
+                name=lb_name, vip_subnet_id=subnet.id).provisioning_status == "PENDING_CREATE", \
                 f"Expected LB {lb_name} not in creation"
-            lb_return=context.client.load_balancer.wait_for_load_balancer(
+            lb_return = context.client.load_balancer.wait_for_load_balancer(
                 name_or_id=lb_name, status='ACTIVE', failures=['ERROR'], interval=2, wait=300)
             context.collector.load_balancers.append(lb_return.id)
             assert lb_return.provisioning_status == "ACTIVE", f"Expected LB {lb_name} not Active"
             assert lb_return.operating_status == "ONLINE", f"Expected LB {lb_name} not Online"
-        assert len(context.collector.load_balancers) == int(lb_quantity),\
+        assert len(context.collector.load_balancers) == lb_quantity, \
             f"Failed to create the desired amount of LBs"
 
     @then('I disable all ports in all networks')
@@ -199,9 +196,9 @@ class StepsDef:
     @then("I should be able to delete a networks")
     def delete_network(context):
         for network_id in context.collector.networks[:]:
-            context.client.network.delete_network(network_id)            
+            context.client.network.delete_network(network_id)
             assert not context.client.network.find_network(
-                    name_or_id=network_id
+                name_or_id=network_id
             ), f"Network with ID {network_id} already deleted"
             context.collector.networks.remove(network_id)
         if context.collector.networks:
@@ -215,16 +212,6 @@ class StepsDef:
                         context.collector.networks.remove(network.id)
         assert len(context.collector.networks) == 0, f"Failed to delete networks"
 
-    @then("I should be able to create a jumphost with name {jumphost_name}")
-    def create_jumphost(context, jumphost_name: str):
-        server = context.client.network.find_network(name_or_id=jumphost_name)
-        assert server is None, f"Jumphost with {jumphost_name} already exists"
-        jumphost = context.client.compute.create_server(name=jumphost_name)
-        context.collector.jumphosts.append(jumphost.id)
-        context.client.network.delete_network(server)
-        assert context.client.network.find_network(name_or_id=server),\
-            f"Jumphost called {jumphost_name} created"
-
     @then("I should be able to list subnets")
     def list_subnets(context):
         subnets = context.client.network.subnets()
@@ -232,31 +219,28 @@ class StepsDef:
 
     @then("I am able to delete all the ports")
     def delete_network_ports(context):
-        for port in context.collector.ports:
-            context.client.network.delete_port(port.id)
-        for network in context.client.network.networks():
-            if f"{context.test_name}" in network.name:
-                remaining_ports = list(context.client.network.ports(network_id=network.id))
-                for port in remaining_ports:
-                    context.client.network.delete_port(port.id)
+        """Delete all ports used in the feature run based on the collector
+
+        Args:
+            context: Behave context object
+        """
+        tools.delete_ports(context)
         assert len(context.collector.ports) == 0, f"failed to delete all ports from all networks under test."
 
-    @then('I should be able to create {subnet_quantity} subnets')
-    def create_subnet(context, subnet_quantity: str):
+    @then('I should be able to create {subnet_quantity:d} subnets')
+    def create_subnet(context, subnet_quantity: int):
         for network in context.client.network.networks():
             if f"{context.test_name}-network" in network.name:
-                cidr = tools.create_subnets(num=int(subnet_quantity))
-                for num in range(1, int(subnet_quantity) + 1):
-                    subnet = context.client.network.create_subnet(
-                        name=f"{context.test_name}-subnet-{num}",
-                        network_id=network.id, ip_version=4, cidr=cidr[num - 1])
-                    time.sleep(5)
+                cidr = tools.create_subnets(num=subnet_quantity)
+                for num in range(1, subnet_quantity + 1):
+                    subnet = tools.create_subnet(context.client,
+                                                 f"{context.test_name}-subnet-{num}",
+                                                 network_id=network.id,
+                                                 cidr=cidr[num - 1])
                     context.collector.subnets.append(subnet.id)
-                    assert not context.client.network.find_network(name_or_id=subnet), \
-                        f"Failed to create subnet with name {subnet}"
             else:
                 continue
-        assert len(context.collector.subnets) == int(subnet_quantity), \
+        assert len(context.collector.subnets) == subnet_quantity, \
             f"Failed to create the desired amount of subnets"
 
     @then("I should be able to delete subnets")
@@ -265,7 +249,7 @@ class StepsDef:
             tools.delete_subent_ports(context.client, subnet_id=subnet_id)
             context.client.network.delete_subnet(subnet_id)
             assert not context.client.network.find_subnet(
-                            name_or_id=subnet_id), f"Subnet with id {subnet_id} was not deleted"
+                name_or_id=subnet_id), f"Subnet with id {subnet_id} was not deleted"
             context.collector.subnets.remove(subnet_id)
         if context.collector.subnets:
             for network in context.client.network.networks():  # list of networks
@@ -282,10 +266,10 @@ class StepsDef:
                                 context.collector.subnets.remove(subnet_id)
         assert len(context.collector.subnets) == 0, f"Failed to delete all subnets"
 
-    @then("I should be able to create {security_group_quantity} security groups")
-    def create_security_group(context, security_group_quantity: str):
+    @then("I should be able to create {security_group_quantity:d} security groups")
+    def create_security_group(context, security_group_quantity: int):
         security_groups = context.client.network.security_groups()
-        for num in range(1, int(security_group_quantity) + 1):
+        for num in range(1, security_group_quantity + 1):
             security_group_name = f"{context.test_name}-sg-{num}"
             assert security_group_name not in security_groups, \
                 f"security group named: {security_group_name} already exists"
@@ -297,7 +281,7 @@ class StepsDef:
             assert (
                     security_group is not None
             ), f"Security group with name {security_group.name} was not found"
-        assert len(context.collector.security_groups) == int(security_group_quantity),\
+        assert len(context.collector.security_groups) == security_group_quantity, \
             f"Failed to create the desired amount of security groups"
 
     @then("I should be able to delete a security groups")
@@ -305,34 +289,33 @@ class StepsDef:
         for sec_group_id in context.collector.security_groups[:]:
             context.client.network.delete_security_group(sec_group_id)
             time.sleep(2)
-            assert not context.client.network.find_security_group(
-                name_or_id=sec_group_id
-            ), f"Security group with id {sec_group_id} was not deleted"
+            assert not tools.check_security_group_exists(
+                context,
+                sec_group_id), f"Security group with id {sec_group_id} was not deleted"
             context.collector.security_groups.remove(sec_group_id)
         if context.collector.security_groups:
             for sec_group in context.client.network.security_groups():
-                security_group = context.client.network.find_security_group(name_or_id=sec_group.id)
+                security_group = tools.check_security_group_exists(context, sec_group.id)
                 assert security_group, f"Security group with name {sec_group.name} does not exist"
                 if f"{context.test_name}-sg" in sec_group.name:
                     context.client.network.delete_security_group(sec_group.id)
                     time.sleep(2)
-                    assert not context.client.network.find_security_group(
-                        name_or_id=sec_group.id
-                    ), f"Security group with name {sec_group.name} was not deleted"
+                    assert not tools.check_security_group_exists(context,
+                                                                 sec_group.id), f"Security group with name {sec_group.name} was not deleted"
                     if sec_group.id in context.collector.security_groups:
                         context.collector.security_groups.remove(sec_group.id)
         assert len(context.collector.security_groups) == 0, f"Failed to delete security groups"
 
-    @then("I should be able to create {security_group_rules_quantity} security group rules")
-    def create_security_group_rules(context, security_group_rules_quantity: str):
+    @then("I should be able to create {security_group_rules_quantity:d} security group rules")
+    def create_security_group_rules(context, security_group_rules_quantity: int):
         sec_groups = list(context.client.network.security_groups())
         base_port = 80
-        for num in range(1, int(security_group_rules_quantity) + 1):
+        for num in range(1, security_group_rules_quantity + 1):
             port_range_min = base_port + num - 1
             port_range_max = port_range_min
             for sec_group in sec_groups:
                 if context.test_name in sec_group.name:
-                    sel_sec_group = context.client.network.find_security_group(name_or_id=sec_group.name)
+                    sel_sec_group = tools.check_security_group_exists(context, sec_group.name)
                     sel_sec_group_rules = [
                         rule for rule in context.client.network.security_group_rules(
                             direction="ingress",
@@ -357,19 +340,19 @@ class StepsDef:
                     context.collector.security_groups_rules.append(new_security_group_rule.id)
 
             assert len(sec_groups) > 0, "There are no security groups"
-        assert len(context.collector.security_groups_rules) == int(security_group_rules_quantity),\
+        assert len(context.collector.security_groups_rules) == int(security_group_rules_quantity), \
             f"Failed to create the desired amount of security group rules"
 
     @then("I should be able to delete a security group rules")
-    def delete_security_group_rules(context,):
+    def delete_security_group_rules(context, ):
         for sec_group_rule_id in context.collector.security_groups_rules[:]:
             context.client.network.delete_security_group_rule(sec_group_rule_id)
             context.collector.security_groups_rules.remove(sec_group_rule_id)
-        if context.collector.security_groups_rules:        
+        if context.collector.security_groups_rules:
             sec_groups = list(context.client.network.security_groups())
             for sec_group in sec_groups:
                 if context.test_name in sec_group.name:
-                    sel_sec_group = context.client.network.find_security_group(name_or_id=sec_group.name)
+                    sel_sec_group = tools.check_security_group_exists(context, sec_group.name)
                     sel_sec_group_rules = []
                     for rule in context.client.network.security_group_rules():
                         if rule.security_group_id == sel_sec_group.id:
@@ -418,32 +401,47 @@ class StepsDef:
             context.collector.floating_ips.remove(ip_id)
         assert len(context.collector.floating_ips) == 0, f"Failed to delete floating IPs"
 
-    @then("I should be able to create {vms_quantity} VMs")
-    def create_vm(context, vms_quantity: str):
+    @then("I should be able to create {vms_quantity:d} VMs")
+    def create_vm(context, vms_quantity: int):
+       
+       # config
+        security_groups = ["default", "ping-sg"]
+        scriptname = f"{context.test_name}-wait"
+
+        user_data = f'''#cloud-config
+        write_files:
+        - content: |
+            #waitscript
+
+           #!/bin/bash
+            let MAXW=100
+            if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 5; sync; fi
+            while test \$MAXW -ge 1; do
+            if type -p "iperf3">/dev/null; then exit 0; fi
+            let MAXW-=1
+            sleep 1
+            if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 1; fi
+            done
+            exit 1
+          path: {scriptname}
+          permissions: '0755'
+        packages:
+        - iperf3
+        - jq
+        '''
+        network_count = 0
         for network in context.client.network.networks():
             if context.test_name in network.name:
-                for num in range(1, int(vms_quantity) + 1):
+                for num in range(1, vms_quantity + 1):
                     vm_name = f"{context.test_name}-vm-{''.join(random.choices(string.ascii_letters + string.digits, k=10))}"
-                    image = context.client.compute.find_image(name_or_id=context.vm_image)
-                    assert image, f"Image with name {context.vm_image} doesn't exist"
-                    flavor = context.client.compute.find_flavor(name_or_id=context.flavor_name)
-                    assert flavor, f"Flavor with name {context.flavor_name} doesn't exist"
-                    assert network, f"Network with name {network.name} doesn't exist"
-                    try:
-                        server = context.client.compute.create_server(
-                            name=vm_name,
-                            image_id=image.id,
-                            flavor_id=flavor.id,
-                            networks=[{"uuid": network.id}],
-                        )
-                        context.client.compute.wait_for_server(server)
-                    except DuplicateResource as e:
-                        assert e, "Server already created!"
+                    server = tools.create_vm(context.client, vm_name, context.vm_image, context.flavor_name, network.id, security_groups=security_groups, userdata=user_data)
                     time.sleep(5)
+                    context.collector.virtual_machines.append(server)
                     created_server = context.client.compute.find_server(name_or_id=vm_name)
-                    context.collector.virtual_machines.append(created_server.id)
+                    # context.collector.virtual_machines.append(created_server.ip)
                     assert created_server, f"VM with name {vm_name} was not created successfully"
-        assert len(context.collector.virtual_machines) == int(vms_quantity),\
+        # TODO rework check to compare with collector eg. len(context.collector.networks)
+        assert len(context.collector.virtual_machines) == vms_quantity * network_count,\
             f"Failed to create the desired amount of VMs"
 
     @then('I should be able to delete the VMs')
@@ -459,16 +457,16 @@ class StepsDef:
                     context.collector.virtual_machines.remove(vm.id)
         assert len(context.collector.virtual_machines) == 0, f"Failed to delete VMs"
 
-    @then("I create {quantity_volumes} volumes")
-    def create_multiple_volumes(context, quantity_volumes):
+    @then("I create {quantity_volumes:d} volumes")
+    def create_multiple_volumes(context, quantity_volumes: int):
         context.volumes = []
-        for num in range(1, int(quantity_volumes) + 1):
+        for num in range(1, quantity_volumes + 1):
             volume_name = f"{context.test_name}-volume-{num}"
             volume = context.client.block_store.create_volume(size=10, name=volume_name)
             context.collector.volumes.append(volume.id)
             context.volumes.append(volume)
             tools.ensure_volume_exist(client=context.client, volume_name=volume_name, test_name=context.test_name)
-        assert len(context.collector.volumes) == int(quantity_volumes), f"Failed to create the desired amount of volumes"
+        assert len(context.collector.volumes) == quantity_volumes, f"Failed to create the desired amount of volumes"
 
     @then('I delete all volumes from test')
     def delete_all_volumes(context):
@@ -490,3 +488,227 @@ class StepsDef:
                           list(context.client.block_store.volumes()))
         tools.verify_volumes_deleted(context.client, context.test_name)
         assert len(context.collector.volumes) == 0, f"Failed to delete volumes"
+
+    @then('I create a jumphost with name {jumphost_name} on network {network_name} with keypair {keypair_name}')
+    def create_a_jumphost(context, jumphost_name: str, network_name: str, keypair_name: str):
+        # config
+        ping_sec_group_name = "ping-sg"
+        ping_sec_group_description = "Ping security group - allow ICMP"
+        security_groups = ["ssh", "default", ping_sec_group_name]
+        keypair_filename = f"{keypair_name}-private"
+        scriptname = f"{context.test_name}-wait"
+
+        user_data = f'''#cloud-config
+        write_files:
+        - content: |
+            #waitscript
+
+           #!/bin/bash
+            let MAXW=100
+            if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 5; sync; fi
+            while test \$MAXW -ge 1; do
+            if type -p "iperf3">/dev/null; then exit 0; fi
+            let MAXW-=1
+            sleep 1
+            if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 1; fi
+            done
+            exit 1
+          path: {scriptname}
+          permissions: '0755'
+        packages:
+        - iperf3
+        - jq
+        runcmd:
+        - iperf3 -Ds
+        '''
+
+        keypair = tools.check_keypair_exists(context.client, keypair_name=keypair_name)
+        if not keypair:
+            keypair = context.client.compute.create_keypair(name=keypair_name)
+            assert keypair, f"Keypair with name {keypair_name} doesn't exist"
+            with open(keypair_filename, 'w') as f:
+                f.write("%s" % keypair.private_key)
+            os.chmod(keypair_filename, 0o600)
+        ping_sec_group = tools.check_security_group_exists(context, sec_group_name=ping_sec_group_name)
+        if not ping_sec_group:
+            context.logger.log_info(f"SG not found, creating")
+            ping_sec_group = tools.create_security_group(context, ping_sec_group_name, ping_sec_group_description)
+            tools.create_security_group_rule(context, ping_sec_group.id, protocol="icmp")
+
+        for security_group in security_groups:
+            security_group = tools.check_security_group_exists(context, security_group)
+            assert security_group, f"Security Group with name {security_group} doesn't exist"
+
+        server = tools.create_jumphost(context.client,
+                                       jumphost_name,
+                                       network_name,
+                                       keypair_name,
+                                       context.vm_image,
+                                       context.flavor_name,
+                                       security_groups=security_groups,
+                                       availability_zone="nova",
+                                       userdata=user_data,)
+        context.collector.jumphosts.append(server.id)
+
+    @given("I have deployed a VM with IP {vm_ip_address}")
+    def initialize(context, vm_ip_address: str):
+        context.vm_ip_address = vm_ip_address
+
+    @given("I have deployed {jh_quantity:d} JHs")
+    def initialize(context, jh_quantity):
+        context.test_name = "default" # TODO: just for testing, delete if naming convention is clarified
+        context.jh = tools.collect_jhs(context.client, context.test_name, context.logger)
+        assert len(context.jh) >= jh_quantity, f"Not enough Jumphost with name found"
+    
+    @given("I have a private key at {vm_private_ssh_key_path} for {username}")
+    def check_private_key_exists(context, vm_private_ssh_key_path: str, username:str):
+        context.vm_private_ssh_key_path = vm_private_ssh_key_path
+        context.vm_username = username
+        assert os.path.isfile(vm_private_ssh_key_path)
+    
+    @then("I should be able to SSH into {jh_quantity:d} JHs and test their {conn_test} connectivity")
+    def step_iterate_steps(context, jh_quantity, conn_test: str):
+        context.assertline = None
+        for i in range(0, jh_quantity):
+            if not isinstance(context.jh, str):
+                context.vm_ip_address = context.jh[i]['ip']                      
+                context.execute_steps('''
+                    Then I should be able to SSH into the VM
+                    Then I should be able to collect all Floating IPs
+                    And be able to ping all IPs to test {conn_test} connectivity
+                    ''')
+            else:
+                context.assertline = f"No matching Jumphosts was found"
+        assert context.assertline is None, context.assertline
+
+    @then("I should be able to SSH into the VM")
+    def test_ssh_connection(context):
+        if hasattr(context, 'pno'):      
+            context.logger.log_info(f"ssh through portforwarding: {context.vm_ip_address}/{context.pno}")
+            ssh_client = SshClient(context.vm_ip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger, context.pno)
+        else:
+            ssh_client = SshClient(context.vm_ip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger)
+
+        if not ssh_client:
+            context.assertline = f"could not access VM {context.vm_ip_address}"
+        if ssh_client.check_server_readiness(attempts=10):
+            context.logger.log_info(f"Server ready for SSH connections")
+        else:
+            context.logger.log_info(f"Server SSH connection failed to establish")
+
+        ssh_client.connect()
+        context.ssh_client = ssh_client
+        ssh_client.print_working_directory()
+
+    @then("be able to communicate with the internet")
+    def test_internet_connectivity(context):
+        context.ssh_client.test_internet_connectivity()
+
+    @then("I should be able to collect all Floating IPs")
+    def collect_float_ips(context):
+        context.ips, assertline = tools.collect_float_ips(context.client, context.logger)
+        if assertline != None:
+            context.assertline = assertline
+
+    @given("I have deployed jhs in {network_quantity:d} networks")
+    def initialize(context, network_quantity):
+        context.hosts=tools.collect_jhs(context.client,f"{context.test_name}-infra", context.logger)
+        assert len(context.hosts) >= network_quantity, f"Not enough jhs in networks found"
+
+    @then("I should be able to collect all VM IPs and ports")
+    def collect_redirs(context):
+        #TODO: this is just a proxy
+        context.redirs={
+          'scs-hm-infra-jh0': {
+            'addr': '10.250.255.25',
+            'fip': '213.131.230.205',
+            'vms': [
+              {
+                'port': 222,
+                'addr': '10.250.3.73',
+                'vm_name': 'scs-hm-infra-vm0'
+              },
+              {
+                'port': 223,
+                'addr': '10.250.0.8',
+                'vm_name': 'scs-hm-infra-vm1'
+              }
+            ]
+          }
+        }
+
+        context.logger.log_info(f"vm data {context.redirs}")
+        assert isinstance(context.redirs,dict), "redirs is no dictionary"
+
+    @then("be able to ping all IPs to test {conn_test} connectivity") 
+    def ping_ips_test(context, conn_test: str):
+        tot_ips = len(context.ips)
+        if len(context.ips) > 0:
+            for ip in context.ips:
+                result, assertline = context.ssh_client.test_internet_connectivity(conn_test, ip,tot_ips)
+            if result[1] != 0:
+                context.assertline = assertline
+
+    @then("be able to communicate with {ip} to test {conn_test} connectivity")
+    def test_domain_connectivity(context, ip: str, conn_test: str):       
+        result, assertline = context.ssh_client.test_internet_connectivity(conn_test, ip)
+        assert result[1] == 0, assertline
+
+    @then("close the connection")
+    def close_connection(context):
+        context.ssh_client.close_conn()
+
+    @then('I attach a floating ip to server {server_name}')
+    def attach_floating_ip_to_server(context, server_name):
+        server = context.client.compute.find_server(name_or_id=server_name)
+        assert server, f"Server with name {server_name} not found"
+        ip = context.client.add_auto_ip(server=server, wait=True, reuse=False)
+        context.vm_ip_address = ip
+        context.logger.log_info(f"Attached floating ip: {ip}")
+        floating_ip_id = tools.get_floating_ip_id(context, ip)
+        assert floating_ip_id, f"Failed to get the ID of floating ip {ip}."
+        context.collector.floating_ips.append(floating_ip_id)
+    
+    @then('I start calculating 4000 digits of pi on VM and check the ping response')
+    def calculate_pi_on_vm(context):
+        """
+        """
+        calc_command = "date +%s && time echo 'scale=4000; 4*a(1)' | bc -l >/dev/null 2>&1 && date +%s"
+        ping_parse_magic = "| tail -n +2 | head -n -4 |awk '{split($0,a,\" \"); print a[1], a[8]}'"
+        ping_command = f"ping -D -c{StepsDef.PING_RETRIES} {context.vm_ip_address} {ping_parse_magic}"
+
+        ping_server_ssh_client = SshClient("213.131.230.11", "ubuntu", context.vm_private_ssh_key_path, context.logger)
+        ping_server_ssh_client.connect()
+
+        tasks = [
+            (context.ssh_client.execute_command, calc_command, True),
+            (ping_server_ssh_client.execute_command, ping_command),
+        ]
+        results = tools.run_parallel(tasks)
+        tools.parse_ping_output(results, context.logger)
+        ping_server_ssh_client.close_conn()
+        context.ssh_client.close_conn()
+
+    # @then('I should be able to create a checkup script for {conn_test} locally')
+    # def create_temp_script(context,conn_test):
+    #     assertline = tools.create_wait_script(conn_test,context.test_name)
+    #     assert assertline == None, assertline
+
+    @then('I should be able to SSH into {network_quantity:d} VMs and perform {conn_test} test')
+    def substeps(context,network_quantity, conn_test):
+        context.assertline=None
+        for i in range(0,len(context.hosts)):
+            jh_name=context.hosts[i]['name']
+            target_ip, source_ip, pno = tools.target_source_calc(jh_name, context.redirs, context.logger)
+            context.vm_ip_address = source_ip
+            context.pno = pno
+            context.execute_steps('''
+                Then I should be able to SSH into the VM
+                ''')
+            context.assertline = context.ssh_client.run_iperf_test(conn_test, context.test_name, target_ip, source_ip)
+
+        # context.assertline = tools.delete_wait_script(context.test_name)        
+        assert context.assertline == None, context.assertline
+
+
+    

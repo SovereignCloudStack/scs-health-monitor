@@ -92,6 +92,7 @@ This *env.yaml* file must be placed in the root of the repository. This is where
 - Erik Kostelanský [@Erik-Kostelansky-dNation](https://github.com/Erik-Kostelansky-dNation)
 - Katharina Trentau [@fraugabel](https://github.com/fraugabel)
 - Ľubomír Dobrovodský [@dobrovodskydnation](https://github.com/dobrovodskydnation)
+- Tomáš Smädo [@tsmado](https://github.com/tsmado)
 
 ## Useful links
 

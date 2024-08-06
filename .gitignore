@@ -175,12 +175,15 @@ cython_debug/
 /sandbox.py
 sandbox/
 
-## SSH keys
-features/SSH/test_ssh
-features/SSH/test_ssh.pub
-features/SSH/sshKey
-features/SSH/sshKey.pub
 
+## SSH keys
+cloud_level_testing/features/SSH/test_ssh
+cloud_level_testing/features/SSH/test_ssh.pub
+sshKey
+sshKey.pub
+cloud_level_testing/features/ssh_check_connectivity_katha.feature
+test-keypair-private
+*-private
 *.prom
 
 # Local .terraform directories
