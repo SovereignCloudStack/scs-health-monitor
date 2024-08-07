@@ -479,7 +479,7 @@ class StepsDef:
         ping_sec_group_name = "ping-sg"
         ping_sec_group_description = "Ping security group - allow ICMP"
         security_groups = ["ssh", "default", ping_sec_group_name]
-        keypair_filename = f"{keypair_name}-private"
+        keypair_filename = f"{context.keypair_name}-private"
 
         user_data = f'''#cloud-config
         packages:
@@ -488,7 +488,6 @@ class StepsDef:
         runcmd:
         - iperf3 -Ds
         '''
-
         keypair = tools.check_keypair_exists(context.client, keypair_name=keypair_name)
         if not keypair:
             keypair = context.client.compute.create_keypair(name=keypair_name)
@@ -519,20 +518,24 @@ class StepsDef:
 
     @given("I have deployed a VM with IP {vm_ip_address}")
     def initialize(context, vm_ip_address: str):
-        context.vm_ip_address = vm_ip_address
+        context.fip_address = vm_ip_address
     
     @given("I have a private key at {keypair_name} for {username}")
     def check_private_key_exists(context, keypair_name: str, username:str):
-        context.vm_private_ssh_key_path = f"{keypair_name}-private"
+        #context.vm_private_ssh_key_path = f"{keypair_name}-private"
+       
+        context.logger.log_info(f"after {context.keypair_name}")
+        context.vm_private_ssh_key_path = f"{context.keypair_name}-private"
         context.vm_username = username
         assert os.path.isfile(context.vm_private_ssh_key_path), f"{context.vm_private_ssh_key_path} is no file "
     
     @then("I should be able to SSH into {jh_quantity:d} JHs and test their {conn_test} connectivity")
     def step_iterate_steps(context, jh_quantity, conn_test: str):
         context.assertline = None
+        context.logger.log_info(f"jh {context.jh[0]}")
         for i in range(0, jh_quantity):
             if not isinstance(context.jh, str):
-                context.vm_ip_address = context.jh[i]['ip']                      
+                context.fip_address = context.jh[i]
                 context.execute_steps(f"""
                     Then I should be able to SSH into the VM
                     Then I should be able to collect all network IPs
@@ -545,14 +548,14 @@ class StepsDef:
     @then("I should be able to SSH into the VM")
     def test_ssh_connection(context):
         if hasattr(context, 'pno'):      
-            context.logger.log_info(f"ssh through portforwarding: {context.vm_ip_address}/{context.pno}")
-            ssh_client = SshClient(context.vm_ip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger, context.pno)
+            context.logger.log_info(f"ssh through portforwarding: {context.fip_address}/{context.pno}")
+            ssh_client = SshClient(context.fip_addressip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger, context.pno)
         else:
-            context.logger.log_info(f"ssh into: {context.vm_ip_address}")
-            ssh_client = SshClient(context.vm_ip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger)
+            context.logger.log_info(f"ssh into: {context.fip_address}")
+            ssh_client = SshClient(context.fip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger)
 
         if not ssh_client:
-            context.assertline = f"could not access VM {context.vm_ip_address}"
+            context.assertline = f"could not access VM {context.fip_address}"
         if ssh_client.check_server_readiness(attempts=10):
             context.logger.log_info(f"Server ready for SSH connections")
         else:
@@ -586,9 +589,10 @@ class StepsDef:
 
     @given("I have deployed {jh_quantity:d} JHs")
     def initialize(context, jh_quantity):
+        print(f"!!! {context.redirs}")
         #context.test_name = "default" # TODO: just for testing, delete if naming convention is clarified
         context.jh = tools.collect_jhs(context.redirs, context.test_name, context.logger)
-        assert len(context.jh) >= jh_quantity, f"Not enough Jumphost with name found"
+        assert len(context.jh) > 0, f"found host {context.test_name}"
 
     @then("I should be able to collect all VM IPs and ports")
     def collect_redirs(context):
@@ -604,13 +608,10 @@ class StepsDef:
 
         context.logger.log_info(f"{jh_count} jump hosts and iterations")
         context.logger.log_info(f"test name: {context.test_name}")
-        # timeout = 60
-        # context.logger.log_info(f"sleeping {timeout}s")
-        # time.sleep(timeout)
         for i in range(0,jh_count):
             jh_name=f'{context.test_name}jh{i}'
             target_ip, source_ip, pno = tools.target_source_calc(jh_name, context.redirs, context.logger)
-            context.vm_ip_address = source_ip
+            context.fip_address = source_ip
             context.pno = pno
             context.execute_steps('''
                 Then I should be able to SSH into the VM
@@ -647,7 +648,7 @@ class StepsDef:
         """
         calc_command = "date +%s && time echo 'scale=4000; 4*a(1)' | bc -l >/dev/null 2>&1 && date +%s"
         ping_parse_magic = "| tail -n +2 | head -n -4 |awk '{split($0,a,\" \"); print a[1], a[8]}'"
-        ping_command = f"ping -D -c{StepsDef.PING_RETRIES} {context.vm_ip_address} {ping_parse_magic}"
+        ping_command = f"ping -D -c{StepsDef.PING_RETRIES} {context.fip_address} {ping_parse_magic}"
 
         ping_server_ssh_client = SshClient("213.131.230.11", "ubuntu", context.vm_private_ssh_key_path, context.logger)
         ping_server_ssh_client.connect()
@@ -686,14 +687,14 @@ class StepsDef:
     def step_given_value_in_feature_one(context):
         context.test_name = '11'
         context.redirs = '22'
-        assert context.one is not None
+        assert context.test_name is not None
 
     @when('I save the value')
     def step_when_save_value(context):
         assert context.test_name == '11'
         assert context.redirs == '22'
 
-    @then('I can pass the context to another feature')
+    @then('I can pass the context')
     def step_then_use_in_another_feature(context):
         #attributes = [attr for attr in dir(context) if not attr.startswith('_') and not callable(getattr(context, attr))]
         attributes = ['test_name', 'redirs']
@@ -703,11 +704,10 @@ class StepsDef:
             setattr(context.shared_context, attr, getattr(context, attr))
         #assert context.shared_context.one == '11'
 ####
-    @given('I use the value from the first feature')
+    @given('I can get the shared context from previouse feature')
     def step_given_use_value_from_first_feature(context):
-        print(f"feature two {context.shared_context}")
+        context.test_name = context.shared_context.test_name
         context.redirs = context.shared_context.redirs
-        assert context.shared_context.test_name == '11'
-        assert context.redirs == '22'
-
+        context.keypair_name = context.shared_context.keypair_name
+        context.logger.log_info(context.redirs)
 

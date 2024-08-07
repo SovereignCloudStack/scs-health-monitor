@@ -18,8 +18,9 @@ Feature: Build benchmark infrastructure
     Then I should be able to calculate the port forwardings for the jump hosts by associating the VM ip addresses with the jump hosts by az in the port range <port_start> to <port_end>
     Then I should be able to create a jump host for each az using a key pair named <keypair_name>
     Then I should be able to attach floating ips to the jump hosts
+    Then I can pass the context to another feature
     
     Examples: Build benchmark infrastructure
     | test_infix | ext_net  | keypair_name          | quantity_vms  | port_start | port_end |
-    | infra      | ext01    | test-keypair-private  | 2             |      222   | 229      |
+    | infra      | ext01    | test-keypair  | 2             |      222   | 229      |
   
