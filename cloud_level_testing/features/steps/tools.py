@@ -337,26 +337,36 @@ def collect_ips(redirs, test_name, logger: Logger):
         assertline = f"No ips found"
     return ips, assertline
 
-def collect_jhs(client, test_name, logger: Logger):
-    servers = client.compute.servers()
-    lookup = f"{test_name}jh"
-    jhs = []
-    jh = None
-    for name in servers:
-        logger.log_info(f"found host {name.name}")
-        if lookup in name.name:
-            logger.log_info(f"String containing '{lookup}': {name.name}")
-            jh = client.compute.find_server(name_or_id=name.name)
-            assert jh, f"No Jumphosts with {lookup} in name found"
-            if jh:
-                for key in jh.addresses:
-                    if test_name in key:
-                        logger.log_debug(f"String containing '{test_name}': {key}")
-                        jhs.append(
-                            {"name": name.name, "ip": jh.addresses[key][1]["addr"]}
-                        )
+
+def collect_jhs(redirs, test_name, logger: Logger):
+    assertline = None
+    jhs = {key: value['fip'] for key, value in redirs.items() if 'scs-hm-infra-jh' in key}
+
+    if len(jhs) == 0:
+        assertline = (f"found host {test_name}")
     logger.log_info(f"returning jhs: {jhs}")
-    return jhs
+    return jhs, assertline
+
+# def collect_jhs(client, test_name, logger: Logger):
+#     servers = client.compute.servers()
+#     lookup = f"{test_name}jh"
+#     jhs = []
+#     jh = None
+#     for name in servers:
+#         logger.log_info(f"found host {name.name}")
+#         if lookup in name.name:
+#             logger.log_info(f"String containing '{lookup}': {name.name}")
+#             jh = client.compute.find_server(name_or_id=name.name)
+#             assert jh, f"No Jumphosts with {lookup} in name found"
+#             if jh:
+#                 for key in jh.addresses:
+#                     if test_name in key:
+#                         logger.log_debug(f"String containing '{test_name}': {key}")
+#                         jhs.append(
+#                             {"name": name.name, "ip": jh.addresses[key][1]["addr"]}
+#                         )
+#     logger.log_info(f"returning jhs: {jhs}")
+#     return jhs
 
 def get_floating_ip_id(context, floating_ip: str) -> str | None:
     """Get ID of floating IP based on its address.
