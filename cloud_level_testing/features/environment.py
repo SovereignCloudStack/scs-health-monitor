@@ -27,8 +27,14 @@ class TeardownClass:
     def teardown(self):
         # Your teardown logic here
         pass
-   
+
+class SharedContext:
+    def __init__(self):
+        self.one = None
+        self.two = None
+
 def before_all(context):
+    context.shared_context = SharedContext()
     context.start_time = DateTimeProvider.get_current_utc_time()
 
     setup_class = SetupClass()
@@ -41,7 +47,15 @@ def before_all(context):
     context.prometheusExporter.add_default_label(LabelNames.CLOUD_LABEL, cloudName)
 
     context.collector = Collector()
+    cloud_name = context.env.get("CLOUD_NAME")
+    context.test_name = context.env.get("TESTS_NAME_IDENTIFICATION")
+    context.vm_image = context.env.get("VM_IMAGE")
+    context.flavor_name = context.env.get("FLAVOR_NAME")
+    context.client = openstack.connect(cloud=cloud_name)
 
+def before_feature(context, feature):
+    #context = context.shared_data
+    print(f"context {context}")
 
 def after_feature(context, feature):
     """

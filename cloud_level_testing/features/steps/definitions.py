@@ -6,6 +6,7 @@ import random
 import string
 
 from libs.ConnectivityClient import SshClient
+from libs.DateTimeProvider import DateTimeProvider as dtp
 import os
 from cloud_level_testing.features.steps import tools
 
@@ -16,11 +17,12 @@ class StepsDef:
 
     @given("I connect to OpenStack")
     def given_i_connect_to_openstack(context):
-        cloud_name = context.env.get("CLOUD_NAME")
-        context.test_name = context.env.get("TESTS_NAME_IDENTIFICATION")
-        context.vm_image = context.env.get("VM_IMAGE")
-        context.flavor_name = context.env.get("FLAVOR_NAME")
-        context.client = openstack.connect(cloud=cloud_name)
+        # cloud_name = context.env.get("CLOUD_NAME")
+        # context.test_name = context.env.get("TESTS_NAME_IDENTIFICATION")
+        # context.vm_image = context.env.get("VM_IMAGE")
+        # context.flavor_name = context.env.get("FLAVOR_NAME")
+        # context.client = openstack.connect(cloud=cloud_name)
+        pass
 
     @when("A router with name {router_name} exists")
     def router_with_name_exists(context, router_name: str):
@@ -585,7 +587,7 @@ class StepsDef:
     @given("I have deployed {jh_quantity:d} JHs")
     def initialize(context, jh_quantity):
         #context.test_name = "default" # TODO: just for testing, delete if naming convention is clarified
-        context.jh = tools.collect_jhs(context.client, context.test_name, context.logger)
+        context.jh = tools.collect_jhs(context.redirs, context.test_name, context.logger)
         assert len(context.jh) >= jh_quantity, f"Not enough Jumphost with name found"
 
     @then("I should be able to collect all VM IPs and ports")
@@ -660,5 +662,51 @@ class StepsDef:
         context.ssh_client.close_conn()
 
 
+    @given('I can start timer')
+    def start_timer(context):
+        context.startTime = dtp.get_current_utc_time()
+        context.logger.log_info(f"start {context.startTime}")
+        assert context.startTime, "could not get start time"
 
     
+    @then('I can stop timer')
+    def stop_timer(context):
+        context.stopTime = dtp.get_current_utc_time()
+        context.logger.log_info(f"stop {context.stopTime}")
+        assert context.stopTime, "could not get stop time"
+    
+
+    @then('I should be able to calculate the total duration')
+    def calc_totDur(context):
+        context.totDur = context.stopTime - context.startTime
+        context.logger.log_info(f"total duration {context.totDur}")
+        assert context.totDur, "could not calc time delta"
+
+    @given('I have a value in feature one')
+    def step_given_value_in_feature_one(context):
+        context.one = '11'
+        context.two = '22'
+        assert context.one is not None
+
+    @when('I save the value')
+    def step_when_save_value(context):
+        assert context.one == '11'
+        assert context.two == '22'
+
+    @then('I can pass the context to another feature')
+    def step_then_use_in_another_feature(context):
+        #attributes = [attr for attr in dir(context) if not attr.startswith('_') and not callable(getattr(context, attr))]
+        attributes = ['one', 'two']
+        context.logger.log_info(f"attributes {attributes}")
+        
+        for attr in attributes:
+            setattr(context.shared_context, attr, getattr(context, attr))
+        #assert context.shared_context.one == '11'
+####
+    @given('I use the value from the first feature')
+    def step_given_use_value_from_first_feature(context):
+        print(f"feature two {context.shared_context}")
+        assert context.shared_context.one == '11'
+        assert context.shared_context.two == '22'
+
+
