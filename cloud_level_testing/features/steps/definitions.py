@@ -705,7 +705,6 @@ class StepsDef:
     @given("I have deployed jumphosts with floating ips")
     def get_deployed_jumphosts(context):
         """Find all jumphosts and get their respective floating ips. Jumphost servers are expected to contain 'jh' substring in their name.
-
         Args:
             context: Behave context object.
         """

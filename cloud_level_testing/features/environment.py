@@ -58,7 +58,6 @@ class SharedContext:
     def keypair_name(self, value):
         self.__keypair_name = value
 
-
 def before_all(context):
     context.shared_context = SharedContext()
     context.start_time = DateTimeProvider.get_current_utc_time()

@@ -353,7 +353,7 @@ def collect_jhs(redirs, test_name, logger: Logger):
                 jhs.append(ip_valid.group(1))
    
     logger.log_info(f"returning jhs: {jhs}")
-    return jhs, assertline
+    return jhs
 
 # def collect_jhs(client, test_name, logger: Logger):
 #     servers = client.compute.servers()
