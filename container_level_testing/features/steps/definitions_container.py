@@ -10,7 +10,7 @@ import container_level_testing.features.steps.container_tools as tools
 class KubernetesTestSteps:
 
     @given('a Kubernetes cluster')
-    def step_given_kubernetes_cluster(context):
+    def kubernetes_cluster(context):
         config.load_kube_config()
         context.v1 = client.CoreV1Api()
         context.response = None
@@ -30,15 +30,8 @@ class KubernetesTestSteps:
     def container_running(context, container_name):
         tools.check_if_container_running(context.v1, container_name=container_name)
 
-    @when('I send an HTTP request to {container_name}')
-    def send_http_request(context, container_name):
-        pod = context.v1.read_namespaced_pod(name=container_name, namespace="default")
-        ip = pod.status.pod_ip
-        context.response = requests.get(f"http://{ip}")
-        # TODO: create a service and get http request against the service, not the ip address
-
-    @when('I create a service for the container named "{container_name}"')
-    def create_service(context, container_name):
+    @when('I create a service for the container named {container_name} on {port}')
+    def create_service(context, container_name, port):
         service_manifest = f"""
     apiVersion: v1
     kind: Service
@@ -49,16 +42,18 @@ class KubernetesTestSteps:
         app: {container_name}
       ports:
         - protocol: TCP
-          port: 80
-          targetPort: 80
+          port: {port}
+          targetPort: {port}
+          nodePort: 30007
     """
-        result = subprocess.run(["kubectl", "apply", "-f", "-"], input=service_manifest, capture_output=True,
-                                text=True)
+        result = subprocess.run(
+            ["kubectl", "apply", "-f", "-"], input=service_manifest, capture_output=True,
+            text=True)
         if result.returncode != 0:
             raise Exception(f"Failed to create service: {result.stderr}")
-        time.sleep(10)
+        time.sleep(15)
 
-    @then('the service for "{container_name}" should be running')
+    @then('the service for {container_name} should be running')
     def service_running(context, container_name):
         result = subprocess.run(["kubectl", "get", "service", container_name], capture_output=True, text=True)
         if result.returncode != 0:
@@ -66,15 +61,27 @@ class KubernetesTestSteps:
         status = result.stdout
         assert container_name in status, f"Expected service {container_name} to be running"
 
-    @when('I send an HTTP request to "{container_name}"')
+    # @when('I send an HTTP request to {container_name}')
+    # def send_http_request(context, container_name):
+    #     result = subprocess.run(
+    #         ["kubectl", "get", "service", container_name, "-o", "jsonpath='{.spec.clusterIP}'"],
+    #         capture_output=True, text=True)
+    #     if result.returncode != 0:
+    #         raise Exception(f"Failed to get service IP: {result.stderr}")
+    #     ip = result.stdout.strip().strip("'")
+    #     context.response = requests.get(f"http://{ip}")
+
+    @when('I send an HTTP request to {container_name} from outside the cluster using node IP node_ip')
     def send_http_request(context, container_name):
-        result = subprocess.run(
+        node_ip = subprocess.run(
             ["kubectl", "get", "service", container_name, "-o", "jsonpath='{.spec.clusterIP}'"],
             capture_output=True, text=True)
-        if result.returncode != 0:
-            raise Exception(f"Failed to get service IP: {result.stderr}")
-        ip = result.stdout.strip().strip("'")
-        context.response = requests.get(f"http://{ip}")
+        ip = node_ip.stdout.strip().strip("'")
+        node_port = tools.get_node_port(container_name)  # Get the node port dynamically
+        try:
+            context.response = requests.get(f"http://{ip}:{node_port}")
+        except requests.exceptions.RequestException as e:
+            raise Exception(f"Failed to send HTTP request: {e}")
 
     @given('a container running a web server named {container_name}')
     def container_running_web_server(context, container_name):
