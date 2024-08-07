@@ -5,6 +5,7 @@ from functools import wraps
 from libs.loggerClass import Logger
 from concurrent.futures import ThreadPoolExecutor
 import os
+import re
 
 import yaml
 from openstack.exceptions import DuplicateResource
@@ -306,7 +307,7 @@ def attach_floating_ip_to_server(context, server_name):
     try:
         server = context.client.compute.find_server(name_or_id=server_name)
         fip = context.client.add_auto_ip(server=server, wait=True, reuse=False)
-        context.vm_ip_address = fip
+        context.fip_address = fip
         context.logger.log_info(f"Attached floating ip: {fip}")
     except:
         fip = None
@@ -339,13 +340,16 @@ def collect_ips(redirs, test_name, logger: Logger):
 
 
 def collect_jhs(redirs, test_name, logger: Logger):
-    assertline = None
-    jhs = {key: value['fip'] for key, value in redirs.items() if 'scs-hm-infra-jh' in key}
-
-    if len(jhs) == 0:
-        assertline = (f"found host {test_name}")
+    ip_pattern = re.compile(r"'([^']+)'")
+    jhs = []
+    for key, value in redirs.items():
+        if f'{test_name}jh' in key and 'fip' in value:
+            match = ip_pattern.search(value['fip'])
+            if match:
+               jhs.append(match.group(1))
+    #jhs = [value['fip'] for key, value in redirs.items() if f'{test_name}jh' in key and 'fip' in value]      
     logger.log_info(f"returning jhs: {jhs}")
-    return jhs, assertline
+    return jhs
 
 # def collect_jhs(client, test_name, logger: Logger):
 #     servers = client.compute.servers()

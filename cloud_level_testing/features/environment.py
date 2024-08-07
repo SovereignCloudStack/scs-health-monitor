@@ -32,6 +32,7 @@ class SharedContext:
     def __init__(self):
         self.__test_name = None
         self.__redirs = None
+        self.__keypair_name = None
 
     @property
     def test_name(self):
@@ -48,6 +49,14 @@ class SharedContext:
     @redirs.setter
     def redirs(self, value):
         self.__redirs = value
+
+    @property
+    def keypair_name(self):
+        return self.__keypair_name
+
+    @keypair_name.setter
+    def keypair_name(self, value):
+        self.__keypair_name = value
 
 
 def before_all(context):

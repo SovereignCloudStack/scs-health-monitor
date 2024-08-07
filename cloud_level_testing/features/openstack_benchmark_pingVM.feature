@@ -20,8 +20,7 @@ Feature: Benchmark ping VMs
 #    Then I should be able to create a jump host for each az using a key pair named <keypair_name>
 #    Then I should be able to attach floating ips to the jump hosts
     
-#    Given I use the context from the first feature
-
+    Given I can get the shared context from previouse feature
     Given I have deployed <jh_quantity> JHs
     And I have a private key at <keypair_name> for <username>
     Then I should be able to SSH into <jh_quantity> JHs and test their <conn_test> connectivity
