@@ -2,6 +2,8 @@ import subprocess
 from pprint import pprint
 
 
+##TODO: Collector for container level testing - maintaining the containers on pods.
+
 class SetupClass:
     def __init__(self):
         pass
@@ -20,9 +22,9 @@ class TeardownClass:
         pass
 
 
-def before_all(context):
-    install_ingress_controller()
-    run_command("kubectl get svc -n ingress-nginx") ##
+# def before_all(context):
+#     install_ingress_controller()
+#     run_command("kubectl get svc -n ingress-nginx") ##
 
 
 def run_command(command):
