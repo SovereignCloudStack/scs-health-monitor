@@ -28,7 +28,6 @@ class TeardownClass:
         # Your teardown logic here
         pass
 
-
 class SharedContext:
     def __init__(self):
         self.__test_name = None

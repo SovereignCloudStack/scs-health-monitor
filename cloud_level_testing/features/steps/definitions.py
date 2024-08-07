@@ -7,7 +7,6 @@ import string
 import subprocess
 
 from libs.ConnectivityClient import SshClient
-
 import os
 from cloud_level_testing.features.steps import tools
 
@@ -727,7 +726,6 @@ class StepsDef:
         """Try to ping all jumphosts on their floating ip, collect ping response duration and failure count.
         Args:
             context: Behave context object.
-
         Returns:
             Pair of ping results dictionary (ip_address : ping response time) and ping failure counter.
         """
