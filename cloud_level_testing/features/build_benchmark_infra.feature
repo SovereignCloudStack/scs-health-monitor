@@ -22,6 +22,10 @@ Feature: Build benchmark infrastructure
     
     Examples: Build benchmark infrastructure
     | test_infix | ext_net  | keypair_name          | quantity_vms  | port_start | port_end |
+<<<<<<< HEAD
     | infra      | ext01    | test-keypair          | 2             |      222   | 229      |
 
+=======
+    | infra      | ext01    | test-keypair  | 2             |      222   | 229      |
+>>>>>>> pingVMtest with context object successful
   

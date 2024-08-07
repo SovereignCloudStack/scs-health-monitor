@@ -526,6 +526,7 @@ class StepsDef:
     def initialize(context, vm_ip_address: str):
         context.fip_address = vm_ip_address
 
+
     @given("I have a private key at {keypair_name} for {username}")
     def check_private_key_exists(context, keypair_name: str, username:str):
         context.vm_private_ssh_key_path = f"{context.keypair_name}-private"
@@ -556,13 +557,11 @@ class StepsDef:
             context.logger.log_info(f"ssh through portforwarding: {context.fip_address}/{context.pno}")
             ssh_client = SshClient(context.fip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger, context.pno)
         else:
-
             context.logger.log_info(f"ssh into: {context.fip_address}")
             ssh_client = SshClient(context.fip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger)
 
         if not ssh_client:
             context.assertline = f"could not access VM {context.fip_address}"
-
         if ssh_client.check_server_readiness(attempts=10):
             context.logger.log_info(f"Server ready for SSH connections")
         else:
@@ -625,13 +624,10 @@ class StepsDef:
 
         context.logger.log_info(f"{jh_count} jump hosts and iterations")
         context.logger.log_info(f"test name: {context.test_name}")
-        # timeout = 60
-        # context.logger.log_info(f"sleeping {timeout}s")
-        # time.sleep(timeout)
         for i in range(0,jh_count):
             jh_name=f'{context.test_name}jh{i}'
             target_ip, source_ip, pno = tools.target_source_calc(jh_name, context.redirs, context.logger)
-            context.vm_ip_address = source_ip
+            context.fip_address = source_ip
             context.pno = pno
             context.execute_steps('''
                 Then I should be able to SSH into the VM
@@ -747,6 +743,7 @@ class StepsDef:
                     f"Ping for ip {address} took {duration:.2f} seconds."
                 )
                 ping_results[address] = duration
+
 
         context.logger.log_info(f"Ping check results: {ping_results}")
         return ping_results, ping_failure_count

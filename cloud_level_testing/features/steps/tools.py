@@ -351,7 +351,6 @@ def collect_jhs(redirs, test_name, logger: Logger):
             ip_valid = ip_pattern.search(ip_string)
             if ip_valid:
                 jhs.append(ip_valid.group(1))
-   
     logger.log_info(f"returning jhs: {jhs}")
     return jhs
 
