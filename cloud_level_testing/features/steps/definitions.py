@@ -684,19 +684,19 @@ class StepsDef:
 
     @given('I have a value in feature one')
     def step_given_value_in_feature_one(context):
-        context.one = '11'
-        context.two = '22'
+        context.test_name = '11'
+        context.redirs = '22'
         assert context.one is not None
 
     @when('I save the value')
     def step_when_save_value(context):
-        assert context.one == '11'
-        assert context.two == '22'
+        assert context.test_name == '11'
+        assert context.redirs == '22'
 
     @then('I can pass the context to another feature')
     def step_then_use_in_another_feature(context):
         #attributes = [attr for attr in dir(context) if not attr.startswith('_') and not callable(getattr(context, attr))]
-        attributes = ['one', 'two']
+        attributes = ['test_name', 'redirs']
         context.logger.log_info(f"attributes {attributes}")
         
         for attr in attributes:
@@ -706,7 +706,8 @@ class StepsDef:
     @given('I use the value from the first feature')
     def step_given_use_value_from_first_feature(context):
         print(f"feature two {context.shared_context}")
-        assert context.shared_context.one == '11'
-        assert context.shared_context.two == '22'
+        context.redirs = context.shared_context.redirs
+        assert context.shared_context.test_name == '11'
+        assert context.redirs == '22'
 
 

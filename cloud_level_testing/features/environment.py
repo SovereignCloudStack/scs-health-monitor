@@ -30,8 +30,25 @@ class TeardownClass:
 
 class SharedContext:
     def __init__(self):
-        self.one = None
-        self.two = None
+        self.__test_name = None
+        self.__redirs = None
+
+    @property
+    def test_name(self):
+        return self.__test_name
+
+    @test_name.setter
+    def test_name(self, value):
+        self.__test_name = value
+    
+    @property
+    def redirs(self):
+        return self.__redirs
+
+    @redirs.setter
+    def redirs(self, value):
+        self.__redirs = value
+
 
 def before_all(context):
     context.shared_context = SharedContext()
