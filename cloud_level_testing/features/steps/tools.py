@@ -187,10 +187,12 @@ def time_it(func):
 
     return wrapper
 
+
 def add_value_to_dict_list(d, key, value):
     if key not in d:
         d[key] = []
     d[key] = value
+
 
 def create_subnets(num):
     subnet_list = []
@@ -224,6 +226,7 @@ def create_subnets(num):
             break
     return subnet_list
 
+
 def vm_extract_ip_by_type(server, type: str):
     """
     Iterate addresses of server object and return first floating ip we find.
@@ -238,6 +241,7 @@ def vm_extract_ip_by_type(server, type: str):
                 return vm_addr["addr"]
     return None
 
+
 def delete_subent_ports(client, subnet_id=None):
     for port in client.network.ports(network_id=subnet_id):
         for fixed_ip in port.fixed_ips:
@@ -249,12 +253,12 @@ def delete_subent_ports(client, subnet_id=None):
 
 
 def ensure_volume_exist(
-    client,
-    volume_name: str,
-    size: int = 10,
-    interval: int = 2,
-    wait: int = 120,
-    test_name: str = "scs-hm",
+        client,
+        volume_name: str,
+        size: int = 10,
+        interval: int = 2,
+        wait: int = 120,
+        test_name: str = "scs-hm",
 ):
     if check_volumes_created(client=client, test_name=test_name) == "available":
         volumes = list(client.block_store.volumes(name=volume_name))
@@ -389,18 +393,18 @@ def create_security_group(context, sec_group_name: str, description: str):
     )
     context.collector.security_groups.append(security_group.id)
     assert (
-        security_group is not None
+            security_group is not None
     ), f"Security group with name {security_group.name} was not found"
     return security_group
 
 
 def create_security_group_rule(
-    context,
-    sec_group_id: str,
-    protocol: str,
-    port_range_min: int = None,
-    port_range_max: int = None,
-    direction: str = "ingress",
+        context,
+        sec_group_id: str,
+        protocol: str,
+        port_range_min: int = None,
+        port_range_max: int = None,
+        direction: str = "ingress",
 ):
     """Create security group rule for specified security group.
 
@@ -424,24 +428,26 @@ def create_security_group_rule(
     )
     context.collector.security_groups_rules.append(sec_group_rule.id)
     assert (
-        sec_group_rule is not None
+            sec_group_rule is not None
     ), f"Rule for security group {sec_group_id} was not created"
     return sec_group_rule
-def create_wait_script(conn_test,testname):
-        """
+
+
+def create_wait_script(conn_test, testname):
+    """
             creates temp script locally and makes it executable 
             script checks if the command $1 exists, waits for the system boot to finish 
             if necessary and retries for up to 100 seconds if the command is not found
         
                 not in use for now
         """
-        assertline = None
-        script_path = f'{testname}-wait'
-        secondary = None
-        if "iperf" in conn_test:
-            secondary = "iperf"
+    assertline = None
+    script_path = f'{testname}-wait'
+    secondary = None
+    if "iperf" in conn_test:
+        secondary = "iperf"
 
-        script_content = f"""
+    script_content = f"""
             #!/bin/bash
             let MAXW=100
             if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 5; sync; fi
@@ -453,13 +459,14 @@ def create_wait_script(conn_test,testname):
             done
             exit 1
             """
-        try:
-            with open(script_path, 'w') as file:
-                    file.write(script_content)
-            os.chmod(script_path, 0o755)
-        except:
-            assertline = f"Failed to write script file {script_path}"
-        return assertline
+    try:
+        with open(script_path, 'w') as file:
+            file.write(script_content)
+        os.chmod(script_path, 0o755)
+    except:
+        assertline = f"Failed to write script file {script_path}"
+    return assertline
+
 
 def delete_wait_script(testname):
     assertline = None
@@ -470,6 +477,7 @@ def delete_wait_script(testname):
     except:
         assertline = f"Failed to delete script file {script_path}"
     return assertline
+
 
 def delete_vms(context, vm_ids: list = None):
     """Delete VMs based on list of IDs or VM IDs in collector.
@@ -715,6 +723,7 @@ def create_vm(client, name, image_name, flavor_name, network_id, **kwargs):
         server = None
     return server
 
+
 def create_jumphost(client, name, network_name, keypair_name, vm_image, flavor_name, security_groups, **kwargs):
     # config
     keypair_filename = f"{keypair_name}-private"
@@ -754,6 +763,7 @@ def create_jumphost(client, name, network_name, keypair_name, vm_image, flavor_n
     assert created_jumphost, f"Jumphost with name {name} was not created successfully"
     return created_jumphost
 
+
 def create_network(client, name, **kwargs):
     """
     Create network
@@ -767,8 +777,10 @@ def create_network(client, name, **kwargs):
         name_or_id=network), f"Network called {network} not present!"
     return network
 
-def list_networks(client, filter: dict=None) -> list:
+
+def list_networks(client, filter: dict = None) -> list:
     return list(client.list_networks(filter))
+
 
 def create_subnet(client, name, network_id, ip_version=4, **kwargs):
     """
@@ -789,10 +801,12 @@ def create_subnet(client, name, network_id, ip_version=4, **kwargs):
         f"Failed to create subnet with name {subnet}"
     return subnet
 
+
 def create_floating_ip(client, server_name):
     server = client.compute.find_server(name_or_id=server_name)
     assert server, f"Server with name {server_name} not found"
     return client.add_auto_ip(server=server, wait=True)
+
 
 def create_router(client, name, **kwargs):
     """
@@ -804,6 +818,7 @@ def create_router(client, name, **kwargs):
     """
     return client.network.create_router(name=name, **kwargs)
 
+
 def find_router(client, name_or_id):
     """
     Search router and return it
@@ -812,6 +827,7 @@ def find_router(client, name_or_id):
     @return:
     """
     return client.network.find_router(name_or_id=name_or_id)
+
 
 def add_interface_to_router(client, router, subnet_id):
     """
@@ -823,8 +839,10 @@ def add_interface_to_router(client, router, subnet_id):
     """
     return client.network.add_interface_to_router(router, subnet_id)
 
+
 def get_availability_zones(client) -> list:
     return list(client.network.availability_zones())
+
 
 def create_lb(client, name, **kwargs):
     """
@@ -844,12 +862,13 @@ def create_lb(client, name, **kwargs):
     assert lb.operating_status == "ONLINE", f"Expected LB {name} not Online"
     return lb
 
+
 def target_source_calc(jh_name, redirs, logger):
     vm_quantity = len(redirs[jh_name]['vms'])
     target_ip = redirs[jh_name]['addr']
     source_ip = redirs[jh_name]['fip']
-    pno = redirs[jh_name]['vms'][vm_quantity-1]['port']
-    logger.log_debug(f"{jh_name}: vm_quantity: {vm_quantity} target_ip: {target_ip} source_ip: {source_ip} pno: {pno}")        
+    pno = redirs[jh_name]['vms'][vm_quantity - 1]['port']
+    logger.log_debug(f"{jh_name}: vm_quantity: {vm_quantity} target_ip: {target_ip} source_ip: {source_ip} pno: {pno}")
     if not source_ip or not target_ip or source_ip == target_ip:
         logger.log_debug(f"IPerf3: {source_ip}<->{target_ip}: skipped")
     return target_ip, source_ip, pno

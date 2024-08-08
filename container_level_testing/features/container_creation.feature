@@ -7,5 +7,5 @@ Feature: Container creation
 
   Examples:
     |container_name|
-    |test-container|
-    |web-server|
+    |ping-container|
+    |pong-container|

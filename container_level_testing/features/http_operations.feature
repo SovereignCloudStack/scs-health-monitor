@@ -8,5 +8,4 @@ Feature: HTTP operations
 
     Examples:
     |container_name|
-
-    |web-server|
+    |test-container|
