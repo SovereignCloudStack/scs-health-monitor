@@ -25,7 +25,6 @@ class Collector:
         self.volumes: list = list()
         self.load_balancers: list = list()
         self.ports: list = list()
-        # TODO: ports vs. interfaces?
         # List of routers and their subnets. dicts {"router": <router-id>, "subnet": <subnet-id>}
         self.router_subnets: list[dict] = list()
         self.enabled_ports: list = ()
@@ -80,11 +79,19 @@ class Collector:
     def find_server(self, name_or_id):
         return self.client.compute.find_server(name_or_id=name_or_id)
 
-    def delete_interface_from_router(self, router, subnet_id):
-        res = self.client.network.remove_interface_from_router(router, subnet_id)
-        if not res:
-            # success
-            self.router_subnets.remove({"router": router.id, "subnet": subnet_id})
+    def delete_router_subnets(self):
+        for router_subnet in self.router_subnets:
+            router = router_subnet["router"]
+            subnet_id = router_subnet["subnet"]
+            res = self.client.network.remove_interface_from_router(router, subnet_id)
+            if not res:
+                # success
+                self.router_subnets.remove({"router": router.id, "subnet": subnet_id})
+
+    def delete_security_groups(self):
+        for security_group in self.security_groups:
+            self.client.network.delete_security_group(security_group)
+            self.security_groups.remove(security_group)
 
     def create_jumphost(self, name, network_name, keypair_name, vm_image, flavor_name,
                         security_groups, **kwargs):
@@ -118,7 +125,8 @@ class Collector:
 
     def create_security_group_rule(self, sec_group_id: str, protocol: str,
                                    port_range_min: int = None, port_range_max: int = None,
-                                   direction: str = 'ingress'):
+                                   direction: str = 'ingress', remote_ip_prefix: str = '0.0.0.0/0'):
+
         """Create security group rule for specified security group
 
         Args:
@@ -127,6 +135,7 @@ class Collector:
             port_range_min (int): The minimum port number in the range that is matched by the security group rule
             port_range_max (int): The maximum port number in the range that is matched by the security group rule
             direction (str): The direction in which the security group rule is applied
+            remote_ip_prefix (str): source IP address to be associated with the rule
 
         Returns:
             ~openstack.network.v2.security_group_rule.SecurityGroupRule: The new security group rule
@@ -136,7 +145,8 @@ class Collector:
             port_range_min=port_range_min,
             port_range_max=port_range_max,
             protocol=protocol,
-            direction=direction
+            direction=direction,
+            remote_ip_prefix=remote_ip_prefix,
         )
         self.security_groups_rules.append(sec_group_rule.id)
         assert sec_group_rule is not None, f"Rule for security group {sec_group_id} was not created"
@@ -603,10 +613,12 @@ def delete_all_test_resources(context):
     delete_vms(context)
     delete_jumphosts(context)
     delete_ports(context)
+    context.collector.delete_router_subnets()
     delete_floating_ips(context)
     delete_subnets(context)
     delete_networks(context)
     delete_routers(context)
+    context.collector.delete_security_groups()
 
 
 def parse_ping_output(data: list[str], logger: Logger):

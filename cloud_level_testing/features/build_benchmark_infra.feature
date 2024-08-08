@@ -1,4 +1,6 @@
 @benchmark
+@create
+@delete
 Feature: Build benchmark infrastructure
 
   Scenario Outline: Build the benchmark infrastructure used for benchmark tests
@@ -17,15 +19,7 @@ Feature: Build benchmark infrastructure
     Then I should be able to create a jump host for each az using a key pair named <keypair_name>
     Then I should be able to attach floating ips to the jump hosts
 
-    # TODO: Just for testing
-    Then I sleep
-
-    # TODO: Implement using collector
-    Then I should be able to delete the VMs
-    Then I should be able to delete all subnets of routers
-    Then I should be able to delete routers
-    Then I should be able to delete a networks
-
     Examples: Build benchmark infrastructure
-    | test_infix | ext_net  | keypair_name          | quantity_vms  | port_start  | port_end  |
-    | infra      | ext01    | test-keypair-private	| 2             | 222         | 229       |
+    | test_infix | ext_net  | keypair_name          | quantity_vms  | port_start | port_end |
+    | infra      | ext01    | test-keypair-private  | 2             |      222   | 229      |
+    #| infra           |    ext01    |    tf-id-rsa      | 2 |      222    | 229 |
