@@ -346,15 +346,10 @@ def collect_jhs(redirs, test_name, logger: Logger):
     for key, value in redirs.items():
         if f'{test_name}jh' in key and 'fip' in value:
             ip_string = value['fip']
-            print(f"1 {ip_string}")
-
             strip_me = strip_pattern.search(ip_string)
             if strip_me:
-                print("match")
                 ip_string = strip_me.group(1)
-
             ip_valid = ip_pattern.search(ip_string)
-            print(f"ip_valid {ip_valid}")
             if ip_valid:
                 jhs.append(ip_valid.group(1))
    
@@ -894,3 +889,4 @@ def target_source_calc(jh_name, redirs, logger):
     if not source_ip or not target_ip or source_ip == target_ip:
         logger.log_debug(f"IPerf3: {source_ip}<->{target_ip}: skipped")
     return target_ip, source_ip, pno
+

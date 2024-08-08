@@ -317,16 +317,18 @@ class SshClient:
         if sftp:
             sftp.close()
 
-    def get_iperf3(self, target_ip):
+    def get_iperf3(self, target_ip, retries = 3):
 
         iperf_command = f"iperf3 -t5 -J -c {target_ip} | jq"
-        try:
-            iperf_json = self.execute_command(iperf_command)
-            self.logger.log_info(f"received Iperf response as json")
-        except:
-            self.logger.log_error(f"Iperf failed retry")
-            iperf_json = None
-            time.sleep(16)
+        iperf_json = None
+        for i in range(1, retries):
+            try:
+                iperf_json = self.execute_command(iperf_command)
+                self.logger.log_info(f"received Iperf response as json")
+                break
+            except:
+                self.logger.log_error(f"Iperf failed retry {i}")
+                time.sleep(16)
         return iperf_json
 
 

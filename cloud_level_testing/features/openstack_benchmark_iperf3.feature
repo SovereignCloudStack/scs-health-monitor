@@ -11,6 +11,6 @@ Feature: Benchmark Iperf3 VMs
     Then I should be able to SSH into VMs and perform <conn_test> test
    
     Examples: Build benchmark infrastructure
-    | test_infix | ext_net  | keypair_name          | quantity_vms  | port_start | port_end | username | conn_test |
-    | infra      | ext01    | test-keypair          | 2             |      222   | 229      | ubuntu	 | iperf3    |
+    | keypair_name          | username | conn_test |
+    | test-keypair          | ubuntu	 | iperf3    |
  
