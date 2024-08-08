@@ -13,4 +13,3 @@ Feature: Benchmark ping VMs
     | keypair_name   | username | conn_test |
     | test-keypair   | ubuntu	  | ping			|
 
-
