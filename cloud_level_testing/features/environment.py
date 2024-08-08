@@ -27,7 +27,8 @@ class TeardownClass:
     def teardown(self):
         # Your teardown logic here
         pass
-   
+
+
 def before_all(context):
     context.start_time = DateTimeProvider.get_current_utc_time()
 
@@ -62,10 +63,11 @@ def after_feature(context, feature):
         context.logger.log_info(f"Feature '{feature.name}' failed: performing cleanup or additional actions")
         if "create" in feature.tags or "delete" in feature.tag:
             if context.collector:
-                context.logger.log_info(f"Feature '{feature.name}' is a deletion or creation feature: performing cleanup")
+                context.logger.log_info(
+                    f"Feature '{feature.name}' is a deletion or creation feature: performing cleanup")
                 cloud_name = context.env.get("CLOUD_NAME")
                 context.client = openstack.connect(cloud=cloud_name)
-                delete_all_test_resources(context) 
+                delete_all_test_resources(context)
     else:
         context.logger.log_info(f"Feature '{feature.name}' passed")
     context.logger.log_info(f"Feature completed: performing additional actions")
@@ -75,7 +77,7 @@ def after_feature(context, feature):
 
 def after_all(context):
     context.stop_time = DateTimeProvider.get_current_utc_time()
-    
+
     if context.collector:
         cloud_name = context.env.get("CLOUD_NAME")
         context.client = openstack.connect(cloud=cloud_name)

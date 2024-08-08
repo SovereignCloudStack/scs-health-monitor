@@ -11,6 +11,11 @@ class KubernetesTestSteps:
 
     @given('a Kubernetes cluster')
     def kubernetes_cluster(context):
+        """Given a Kubernetes cluster, this step initializes the Kubernetes client configuration and verifies
+        connection to the cluster by listing the nodes.
+
+        :param context: Behave context object
+        """
         config.load_kube_config()
         context.v1 = client.CoreV1Api()
         context.response = None
@@ -22,16 +27,38 @@ class KubernetesTestSteps:
 
     @when('I create a container named {container_name}')
     def create_container(context, container_name):
+        """
+        When a container is created with the specified name, this step creates a pod
+        in the default namespace and waits for it to start.
+
+        :param context: Behave context object
+        :param container_name: Name of the container to create
+        """
         pod = tools.create_container(container_name=container_name)
         context.v1.create_namespaced_pod(namespace="default", body=pod)
-        time.sleep(10)
+        time.sleep(20)
 
     @then('the container {container_name} should be running')
     def container_running(context, container_name):
+        """
+        Then the container should be running, this step checks if the specified container
+        is in the running state.
+
+        :param context: Behave context object
+        :param container_name: Name of the container to check
+        """
         tools.check_if_container_running(context.v1, container_name=container_name)
 
     @when('I create a service for the container named {container_name} on {port}')
     def create_service(context, container_name, port):
+        """
+        When a service is created for the specified container on the given port, this step
+        defines and applies the service manifest.
+
+        :param context: Behave context object
+        :param container_name: Name of the container to create the service for
+        :param port: Port number for the service
+        """
         service_manifest = f"""
     apiVersion: v1
     kind: Service
@@ -44,7 +71,7 @@ class KubernetesTestSteps:
         - protocol: TCP
           port: {port}
           targetPort: {port}
-          nodePort: 30007
+      type: NodePort
     """
         result = subprocess.run(
             ["kubectl", "apply", "-f", "-"], input=service_manifest, capture_output=True,
@@ -55,6 +82,13 @@ class KubernetesTestSteps:
 
     @then('the service for {container_name} should be running')
     def service_running(context, container_name):
+        """
+        Then the service should be running, this step verifies that the service
+        for the specified container is running.
+
+        :param context: Behave context object
+        :param container_name: Name of the container whose service status is checked
+        """
         result = subprocess.run(["kubectl", "get", "service", container_name], capture_output=True, text=True)
         if result.returncode != 0:
             raise Exception(f"Failed to get service status: {result.stderr}")
@@ -108,7 +142,7 @@ class KubernetesTestSteps:
     def delete_container(context, container_name):
         context.v1.delete_namespaced_pod(name=container_name, namespace="default", body=client.V1DeleteOptions())
         # context.logger(f"Wait for the pod to be deleted")
-        time.sleep(10)
+        time.sleep(15)
 
     @then('the container {container_name} should be deleted')
     def container_deleted(context, container_name):
