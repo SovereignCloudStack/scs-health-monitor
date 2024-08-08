@@ -562,6 +562,7 @@ class StepsDef:
 
         if not ssh_client:
             context.assertline = f"could not access VM {context.fip_address}"
+
         if ssh_client.check_server_readiness(attempts=10):
             context.logger.log_info(f"Server ready for SSH connections")
         else:
@@ -617,17 +618,15 @@ class StepsDef:
             context.assertline = context.ssh_client.run_iperf_test(conn_test, context.test_name, target_ip, source_ip=context.fip_address)      
         assert context.assertline == None, context.assertline
 
-    @then('I should be able to SSH into {network_quantity:d} VMs and perform {conn_test} test')
-    def substeps(context,network_quantity, conn_test):
+    @then('I should be able to SSH into VMs and perform {conn_test} test')
+    def substeps(context, conn_test):
         context.assertline=None
-        jh_count = sum(1 for key in context.redirs if f'{context.test_name}jh' in key)
-
-        context.logger.log_info(f"{jh_count} jump hosts and iterations")
-        context.logger.log_info(f"test name: {context.test_name}")
-        for i in range(0,jh_count):
+        jh_quantity = len(context.jh)
+        context.logger.log_info(f"{jh_quantity} jump hosts and iterations")
+        for i in range(0,jh_quantity):
             jh_name=f'{context.test_name}jh{i}'
             target_ip, source_ip, pno = tools.target_source_calc(jh_name, context.redirs, context.logger)
-            context.fip_address = source_ip
+            context.fip_address = context.jh[i]
             context.pno = pno
             context.execute_steps('''
                 Then I should be able to SSH into the VM
