@@ -357,10 +357,7 @@ packages:
 
     @then('I can pass the context to another feature')
     def step_then_use_in_another_feature(context):
-        context.logger.log_info(f"!! We expect shared context: {context.shared_context}")
-        #assert isinstance(context.shared_context, SharedContext)
         context.shared_context.test_name = context.test_name
         context.shared_context.redirs = context.redirs
         context.shared_context.keypair_name = context.keypair_name
-        context.logger.log_info(f"before {context.keypair_name}")
-        #assert hasattr(context.shared_context,'redirs'), f"context could not be passed"
+        assert hasattr(context.shared_context,'redirs'), f"context could not be passed"

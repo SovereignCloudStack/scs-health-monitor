@@ -62,7 +62,8 @@ class SharedContext:
 def before_all(context):
     context.shared_context = SharedContext()
     context.start_time = DateTimeProvider.get_current_utc_time()
-
+    print(f"timer set: {context.start_time}")
+    
     setup_class = SetupClass()
     setup_class.setup()
     context.env = Tools.load_env_from_yaml()
@@ -79,10 +80,6 @@ def before_all(context):
     context.flavor_name = context.env.get("FLAVOR_NAME")
     context.client = openstack.connect(cloud=cloud_name)
 
-def before_feature(context, feature):
-    #context = context.shared_data
-    print(f"context {context}")
-
 def after_feature(context, feature):
     """
         behave framework hook: code will run after each feature
@@ -97,7 +94,6 @@ def after_feature(context, feature):
             call for cleanup
     """
     feature_failed = any(scenario.status == 'failed' for scenario in feature.scenarios)
-    context.logger.log_info(f"feature tag {feature.tags}")
     if feature_failed:
         context.logger.log_info(f"Feature '{feature.name}' failed: performing cleanup or additional actions")
         if "create" in feature.tags or "delete" in feature.tag:
@@ -109,12 +105,14 @@ def after_feature(context, feature):
     else:
         context.logger.log_info(f"Feature '{feature.name}' passed")
     context.logger.log_info(f"Feature completed: performing additional actions")
-    if context.collector:
-        context.logger.log_info(f"this is in the collector {context.collector}")
+
 
 
 def after_all(context):
     context.stop_time = DateTimeProvider.get_current_utc_time()
+    print(f"timer stopped: {context.stop_time}")
+    totDur = DateTimeProvider.calc_totDur(context, context.start_time, context.stop_time)
+
     
     if context.collector:
         cloud_name = context.env.get("CLOUD_NAME")

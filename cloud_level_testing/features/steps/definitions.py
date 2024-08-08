@@ -6,7 +6,7 @@ import random
 import string
 
 from libs.ConnectivityClient import SshClient
-from libs.DateTimeProvider import DateTimeProvider as dtp
+
 import os
 from cloud_level_testing.features.steps import tools
 
@@ -522,7 +522,6 @@ class StepsDef:
     
     @given("I have a private key at {keypair_name} for {username}")
     def check_private_key_exists(context, keypair_name: str, username:str):
-        context.logger.log_info(f"after {context.keypair_name}")
         context.vm_private_ssh_key_path = f"{context.keypair_name}-private"
         context.vm_username = username
         assert os.path.isfile(context.vm_private_ssh_key_path), f"{context.vm_private_ssh_key_path} is no file "
@@ -530,7 +529,7 @@ class StepsDef:
     @then("I should be able to SSH into JHs and test their {conn_test} connectivity")
     def step_iterate_steps(context, conn_test: str):
         context.assertline = None
-        context.logger.log_info(f"jh {context.jh[0]}")
+        context.logger.log_info(f"jh on {context.jh[0]}")
         jh_quantity = len(context.jh)
         for i in range(0, jh_quantity):
             if not isinstance(context.jh, str):
@@ -574,25 +573,15 @@ class StepsDef:
     @then("I should be able to collect all network IPs")
     def collect_network_ips(context):
         assert hasattr(context, 'redirs'), f"No redirs found infrastructure not completely built yet"        
-        context.logger.log_info(f"vm data {context.redirs}")
         assert isinstance(context.redirs,dict), "redirs is no dictionary"
         context.ips, assertline = tools.collect_ips(context.redirs, context.test_name, context.logger)
         if assertline != None:
             context.assertline = assertline
 
-    # @then("I should be able to collect all Floating IPs")
-    # def collect_float_ips(context):
-    #     """
-    #     returns all floating ips (might not be needed)
-    #     """
-    #     context.ips, assertline = tools.collect_float_ips(context.client, context.logger)
-    #     if assertline != None:
-    #         context.assertline = assertline
-
     @given("I have deployed JHs")
     def ensure_jh_deployed(context):
         assert hasattr(context, 'redirs'), f"No redirs found infrastructure not completely built yet"        
-        context.logger.log_info(f"vm data {context.redirs}")
+        context.logger.log_debug(f"vm data {context.redirs}")
         assert isinstance(context.redirs,dict), "redirs is no dictionary"
         context.jh = tools.collect_jhs(context.redirs, context.test_name, context.logger)
         assert len(context.jh) > 0, f"no jh found for {context.test_name}"
@@ -610,7 +599,7 @@ class StepsDef:
             context.execute_steps('''
                 Then I should be able to SSH into the VM
                 ''')
-            context.assertline = context.ssh_client.run_iperf_test(conn_test, context.test_name, target_ip, source_ip)      
+            context.assertline = context.ssh_client.run_iperf_test(conn_test, context.test_name, target_ip, source_ip=context.fip_address)      
         assert context.assertline == None, context.assertline
 
     @then("be able to ping all IPs to test {conn_test} connectivity") 
@@ -656,54 +645,9 @@ class StepsDef:
         ping_server_ssh_client.close_conn()
         context.ssh_client.close_conn()
 
-
-    @given('I can start timer')
-    def start_timer(context):
-        context.startTime = dtp.get_current_utc_time()
-        context.logger.log_info(f"start {context.startTime}")
-        assert context.startTime, "could not get start time"
-
-    
-    @then('I can stop timer')
-    def stop_timer(context):
-        context.stopTime = dtp.get_current_utc_time()
-        context.logger.log_info(f"stop {context.stopTime}")
-        assert context.stopTime, "could not get stop time"
-    
-
-    @then('I should be able to calculate the total duration')
-    def calc_totDur(context):
-        context.totDur = context.stopTime - context.startTime
-        context.logger.log_info(f"total duration {context.totDur}")
-        assert context.totDur, "could not calc time delta"
-
-
-####
-    @given('I have a value in feature one')
-    def step_given_value_in_feature_one(context):
-        context.test_name = '11'
-        context.redirs = '22'
-        assert context.test_name is not None
-
-    @when('I save the value')
-    def step_when_save_value(context):
-        assert context.test_name == '11'
-        assert context.redirs == '22'
-
-    @then('I can pass the context')
-    def step_then_use_in_another_feature(context):
-        #attributes = [attr for attr in dir(context) if not attr.startswith('_') and not callable(getattr(context, attr))]
-        attributes = ['test_name', 'redirs']
-        context.logger.log_info(f"attributes {attributes}")
-        
-        for attr in attributes:
-            setattr(context.shared_context, attr, getattr(context, attr))
-        #assert context.shared_context.one == '11'
-####
     @given('I can get the shared context from previouse feature')
     def step_given_use_value_from_first_feature(context):
         context.test_name = context.shared_context.test_name
         context.redirs = context.shared_context.redirs
         context.keypair_name = context.shared_context.keypair_name
-        context.logger.log_info(context.redirs)
-
+        assert hasattr(context, 'redirs'), "did not get context"
