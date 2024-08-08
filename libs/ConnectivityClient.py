@@ -150,6 +150,7 @@ class SshClient:
 
     def close_conn(self):
         self.client.close()
+        self.logger.log_info("ssh connection closed")
 
     def test_internet_connectivity(self, conn_test, ip="8.8.8.8", tot_ips=1):
         """

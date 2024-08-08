@@ -522,17 +522,16 @@ class StepsDef:
     
     @given("I have a private key at {keypair_name} for {username}")
     def check_private_key_exists(context, keypair_name: str, username:str):
-        #context.vm_private_ssh_key_path = f"{keypair_name}-private"
-       
         context.logger.log_info(f"after {context.keypair_name}")
         context.vm_private_ssh_key_path = f"{context.keypair_name}-private"
         context.vm_username = username
         assert os.path.isfile(context.vm_private_ssh_key_path), f"{context.vm_private_ssh_key_path} is no file "
     
-    @then("I should be able to SSH into {jh_quantity:d} JHs and test their {conn_test} connectivity")
-    def step_iterate_steps(context, jh_quantity, conn_test: str):
+    @then("I should be able to SSH into JHs and test their {conn_test} connectivity")
+    def step_iterate_steps(context, conn_test: str):
         context.assertline = None
         context.logger.log_info(f"jh {context.jh[0]}")
+        jh_quantity = len(context.jh)
         for i in range(0, jh_quantity):
             if not isinstance(context.jh, str):
                 context.fip_address = context.jh[i]
@@ -547,21 +546,24 @@ class StepsDef:
 
     @then("I should be able to SSH into the VM")
     def test_ssh_connection(context):
+        context.logger.log_info(f"key: {context.keypair_name} {context.vm_private_ssh_key_path}")
         if hasattr(context, 'pno'):      
             context.logger.log_info(f"ssh through portforwarding: {context.fip_address}/{context.pno}")
-            ssh_client = SshClient(context.fip_addressip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger, context.pno)
+            ssh_client = SshClient(context.fip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger, context.pno)
         else:
             context.logger.log_info(f"ssh into: {context.fip_address}")
             ssh_client = SshClient(context.fip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger)
 
         if not ssh_client:
             context.assertline = f"could not access VM {context.fip_address}"
+
         if ssh_client.check_server_readiness(attempts=10):
             context.logger.log_info(f"Server ready for SSH connections")
         else:
             context.logger.log_info(f"Server SSH connection failed to establish")
 
         ssh_client.connect()
+        context.logger.log_info(f"logged in via ssh in definitions")
         context.ssh_client = ssh_client
         ssh_client.print_working_directory()
 
@@ -578,40 +580,32 @@ class StepsDef:
         if assertline != None:
             context.assertline = assertline
 
-    @then("I should be able to collect all Floating IPs")
-    def collect_float_ips(context):
-        """
-        returns all floating ips (might not be needed)
-        """
-        context.ips, assertline = tools.collect_float_ips(context.client, context.logger)
-        if assertline != None:
-            context.assertline = assertline
+    # @then("I should be able to collect all Floating IPs")
+    # def collect_float_ips(context):
+    #     """
+    #     returns all floating ips (might not be needed)
+    #     """
+    #     context.ips, assertline = tools.collect_float_ips(context.client, context.logger)
+    #     if assertline != None:
+    #         context.assertline = assertline
 
-    @given("I have deployed {jh_quantity:d} JHs")
-    def initialize(context, jh_quantity):
-        print(f"!!! {context.redirs}")
-        #context.test_name = "default" # TODO: just for testing, delete if naming convention is clarified
-        context.jh = tools.collect_jhs(context.redirs, context.test_name, context.logger)
-        assert len(context.jh) > 0, f"found host {context.test_name}"
-
-    @then("I should be able to collect all VM IPs and ports")
-    def collect_redirs(context):
-        assert hasattr(context, 'redirs'), f"No redirs found infrastructure not completely built yet"
-        
+    @given("I have deployed JHs")
+    def ensure_jh_deployed(context):
+        assert hasattr(context, 'redirs'), f"No redirs found infrastructure not completely built yet"        
         context.logger.log_info(f"vm data {context.redirs}")
         assert isinstance(context.redirs,dict), "redirs is no dictionary"
+        context.jh = tools.collect_jhs(context.redirs, context.test_name, context.logger)
+        assert len(context.jh) > 0, f"no jh found for {context.test_name}"
 
-    @then('I should be able to SSH into {network_quantity:d} VMs and perform {conn_test} test')
-    def substeps(context,network_quantity, conn_test):
+    @then('I should be able to SSH into VMs and perform {conn_test} test')
+    def substeps(context, conn_test):
         context.assertline=None
-        jh_count = sum(1 for key in context.redirs if f'{context.test_name}jh' in key)
-
-        context.logger.log_info(f"{jh_count} jump hosts and iterations")
-        context.logger.log_info(f"test name: {context.test_name}")
-        for i in range(0,jh_count):
+        jh_quantity = len(context.jh)
+        context.logger.log_info(f"{jh_quantity} jump hosts and iterations")
+        for i in range(0,jh_quantity):
             jh_name=f'{context.test_name}jh{i}'
             target_ip, source_ip, pno = tools.target_source_calc(jh_name, context.redirs, context.logger)
-            context.fip_address = source_ip
+            context.fip_address = context.jh[i]
             context.pno = pno
             context.execute_steps('''
                 Then I should be able to SSH into the VM
@@ -683,6 +677,8 @@ class StepsDef:
         context.logger.log_info(f"total duration {context.totDur}")
         assert context.totDur, "could not calc time delta"
 
+
+####
     @given('I have a value in feature one')
     def step_given_value_in_feature_one(context):
         context.test_name = '11'
