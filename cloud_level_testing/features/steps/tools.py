@@ -340,37 +340,26 @@ def collect_ips(redirs, test_name, logger: Logger):
 
 
 def collect_jhs(redirs, test_name, logger: Logger):
-    ip_pattern = re.compile(r"'([^']+)'")
+    ip_pattern = re.compile(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
+    strip_pattern = re.compile(r"'([^']+)'")
     jhs = []
     for key, value in redirs.items():
         if f'{test_name}jh' in key and 'fip' in value:
-            match = ip_pattern.search(value['fip'])
-            if match:
-               jhs.append(match.group(1))
-    #jhs = [value['fip'] for key, value in redirs.items() if f'{test_name}jh' in key and 'fip' in value]      
+            ip_string = value['fip']
+            print(f"1 {ip_string}")
+
+            strip_me = strip_pattern.search(ip_string)
+            if strip_me:
+                print("match")
+                ip_string = strip_me.group(1)
+
+            ip_valid = ip_pattern.search(ip_string)
+            print(f"ip_valid {ip_valid}")
+            if ip_valid:
+                jhs.append(ip_valid.group(1))
+   
     logger.log_info(f"returning jhs: {jhs}")
     return jhs
-
-# def collect_jhs(client, test_name, logger: Logger):
-#     servers = client.compute.servers()
-#     lookup = f"{test_name}jh"
-#     jhs = []
-#     jh = None
-#     for name in servers:
-#         logger.log_info(f"found host {name.name}")
-#         if lookup in name.name:
-#             logger.log_info(f"String containing '{lookup}': {name.name}")
-#             jh = client.compute.find_server(name_or_id=name.name)
-#             assert jh, f"No Jumphosts with {lookup} in name found"
-#             if jh:
-#                 for key in jh.addresses:
-#                     if test_name in key:
-#                         logger.log_debug(f"String containing '{test_name}': {key}")
-#                         jhs.append(
-#                             {"name": name.name, "ip": jh.addresses[key][1]["addr"]}
-#                         )
-#     logger.log_info(f"returning jhs: {jhs}")
-#     return jhs
 
 def get_floating_ip_id(context, floating_ip: str) -> str | None:
     """Get ID of floating IP based on its address.
@@ -763,7 +752,7 @@ def create_vm(client, name, image_name, flavor_name, network_id, **kwargs):
 
 
 def create_jumphost(client, name, network_name, keypair_name, vm_image, flavor_name, security_groups, **kwargs):
-    # config
+
     keypair_filename = f"{keypair_name}-private"
 
     image = client.compute.find_image(name_or_id=vm_image)
@@ -839,10 +828,6 @@ def create_subnet(client, name, network_id, ip_version=4, **kwargs):
         f"Failed to create subnet with name {subnet}"
     return subnet
 
-# def create_floating_ip(client, server_name):
-#     server = client.compute.find_server(name_or_id=server_name)
-#     assert server, f"Server with name {server_name} not found"
-#     return client.add_auto_ip(server=server, wait=True)
 
 
 def create_router(client, name, **kwargs):
