@@ -107,6 +107,14 @@ class KubernetesTestSteps:
 
     @when('I send an HTTP request to {container_name} from outside the cluster using node IP node_ip')
     def send_http_request(context, container_name):
+        """
+        When an HTTP request is sent to the specified container via ingress, this step
+        sends the request using the provided ingress host.
+
+        :param context: Behave context object
+        :param container_name: Name of the container to send the request to
+        :param ingress_host: Ingress host to use for the request
+        """
         node_ip = subprocess.run(
             ["kubectl", "get", "service", container_name, "-o", "jsonpath='{.spec.clusterIP}'"],
             capture_output=True, text=True)
@@ -119,15 +127,36 @@ class KubernetesTestSteps:
 
     @given('a container running a web server named {container_name}')
     def container_running_web_server(context, container_name):
+        """
+        Given a container running a web server, this step creates and ensures the specified
+        container is running.
+
+        :param context: Behave context object
+        :param container_name: Name of the web server container
+        """
         context.create_container(context, container_name)
         context.container_running(context, container_name)
 
     @then('the response status code should be 200')
     def response_status_code(context):
+        """
+        Then the response status code should be 200, this step checks the HTTP response
+        status code.
+
+        :param context: Behave context object
+        """
         assert context.response.status_code == HTTPStatus.OK
 
     @when('{src_container} pings {dst_container}')
     def ping(context, src_container, dst_container):
+        """
+        When one container pings another, this step executes a ping command from the source
+        container to the destination container.
+
+        :param context: Behave context object
+        :param src_container: Name of the source container
+        :param dst_container: Name of the destination container
+        """
         result = subprocess.run(["kubectl", "exec", src_container, "--", "ping", "-c", "1", dst_container],
                                 capture_output=True, text=True)
         if result.returncode != 0:
@@ -136,16 +165,36 @@ class KubernetesTestSteps:
 
     @then('the ping should be successful')
     def ping_successful(context):
+        """
+        Then the ping should be successful, this step verifies that the ping command
+        was successful.
+
+        :param context: Behave context object
+        """
         assert "1 packets transmitted, 1 received" in context.ping_response
 
     @when('I delete the container named {container_name}')
     def delete_container(context, container_name):
+        """
+        When a container is deleted, this step deletes the specified container from
+        the default namespace.
+
+        :param context: Behave context object
+        :param container_name: Name of the container to delete
+        """
         context.v1.delete_namespaced_pod(name=container_name, namespace="default", body=client.V1DeleteOptions())
         # context.logger(f"Wait for the pod to be deleted")
         time.sleep(15)
 
     @then('the container {container_name} should be deleted')
     def container_deleted(context, container_name):
+        """
+        Then the container should be deleted, this step checks that the specified
+        container has been deleted.
+
+        :param context: Behave context object
+        :param container_name: Name of the container to check
+        """
         try:
             context.v1.read_namespaced_pod(name=container_name, namespace="default")
             raise AssertionError("Pod still exists")
