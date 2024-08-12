@@ -27,10 +27,43 @@ class TeardownClass:
     def teardown(self):
         # Your teardown logic here
         pass
-   
-def before_all(context):
-    context.start_time = DateTimeProvider.get_current_utc_time()
 
+class SharedContext:
+    def __init__(self):
+        self.__test_name = None
+        self.__redirs = None
+        self.__keypair_name = None
+
+    @property
+    def test_name(self):
+        return self.__test_name
+
+    @test_name.setter
+    def test_name(self, value):
+        self.__test_name = value
+    
+    @property
+    def redirs(self):
+        return self.__redirs
+
+    @redirs.setter
+    def redirs(self, value):
+        self.__redirs = value
+
+    @property
+    def keypair_name(self):
+        return self.__keypair_name
+
+    @keypair_name.setter
+    def keypair_name(self, value):
+        self.__keypair_name = value
+
+
+def before_all(context):
+    context.shared_context = SharedContext()
+    context.start_time = DateTimeProvider.get_current_utc_time()
+    print(f"timer set: {context.start_time}")
+    
     setup_class = SetupClass()
     setup_class.setup()
     context.env = Tools.load_env_from_yaml()
@@ -41,7 +74,11 @@ def before_all(context):
     context.prometheusExporter.add_default_label(LabelNames.CLOUD_LABEL, cloudName)
 
     context.collector = Collector()
-
+    cloud_name = context.env.get("CLOUD_NAME")
+    context.test_name = context.env.get("TESTS_NAME_IDENTIFICATION")
+    context.vm_image = context.env.get("VM_IMAGE")
+    context.flavor_name = context.env.get("FLAVOR_NAME")
+    context.client = openstack.connect(cloud=cloud_name)
 
 def after_feature(context, feature):
     """
@@ -57,7 +94,6 @@ def after_feature(context, feature):
             call for cleanup
     """
     feature_failed = any(scenario.status == 'failed' for scenario in feature.scenarios)
-    context.logger.log_info(f"feature tag {feature.tags}")
     if feature_failed:
         context.logger.log_info(f"Feature '{feature.name}' failed: performing cleanup or additional actions")
         if "create" in feature.tags or "delete" in feature.tag:
@@ -69,12 +105,14 @@ def after_feature(context, feature):
     else:
         context.logger.log_info(f"Feature '{feature.name}' passed")
     context.logger.log_info(f"Feature completed: performing additional actions")
-    if context.collector:
-        context.logger.log_info(f"this is in the collector {context.collector}")
+
 
 
 def after_all(context):
     context.stop_time = DateTimeProvider.get_current_utc_time()
+    print(f"timer stopped: {context.stop_time}")
+    totDur = DateTimeProvider.calc_totDur(context, context.start_time, context.stop_time)
+
     
     if context.collector:
         cloud_name = context.env.get("CLOUD_NAME")

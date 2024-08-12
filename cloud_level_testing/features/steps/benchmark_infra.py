@@ -4,6 +4,7 @@ import jinja2
 import base64
 
 import tools
+from environment import SharedContext
 
 DEFAULT_SECURITY_GROUPS = ["ssh", "default"]
 DEFAULT_IPERF3_PORT = 5201
@@ -43,7 +44,7 @@ class BenchmarkInfra:
         context.az_vm_port_mapping: list = []
 
         # Security group name the jump hosts will use for port forwardings
-        context.jh_sg_group_name = f"{context.test_name}jumphost"
+        context.host_sec_group_name = f"{context.test_name}jumphost"
 
         context.collector.client = context.client
 
@@ -116,12 +117,12 @@ class BenchmarkInfra:
                                          context.lb_router_name,
                                          router_update["port_id"])
 
-    @then("I should be able to create a security group for the jump hosts allowing inbound tcp "
+    @then("I should be able to create a security group for the hosts allowing inbound tcp "
           "connections for the port range {port_start:d} to {port_end:d}")
     def create_security_group(context, port_start: int, port_end: int):
         sg = context.collector.create_security_group(
-            context.jh_sg_group_name,
-            "Allow ssh redirection to vms and iperf3"
+            context.host_sec_group_name,
+            "Allow ssh redirection inside network and iperf3"
         )
         context.collector.create_security_group_rule(sg["id"], "tcp", port_start, port_end)
         context.collector.create_security_group_rule(
@@ -131,10 +132,13 @@ class BenchmarkInfra:
             DEFAULT_IPERF3_PORT,
             remote_ip_prefix="10.0.0.0/8",
         )
+        context.collector.create_security_group_rule(sg["id"], "icmp", remote_ip_prefix="0.0.0.0/0")
+        #TODO only inner network maybe rewrite pingVM feature to ping only inner network remote_ip_prefix="10.0.0.0/8"
 
     @then(
         "I should be able to create a jump host for each az using a key pair named {keypair_name}")
     def infra_create_jumphosts(context, keypair_name: str):
+        context.keypair_name = keypair_name
         for az in context.azs:
             jh_name = BenchmarkInfra.calculate_jh_name_by_az(context, az)
 
@@ -167,6 +171,9 @@ iptables -t nat -A PREROUTING -s 0/0 -i $(cat /tmp/iface) -j DNAT -p tcp --dport
             forwarding_script = template.render(redirs=context.redirs, jh_name=jh_name)
 
             user_data = f"""#cloud-config
+packages:
+- iperf3
+- jq
 
 # A little bit hacky: We provide the script base64 encoded,
 # otherwise cloud-init complains about invalid characters.
@@ -179,10 +186,12 @@ write_files:
 - content: ''
   path: /tmp/set-ip-forwardings.sh
   permissions: '0755'
-
+        
 runcmd:
 - cat /tmp/set-ip-forwardings-base64 | base64 -d > /tmp/set-ip-forwardings.sh
 - /tmp/set-ip-forwardings.sh
+# run iperf3 as deamon from server
+- iperf3 -Ds 
 """
 
             context.collector.create_jumphost(jh_name,
@@ -191,7 +200,7 @@ runcmd:
                                               context.vm_image,
                                               context.flavor_name,
                                               DEFAULT_SECURITY_GROUPS + [
-                                                  context.jh_sg_group_name
+                                                  context.host_sec_group_name
                                               ],
                                               availability_zone=az,
                                               userdata=user_data,
@@ -200,9 +209,10 @@ runcmd:
     @then("I should be able to attach floating ips to the jump hosts")
     def infra_create_floating_ip(context):
         for az in context.azs:
-            fip = context.collector.create_floating_ip(
-                BenchmarkInfra.calculate_jh_name_by_az(context, az)
-            )
+            # fip = context.collector.create_floating_ip(
+            #     BenchmarkInfra.calculate_jh_name_by_az(context, az)
+            # )
+            fip = tools.attach_floating_ip_to_server(context, BenchmarkInfra.calculate_jh_name_by_az(context, az))
             # Add jump host internal ip and fip to port forwardings data structure
             for jh_name, redir in context.redirs.items():
                 if jh_name == BenchmarkInfra.calculate_jh_name_by_az(context, az):
@@ -216,6 +226,11 @@ runcmd:
     @then("I should be able to create {quantity:d} VMs with a key pair named {keypair_name} and "
           "strip them over the VM networks")
     def infra_create_vms(context, quantity: int, keypair_name: str):
+        user_data = f'''#cloud-config
+packages:
+- iperf3
+- jq
+        '''
         for num in range(0, quantity):
             vm_name = BenchmarkInfra.derive_vm_name(context, num)
             assert len(context.vm_nets_ids) > 0, "Number of VM networks has to be greater than 0"
@@ -226,7 +241,10 @@ runcmd:
                                               keypair_name,
                                               context.vm_image,
                                               context.flavor_name,
-                                              DEFAULT_SECURITY_GROUPS)
+                                              DEFAULT_SECURITY_GROUPS + [
+                                                  context.host_sec_group_name
+                                              ],
+                                              userdata=user_data,)
 
     @then('I should be able to query the ip addresses of the created {quantity:d} VMs')
     def infra_vms_query_ips(context, quantity: int):
@@ -337,3 +355,9 @@ runcmd:
                                                    subnet="scs-hm-subnet-1",
                                                    address="10.30.40.139", protocol_port=80)
 
+    @then('I can pass the context to another feature')
+    def step_then_use_in_another_feature(context):
+        context.shared_context.test_name = context.test_name
+        context.shared_context.redirs = context.redirs
+        context.shared_context.keypair_name = context.keypair_name
+        assert hasattr(context.shared_context,'redirs'), f"context could not be passed"

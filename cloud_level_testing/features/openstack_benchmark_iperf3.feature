@@ -1,16 +1,16 @@
 @iperf3
 @benchmark
+@create
+@delete
 Feature: Benchmark Iperf3 VMs
 
-  Scenario Outline: Collecting IPs of VMs can be reached through Openstack, ping them from remote accesses and track retries and failures
-    Given I connect to OpenStack
-    Given I have deployed jhs in <network_quantity> networks
-    And I have a private key at <vm_private_ssh_key_path> for <username>
-    Then I should be able to collect all Floating IPs
-    Then I should be able to collect all VM IPs and ports
-    Then I should be able to SSH into <network_quantity> VMs and perform <conn_test> test
+  Scenario Outline: Build the benchmark infrastructure used for benchmark tests and perform iperf3
+    Given I can get the shared context from previouse feature
+    Given I have a private key at <keypair_name> for <username>
+    Given I have deployed JHs
+    Then I should be able to SSH into VMs and perform <conn_test> test
    
-
-  Examples:
-    | host_name   | vm_private_ssh_key_path  | username 	| network_quantity	| conn_test |
-    | default-jh  | test-keypair-private	   | ubuntu	    | 1	                | iperf3    |
+    Examples: Build benchmark infrastructure
+    | keypair_name          | username | conn_test |
+    | test-keypair          | ubuntu	 | iperf3    |
+ 
