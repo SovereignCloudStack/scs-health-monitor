@@ -20,6 +20,7 @@ class KubernetesTestSteps:
         context.v1 = client.CoreV1Api()
         context.response = None
         context.ping_response = None
+        context.name_space = "scs-vp12"
         context.v1.list_node()
         result = subprocess.run(["kubectl", "get", "nodes"], capture_output=True, text=True)
         if result.returncode != 0:
@@ -35,8 +36,8 @@ class KubernetesTestSteps:
         :param container_name: Name of the container to create
         """
         pod = tools.create_container(container_name=container_name)
-        context.v1.create_namespaced_pod(namespace="default", body=pod)
-        time.sleep(20)
+        context.v1.create_namespaced_pod(namespace=context.name_space, body=pod)
+        time.sleep(10)
 
     @then('the container {container_name} should be running')
     def container_running(context, container_name):
@@ -47,7 +48,7 @@ class KubernetesTestSteps:
         :param context: Behave context object
         :param container_name: Name of the container to check
         """
-        tools.check_if_container_running(context.v1, container_name=container_name)
+        tools.check_if_container_running(context.v1, container_name=container_name, namespace=context.name_space)
 
     @when('I create a service for the container named {container_name} on {port}')
     def create_service(context, container_name, port):
@@ -59,25 +60,10 @@ class KubernetesTestSteps:
         :param container_name: Name of the container to create the service for
         :param port: Port number for the service
         """
-        service_manifest = f"""
-    apiVersion: v1
-    kind: Service
-    metadata:
-      name: {container_name}
-    spec:
-      selector:
-        app: {container_name}
-      ports:
-        - protocol: TCP
-          port: {port}
-          targetPort: {port}
-      type: NodePort
-    """
-        result = subprocess.run(
-            ["kubectl", "apply", "-f", "-"], input=service_manifest, capture_output=True,
-            text=True)
-        if result.returncode != 0:
-            raise Exception(f"Failed to create service: {result.stderr}")
+        result = context.v1.create_namespaced_service(
+            namespace=context.name_space, body=tools.create_service(
+                service_name=container_name, port=port))
+        # Exception(f"Failed to create service: {result.stderr}")
         time.sleep(15)
 
     @then('the service for {container_name} should be running')
@@ -89,11 +75,12 @@ class KubernetesTestSteps:
         :param context: Behave context object
         :param container_name: Name of the container whose service status is checked
         """
-        result = subprocess.run(["kubectl", "get", "service", container_name], capture_output=True, text=True)
-        if result.returncode != 0:
-            raise Exception(f"Failed to get service status: {result.stderr}")
-        status = result.stdout
-        assert container_name in status, f"Expected service {container_name} to be running"
+        # result = subprocess.run(["kubectl", "get", "service", container_name], capture_output=True, text=True)
+        # if result.returncode != 0:
+        #     raise Exception(f"Failed to get service status: {result.stderr}")
+        # status = result.stdout
+        # assert container_name in status, f"Expected service {container_name} to be running"
+        context.v1.S
 
     # @when('I send an HTTP request to {container_name}')
     # def send_http_request(context, container_name):
@@ -119,7 +106,7 @@ class KubernetesTestSteps:
             ["kubectl", "get", "service", container_name, "-o", "jsonpath='{.spec.clusterIP}'"],
             capture_output=True, text=True)
         ip = node_ip.stdout.strip().strip("'")
-        node_port = tools.get_node_port(container_name)  # Get the node port dynamically
+        node_port = tools.get_node_port(container_name, namespace=context.name_space)  # Get the node port dynamically
         try:
             context.response = requests.get(f"http://{ip}:{node_port}")
         except requests.exceptions.RequestException as e:
@@ -182,7 +169,7 @@ class KubernetesTestSteps:
         :param context: Behave context object
         :param container_name: Name of the container to delete
         """
-        context.v1.delete_namespaced_pod(name=container_name, namespace="default", body=client.V1DeleteOptions())
+        context.v1.delete_namespaced_pod(name=container_name, namespace=context.name_space, body=client.V1DeleteOptions())
         # context.logger(f"Wait for the pod to be deleted")
         time.sleep(15)
 
@@ -196,7 +183,7 @@ class KubernetesTestSteps:
         :param container_name: Name of the container to check
         """
         try:
-            context.v1.read_namespaced_pod(name=container_name, namespace="default")
+            context.v1.read_namespaced_pod(name=container_name, namespace=context.name_space)
             raise AssertionError("Pod still exists")
         except client.exceptions.ApiException as e:
             if e.status == 404:
