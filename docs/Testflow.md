@@ -51,6 +51,25 @@ The first feature always has to be the `openstack_benchmark_build_infra.feature`
 
 * Note all features that fail and have a `@create` or `@delete` tag assigned to them will lead to a deletion of the build up resources right after the feature run. Hence if they are followed by a feature depending on those resources this feature will inevitably fail.
 
-## 
+## Extended Description:
+
+* Our approach to use the behave-framework to build up and test an openstack infrastructure automated relies on certain peculiarities of this framework. First of all you have to understand the basic entities of a testrun:
+
+1. 1 testrun can contain multiple features\
+1 feauture can contain multiple steps\
+1 step can contain multiple substeps
+
+
+1. In the `environment.py` you can define what actions have to be done \
+`before_all` (in the beginning of the testrun), \
+`after_feature` (after every feature) and \
+`after_all` (in the end of the testrun)\
+To calculate for exemple the total duration of the run we set the timer in the `before_all` section and get the result in the `after_all` section, where we also collect the metrics and push them to the prometheus gateway or delete all resources. In the `after_feature` section, we delete ressources if a creation or deletion feature has failed.
+
+1. We tried to keep the steps and features as independent and self contained as possible. But in an infrastructure this is almost impossible, if you don't want to create monolytic steps and functions. Therefore we create an oblect called `context` and an object called `Collector` in the `before_all` section. We store every information, that has to be passed between the steps into the context like the connection to the openstack client. The Collector fetches each resource-id, when a resource is created to ensure that all and only resources that were created in the test run are deleted in the end.
+
+1. However, if we run features, that rely on another feature like on the  `openstack_benchmark_build_infra.feature` the problem occures that the context attributes that are created during a feature run are deleted after each feature. Therefore we created a SharedContext Object that is already initialised `before_all` and stores the data that is necessary for the following features like the test-prefix (context.test_name) and the floating ip and portforwarding (context.redirs).\
+So in the end of `openstack_benchmark_build_infra.feature` the following step must be performed: ```Then I can pass the context to another feature``` (to store the needed information into the `SharedContext`)
+and the following features have to begin with the step: ``` Given I can get the shared context from previouse feature``` (to transfer the shared informations into the new `context` object). 
 
 
