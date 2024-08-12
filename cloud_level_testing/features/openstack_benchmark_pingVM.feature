@@ -1,7 +1,5 @@
 @vm
 @benchmark
-@create
-@delete
 Feature: Benchmark ping VMs
 
   Scenario Outline: Collecting IPs of VMs can be reached through Openstack, ping them from remote accesses and track retries and failures   
