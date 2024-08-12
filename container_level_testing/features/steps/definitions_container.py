@@ -1,5 +1,5 @@
 from behave import given, when, then
-from kubernetes import client, config
+from kubernetes import client, config, stream
 import requests
 import time
 import subprocess
@@ -22,7 +22,7 @@ class KubernetesTestSteps:
         context.ping_response = None
         context.name_space = "scs-vp12"
         context.v1.list_node()
-        result = subprocess.run(["kubectl", "get", "nodes"], capture_output=True, text=True)
+        result = context.v1.list_node()
         if result.returncode != 0:
             raise Exception(f"Failed to connect to Kubernetes cluster: {result.stderr}")
 
@@ -75,12 +75,8 @@ class KubernetesTestSteps:
         :param context: Behave context object
         :param container_name: Name of the container whose service status is checked
         """
-        # result = subprocess.run(["kubectl", "get", "service", container_name], capture_output=True, text=True)
-        # if result.returncode != 0:
-        #     raise Exception(f"Failed to get service status: {result.stderr}")
-        # status = result.stdout
-        # assert container_name in status, f"Expected service {container_name} to be running"
-        context.v1.S
+        service = context.v1.read_namespaced_service(name=container_name, namespace=context.name_space)
+        assert service, f"Expected service {container_name} to be running"
 
     # @when('I send an HTTP request to {container_name}')
     # def send_http_request(context, container_name):
@@ -102,13 +98,11 @@ class KubernetesTestSteps:
         :param container_name: Name of the container to send the request to
         :param ingress_host: Ingress host to use for the request
         """
-        node_ip = subprocess.run(
-            ["kubectl", "get", "service", container_name, "-o", "jsonpath='{.spec.clusterIP}'"],
-            capture_output=True, text=True)
-        ip = node_ip.stdout.strip().strip("'")
+        service = context.client.v1.read_namespaced_service(name=container_name, namespace=context.name_space)
+        node_ip = service.spec.cluster_ip
         node_port = tools.get_node_port(container_name, namespace=context.name_space)  # Get the node port dynamically
         try:
-            context.response = requests.get(f"http://{ip}:{node_port}")
+            context.response = requests.get(f"http://{node_ip}:{node_port}")
         except requests.exceptions.RequestException as e:
             raise Exception(f"Failed to send HTTP request: {e}")
 
@@ -144,11 +138,21 @@ class KubernetesTestSteps:
         :param src_container: Name of the source container
         :param dst_container: Name of the destination container
         """
-        result = subprocess.run(["kubectl", "exec", src_container, "--", "ping", "-c", "1", dst_container],
-                                capture_output=True, text=True)
-        if result.returncode != 0:
-            raise Exception(f"Ping failed: {result.stderr}")
-        context.ping_response = result.stdout
+        try:
+            exec_command = ['ping', '-c', '1', dst_container]
+            response = stream.stream(
+                context.v1.connect_get_namespaced_pod_exec,
+                name=src_container,
+                namespace=context.name_space,
+                command=exec_command,
+                stderr=True, stdin=False,
+                stdout=True, tty=False)
+            context.ping_response = response
+
+            if "1 packets transmitted, 1 received" not in response:
+                raise Exception(f"Ping failed: {response}")
+        except client.exceptions.ApiException as e:
+            raise Exception(f"An error occurred during ping: {e}")
 
     @then('the ping should be successful')
     def ping_successful(context):
