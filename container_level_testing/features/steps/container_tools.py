@@ -15,6 +15,7 @@ def create_container(container_name):
             containers=[client.V1Container(
                 name=container_name,
                 image="busybox",
+                command=["sleep", "3600"],
                 ports=[client.V1ContainerPort(container_port=80)]
             )]
         )
