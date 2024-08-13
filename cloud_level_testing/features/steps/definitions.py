@@ -6,6 +6,7 @@ import random
 import string
 
 from libs.ConnectivityClient import SshClient
+
 import os
 from cloud_level_testing.features.steps import tools
 
@@ -16,11 +17,12 @@ class StepsDef:
 
     @given("I connect to OpenStack")
     def given_i_connect_to_openstack(context):
-        cloud_name = context.env.get("CLOUD_NAME")
-        context.test_name = context.env.get("TESTS_NAME_IDENTIFICATION")
-        context.vm_image = context.env.get("VM_IMAGE")
-        context.flavor_name = context.env.get("FLAVOR_NAME")
-        context.client = openstack.connect(cloud=cloud_name)
+        # cloud_name = context.env.get("CLOUD_NAME")
+        # context.test_name = context.env.get("TESTS_NAME_IDENTIFICATION")
+        # context.vm_image = context.env.get("VM_IMAGE")
+        # context.flavor_name = context.env.get("FLAVOR_NAME")
+        # context.client = openstack.connect(cloud=cloud_name)
+        pass
 
     @when("A router with name {router_name} exists")
     def router_with_name_exists(context, router_name: str):
@@ -406,25 +408,7 @@ class StepsDef:
        
        # config
         security_groups = ["default", "ping-sg"]
-        scriptname = f"{context.test_name}-wait"
-
         user_data = f'''#cloud-config
-        write_files:
-        - content: |
-            #waitscript
-
-           #!/bin/bash
-            let MAXW=100
-            if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 5; sync; fi
-            while test \$MAXW -ge 1; do
-            if type -p "iperf3">/dev/null; then exit 0; fi
-            let MAXW-=1
-            sleep 1
-            if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 1; fi
-            done
-            exit 1
-          path: {scriptname}
-          permissions: '0755'
         packages:
         - iperf3
         - jq
@@ -495,33 +479,15 @@ class StepsDef:
         ping_sec_group_name = "ping-sg"
         ping_sec_group_description = "Ping security group - allow ICMP"
         security_groups = ["ssh", "default", ping_sec_group_name]
-        keypair_filename = f"{keypair_name}-private"
-        scriptname = f"{context.test_name}-wait"
+        keypair_filename = f"{context.keypair_name}-private"
 
         user_data = f'''#cloud-config
-        write_files:
-        - content: |
-            #waitscript
-
-           #!/bin/bash
-            let MAXW=100
-            if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 5; sync; fi
-            while test \$MAXW -ge 1; do
-            if type -p "iperf3">/dev/null; then exit 0; fi
-            let MAXW-=1
-            sleep 1
-            if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 1; fi
-            done
-            exit 1
-          path: {scriptname}
-          permissions: '0755'
         packages:
         - iperf3
         - jq
         runcmd:
         - iperf3 -Ds
         '''
-
         keypair = tools.check_keypair_exists(context.client, keypair_name=keypair_name)
         if not keypair:
             keypair = context.client.compute.create_keypair(name=keypair_name)
@@ -552,93 +518,89 @@ class StepsDef:
 
     @given("I have deployed a VM with IP {vm_ip_address}")
     def initialize(context, vm_ip_address: str):
-        context.vm_ip_address = vm_ip_address
-
-    @given("I have deployed {jh_quantity:d} JHs")
-    def initialize(context, jh_quantity):
-        context.test_name = "default" # TODO: just for testing, delete if naming convention is clarified
-        context.jh = tools.collect_jhs(context.client, context.test_name, context.logger)
-        assert len(context.jh) >= jh_quantity, f"Not enough Jumphost with name found"
+        context.fip_address = vm_ip_address
     
-    @given("I have a private key at {vm_private_ssh_key_path} for {username}")
-    def check_private_key_exists(context, vm_private_ssh_key_path: str, username:str):
-        context.vm_private_ssh_key_path = vm_private_ssh_key_path
+    @given("I have a private key at {keypair_name} for {username}")
+    def check_private_key_exists(context, keypair_name: str, username:str):
+        context.vm_private_ssh_key_path = f"{context.keypair_name}-private"
         context.vm_username = username
-        assert os.path.isfile(vm_private_ssh_key_path)
+        assert os.path.isfile(context.vm_private_ssh_key_path), f"{context.vm_private_ssh_key_path} is no file "
     
-    @then("I should be able to SSH into {jh_quantity:d} JHs and test their {conn_test} connectivity")
-    def step_iterate_steps(context, jh_quantity, conn_test: str):
+    @then("I should be able to SSH into JHs and test their {conn_test} connectivity")
+    def step_iterate_steps(context, conn_test: str):
         context.assertline = None
+        context.logger.log_info(f"jh on {context.jh[0]}")
+        jh_quantity = len(context.jh)
         for i in range(0, jh_quantity):
             if not isinstance(context.jh, str):
-                context.vm_ip_address = context.jh[i]['ip']                      
-                context.execute_steps('''
+                context.fip_address = context.jh[i]
+                context.execute_steps(f"""
                     Then I should be able to SSH into the VM
-                    Then I should be able to collect all Floating IPs
+                    Then I should be able to collect all network IPs
                     And be able to ping all IPs to test {conn_test} connectivity
-                    ''')
+                    """)
             else:
                 context.assertline = f"No matching Jumphosts was found"
         assert context.assertline is None, context.assertline
 
     @then("I should be able to SSH into the VM")
     def test_ssh_connection(context):
+        context.logger.log_info(f"key: {context.keypair_name} {context.vm_private_ssh_key_path}")
         if hasattr(context, 'pno'):      
-            context.logger.log_info(f"ssh through portforwarding: {context.vm_ip_address}/{context.pno}")
-            ssh_client = SshClient(context.vm_ip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger, context.pno)
+            context.logger.log_info(f"ssh through portforwarding: {context.fip_address}/{context.pno}")
+            ssh_client = SshClient(context.fip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger, context.pno)
         else:
-            ssh_client = SshClient(context.vm_ip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger)
+            context.logger.log_info(f"ssh into: {context.fip_address}")
+            ssh_client = SshClient(context.fip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger)
 
         if not ssh_client:
-            context.assertline = f"could not access VM {context.vm_ip_address}"
+            context.assertline = f"could not access VM {context.fip_address}"
+
         if ssh_client.check_server_readiness(attempts=10):
             context.logger.log_info(f"Server ready for SSH connections")
         else:
             context.logger.log_info(f"Server SSH connection failed to establish")
 
         ssh_client.connect()
+        context.logger.log_info(f"logged in via ssh in definitions")
         context.ssh_client = ssh_client
         ssh_client.print_working_directory()
 
     @then("be able to communicate with the internet")
     def test_internet_connectivity(context):
         context.ssh_client.test_internet_connectivity()
-
-    @then("I should be able to collect all Floating IPs")
-    def collect_float_ips(context):
-        context.ips, assertline = tools.collect_float_ips(context.client, context.logger)
+    
+    @then("I should be able to collect all network IPs")
+    def collect_network_ips(context):
+        assert hasattr(context, 'redirs'), f"No redirs found infrastructure not completely built yet"        
+        assert isinstance(context.redirs,dict), "redirs is no dictionary"
+        context.ips, assertline = tools.collect_ips(context.redirs, context.test_name, context.logger)
         if assertline != None:
             context.assertline = assertline
 
-    @given("I have deployed jhs in {network_quantity:d} networks")
-    def initialize(context, network_quantity):
-        context.hosts=tools.collect_jhs(context.client,f"{context.test_name}-infra", context.logger)
-        assert len(context.hosts) >= network_quantity, f"Not enough jhs in networks found"
-
-    @then("I should be able to collect all VM IPs and ports")
-    def collect_redirs(context):
-        #TODO: this is just a proxy
-        context.redirs={
-          'scs-hm-infra-jh0': {
-            'addr': '10.250.255.25',
-            'fip': '213.131.230.205',
-            'vms': [
-              {
-                'port': 222,
-                'addr': '10.250.3.73',
-                'vm_name': 'scs-hm-infra-vm0'
-              },
-              {
-                'port': 223,
-                'addr': '10.250.0.8',
-                'vm_name': 'scs-hm-infra-vm1'
-              }
-            ]
-          }
-        }
-
-        context.logger.log_info(f"vm data {context.redirs}")
+    @given("I have deployed JHs")
+    def ensure_jh_deployed(context):
+        assert hasattr(context, 'redirs'), f"No redirs found infrastructure not completely built yet"        
+        context.logger.log_debug(f"vm data {context.redirs}")
         assert isinstance(context.redirs,dict), "redirs is no dictionary"
+        context.jh = tools.collect_jhs(context.redirs, context.test_name, context.logger)
+        assert len(context.jh) > 0, f"no jh found for {context.test_name}"
+
+    @then('I should be able to SSH into VMs and perform {conn_test} test')
+    def substeps(context, conn_test):
+        context.assertline=None
+        jh_quantity = len(context.jh)
+        context.logger.log_info(f"{jh_quantity} jump hosts and iterations")
+        for i in range(0,jh_quantity):
+            jh_name=f'{context.test_name}jh{i}'
+            target_ip, source_ip, pno = tools.target_source_calc(jh_name, context.redirs, context.logger)
+            context.fip_address = context.jh[i]
+            context.pno = pno
+            context.execute_steps('''
+                Then I should be able to SSH into the VM
+                ''')
+            context.assertline = context.ssh_client.run_iperf_test(conn_test, context.test_name, target_ip, source_ip=context.fip_address)      
+        assert context.assertline == None, context.assertline
 
     @then("be able to ping all IPs to test {conn_test} connectivity") 
     def ping_ips_test(context, conn_test: str):
@@ -660,22 +622,16 @@ class StepsDef:
 
     @then('I attach a floating ip to server {server_name}')
     def attach_floating_ip_to_server(context, server_name):
-        server = context.client.compute.find_server(name_or_id=server_name)
-        assert server, f"Server with name {server_name} not found"
-        ip = context.client.add_auto_ip(server=server, wait=True, reuse=False)
-        context.vm_ip_address = ip
-        context.logger.log_info(f"Attached floating ip: {ip}")
-        floating_ip_id = tools.get_floating_ip_id(context, ip)
-        assert floating_ip_id, f"Failed to get the ID of floating ip {ip}."
-        context.collector.floating_ips.append(floating_ip_id)
-    
+        fip,assertline = tools.attach_floating_ip_to_server(context, server_name)
+        assert assertline == None, assertline
+
     @then('I start calculating 4000 digits of pi on VM and check the ping response')
     def calculate_pi_on_vm(context):
         """
         """
         calc_command = "date +%s && time echo 'scale=4000; 4*a(1)' | bc -l >/dev/null 2>&1 && date +%s"
         ping_parse_magic = "| tail -n +2 | head -n -4 |awk '{split($0,a,\" \"); print a[1], a[8]}'"
-        ping_command = f"ping -D -c{StepsDef.PING_RETRIES} {context.vm_ip_address} {ping_parse_magic}"
+        ping_command = f"ping -D -c{StepsDef.PING_RETRIES} {context.fip_address} {ping_parse_magic}"
 
         ping_server_ssh_client = SshClient("213.131.230.11", "ubuntu", context.vm_private_ssh_key_path, context.logger)
         ping_server_ssh_client.connect()
@@ -689,26 +645,9 @@ class StepsDef:
         ping_server_ssh_client.close_conn()
         context.ssh_client.close_conn()
 
-    # @then('I should be able to create a checkup script for {conn_test} locally')
-    # def create_temp_script(context,conn_test):
-    #     assertline = tools.create_wait_script(conn_test,context.test_name)
-    #     assert assertline == None, assertline
-
-    @then('I should be able to SSH into {network_quantity:d} VMs and perform {conn_test} test')
-    def substeps(context,network_quantity, conn_test):
-        context.assertline=None
-        for i in range(0,len(context.hosts)):
-            jh_name=context.hosts[i]['name']
-            target_ip, source_ip, pno = tools.target_source_calc(jh_name, context.redirs, context.logger)
-            context.vm_ip_address = source_ip
-            context.pno = pno
-            context.execute_steps('''
-                Then I should be able to SSH into the VM
-                ''')
-            context.assertline = context.ssh_client.run_iperf_test(conn_test, context.test_name, target_ip, source_ip)
-
-        # context.assertline = tools.delete_wait_script(context.test_name)        
-        assert context.assertline == None, context.assertline
-
-
-    
+    @given('I can get the shared context from previouse feature')
+    def step_given_use_value_from_first_feature(context):
+        context.test_name = context.shared_context.test_name
+        context.redirs = context.shared_context.redirs
+        context.keypair_name = context.shared_context.keypair_name
+        assert hasattr(context, 'redirs'), "did not get context"

@@ -5,6 +5,7 @@ from functools import wraps
 from libs.loggerClass import Logger
 from concurrent.futures import ThreadPoolExecutor
 import os
+import re
 
 import yaml
 from openstack.exceptions import DuplicateResource
@@ -101,7 +102,9 @@ class Collector:
         return vm
 
     def create_floating_ip(self, server_name):
-        fip = create_floating_ip(self.client, server_name)
+        server = self.client.compute.find_server(name_or_id=server_name)
+        assert server, f"Server with name {server_name} not found"
+        fip = self.client.add_auto_ip(server=server, wait=True, reuse=False)
         self.floating_ips.append(fip)
         return fip
 
@@ -299,6 +302,23 @@ def check_volumes_created(client, test_name):
             assert volume.status == "available", f"Volume {volume.name} not available"
             return volume.status
 
+def attach_floating_ip_to_server(context, server_name):
+    assertline = None
+    try:
+        server = context.client.compute.find_server(name_or_id=server_name)
+        fip = context.client.add_auto_ip(server=server, wait=True, reuse=False)
+        context.fip_address = fip
+        context.logger.log_info(f"Attached floating ip: {fip}")
+    except:
+        fip = None
+        assertline = f"Server with name {server_name} not found"
+    
+    try:
+        floating_ip_id = get_floating_ip_id(context, fip)
+        context.collector.floating_ips.append(floating_ip_id)
+    except: 
+        assertline = f"Failed to get the ID of floating ip {fip}."
+    return fip, assertline
 
 def collect_float_ips(client, logger: Logger):
     ips = []
@@ -311,28 +331,30 @@ def collect_float_ips(client, logger: Logger):
         assertline = f"No ips found"
     return ips, assertline
 
+def collect_ips(redirs, test_name, logger: Logger):
+    assertline = None
+    ips = [vm["addr"] for vm in redirs[f"{test_name}jh0"]["vms"]]
+    if len(ips) == 0:
+        assertline = f"No ips found"
+    return ips, assertline
 
-def collect_jhs(client, test_name, logger: Logger):
-    servers = client.compute.servers()
-    lookup = f"{test_name}-jh"
+
+def collect_jhs(redirs, test_name, logger: Logger):
+    ip_pattern = re.compile(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
+    strip_pattern = re.compile(r"'([^']+)'")
     jhs = []
-    jh = None
-    for name in servers:
-        logger.log_debug(f"found host {name.name}")
-        if lookup in name.name:
-            logger.log_debug(f"String containing '{lookup}': {name.name}")
-            jh = client.compute.find_server(name_or_id=name.name)
-            assert jh, f"No Jumphosts with {lookup} in name found"
-            if jh:
-                for key in jh.addresses:
-                    if test_name in key:
-                        logger.log_debug(f"String containing '{test_name}': {key}")
-                        jhs.append(
-                            {"name": name.name, "ip": jh.addresses[key][1]["addr"]}
-                        )
+    for key, value in redirs.items():
+        if f'{test_name}jh' in key and 'fip' in value:
+            ip_string = value['fip']
+            strip_me = strip_pattern.search(ip_string)
+            if strip_me:
+                ip_string = strip_me.group(1)
+            ip_valid = ip_pattern.search(ip_string)
+            if ip_valid:
+                jhs.append(ip_valid.group(1))
+   
     logger.log_info(f"returning jhs: {jhs}")
     return jhs
-
 
 def get_floating_ip_id(context, floating_ip: str) -> str | None:
     """Get ID of floating IP based on its address.
@@ -725,7 +747,7 @@ def create_vm(client, name, image_name, flavor_name, network_id, **kwargs):
 
 
 def create_jumphost(client, name, network_name, keypair_name, vm_image, flavor_name, security_groups, **kwargs):
-    # config
+
     keypair_filename = f"{keypair_name}-private"
 
     image = client.compute.find_image(name_or_id=vm_image)
@@ -802,11 +824,6 @@ def create_subnet(client, name, network_id, ip_version=4, **kwargs):
     return subnet
 
 
-def create_floating_ip(client, server_name):
-    server = client.compute.find_server(name_or_id=server_name)
-    assert server, f"Server with name {server_name} not found"
-    return client.add_auto_ip(server=server, wait=True)
-
 
 def create_router(client, name, **kwargs):
     """
@@ -872,3 +889,4 @@ def target_source_calc(jh_name, redirs, logger):
     if not source_ip or not target_ip or source_ip == target_ip:
         logger.log_debug(f"IPerf3: {source_ip}<->{target_ip}: skipped")
     return target_ip, source_ip, pno
+

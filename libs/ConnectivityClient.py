@@ -150,6 +150,7 @@ class SshClient:
 
     def close_conn(self):
         self.client.close()
+        self.logger.log_info("ssh connection closed")
 
     def test_internet_connectivity(self, conn_test, ip="8.8.8.8", tot_ips=1):
         """
@@ -181,9 +182,9 @@ class SshClient:
                 self.conn_test_count.labels(
                     ResultStatusCodes.FAILURE, self.host, ip, conn_test
                 ).inc()
-                self.assertline = f"Failed to test internet connectivity for server {self.host}, Failures: {self.ping_stat[1]}/{self.ping_stat[2]}, Retries: {self.ping_stat[0]}"
+                self.assertline = f"Failed to test connectivity for server {self.host}, Failures: {self.ping_stat[1]}/{self.ping_stat[2]}, Retries: {self.ping_stat[0]}"
             self.logger.log_info(
-                f"ping status [retries,failures,total] {self.ping_stat}"
+                f"ping status {ip} [retries,failures,total] {self.ping_stat}"
             )
 
         test_connectivity()
@@ -316,16 +317,18 @@ class SshClient:
         if sftp:
             sftp.close()
 
-    def get_iperf3(self, target_ip):
+    def get_iperf3(self, target_ip, retries = 3):
 
         iperf_command = f"iperf3 -t5 -J -c {target_ip} | jq"
-        try:
-            iperf_json = self.execute_command(iperf_command)
-            self.logger.log_info(f"received Iperf response as json")
-        except:
-            self.logger.log_error(f"Iperf failed retry")
-            iperf_json = None
-            time.sleep(16)
+        iperf_json = None
+        for i in range(1, retries):
+            try:
+                iperf_json = self.execute_command(iperf_command)
+                self.logger.log_info(f"received Iperf response as json")
+                break
+            except:
+                self.logger.log_error(f"Iperf failed retry {i}")
+                time.sleep(16)
         return iperf_json
 
 
