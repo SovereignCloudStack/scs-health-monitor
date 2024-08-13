@@ -100,7 +100,7 @@ class KubernetesTestSteps:
         """
         service = context.v1.read_namespaced_service(name=container_name, namespace=context.name_space)
         node_ip = service.spec.cluster_ip
-        node_port = tools.get_node_port(container_name, namespace=context.name_space)  # Get the node port dynamically
+        node_port = tools.get_node_port(client=context.v1, service_name=container_name, namespace=context.name_space)
         try:
             context.response = requests.get(f"http://{node_ip}:{node_port}")
         except requests.exceptions.RequestException as e:
