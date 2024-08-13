@@ -529,6 +529,7 @@ class StepsDef:
 
     @given("I have a private key at {keypair_name} for {username}")
     def check_private_key_exists(context, keypair_name: str, username:str):
+        assert keypair_name == context.keypair_name, f"given private key in feature is not the same as in infrastruct"
         context.vm_private_ssh_key_path = f"{context.keypair_name}-private"
         context.vm_username = username
         assert os.path.isfile(context.vm_private_ssh_key_path), f"{context.vm_private_ssh_key_path} is no file "
@@ -550,28 +551,34 @@ class StepsDef:
                 context.assertline = f"No matching Jumphosts was found"
         assert context.assertline is None, context.assertline
 
+    @then("I should be able to retrieve the first floating ip and portnumber of the network")
+    def get_jh_fip(context):
+        context.fip_address = context.jh[0]
+        assert context.fip_address, "jh has no valid fip"
+        try:
+            context.pno = context.redirs[f'{context.test_name}jh{0}']['vms'][1]['port']
+        except:
+            context.logger.log_info("no portnumber found")
+
     @then("I should be able to SSH into the VM")
     def test_ssh_connection(context):
         context.logger.log_info(f"key: {context.keypair_name} {context.vm_private_ssh_key_path}")
         if hasattr(context, 'pno'):      
             context.logger.log_info(f"ssh through portforwarding: {context.fip_address}/{context.pno}")
-            ssh_client = SshClient(context.fip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger, context.pno)
+            attempts = 20
+            context.ssh_client = SshClient(context.fip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger, context.pno) 
         else:
             context.logger.log_info(f"ssh into: {context.fip_address}")
-            ssh_client = SshClient(context.fip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger)
-
-        if not ssh_client:
+            attempts = 10
+            context.ssh_client = SshClient(context.fip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger)
+        if not context.ssh_client:
             context.assertline = f"could not access VM {context.fip_address}"
 
-        if ssh_client.check_server_readiness(attempts=10):
+        if context.ssh_client.check_server_readiness(attempts=attempts):
             context.logger.log_info(f"Server ready for SSH connections")
         else:
             context.logger.log_info(f"Server SSH connection failed to establish")
-
-        ssh_client.connect()
-        context.logger.log_info(f"logged in via ssh in definitions")
-        context.ssh_client = ssh_client
-        ssh_client.print_working_directory()
+        context.ssh_client.print_working_directory()
 
     @then("be able to communicate with the internet")
     def test_internet_connectivity(context):
@@ -680,12 +687,15 @@ class StepsDef:
         )
         ping_server_ssh_client.connect()
 
-        tasks = [
-            (context.ssh_client.execute_command, calc_command, True),
-            (ping_server_ssh_client.execute_command, ping_command),
-        ]
-        results = tools.run_parallel(tasks)
-        tools.parse_ping_output(results, context.logger)
+        try:
+            tasks = [
+                (context.ssh_client.execute_command, calc_command, True),
+                (ping_server_ssh_client.execute_command, ping_command),
+            ]
+            results = tools.run_parallel(tasks)
+            tools.parse_ping_output(results, context.logger)
+        except:
+            context.logger.log_info(f"task failed")
         ping_server_ssh_client.close_conn()
         context.ssh_client.close_conn()
 

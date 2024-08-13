@@ -266,7 +266,6 @@ class SshClient:
         """
         try:
             self.connect()
-            self.close_conn()
             return True
         except (
             paramiko.ssh_exception.NoValidConnectionsError,
