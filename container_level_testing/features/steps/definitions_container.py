@@ -23,7 +23,7 @@ class KubernetesTestSteps:
         context.name_space = "scs-vp12"
         context.v1.list_node()
         result = context.v1.list_node()
-        if result.returncode != 0:
+        if not result:
             raise Exception(f"Failed to connect to Kubernetes cluster: {result.stderr}")
 
     @when('I create a container named {container_name}')
