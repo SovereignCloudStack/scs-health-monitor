@@ -4,6 +4,7 @@ from openstack.cloud._floating_ip import FloatingIPCloudMixin
 import time
 import random
 import string
+import subprocess
 
 from libs.ConnectivityClient import SshClient
 
@@ -405,8 +406,7 @@ class StepsDef:
 
     @then("I should be able to create {vms_quantity:d} VMs")
     def create_vm(context, vms_quantity: int):
-       
-       # config
+        # config
         security_groups = ["default", "ping-sg"]
         user_data = f'''#cloud-config
         packages:
@@ -475,6 +475,14 @@ class StepsDef:
 
     @then('I create a jumphost with name {jumphost_name} on network {network_name} with keypair {keypair_name}')
     def create_a_jumphost(context, jumphost_name: str, network_name: str, keypair_name: str):
+        """Create a jumphost server in openstack.
+
+        Args:
+            context: Behave context object.
+            jumphost_name: Name of created jumphost.
+            network_name: Name of network where jumphost should be connected.
+            keypair_name: Name of access keypair to use, creates new one if it doesn't exist.
+        """
         # config
         ping_sec_group_name = "ping-sg"
         ping_sec_group_description = "Ping security group - allow ICMP"
@@ -519,13 +527,13 @@ class StepsDef:
     @given("I have deployed a VM with IP {vm_ip_address}")
     def initialize(context, vm_ip_address: str):
         context.fip_address = vm_ip_address
-    
+
     @given("I have a private key at {keypair_name} for {username}")
     def check_private_key_exists(context, keypair_name: str, username:str):
         context.vm_private_ssh_key_path = f"{context.keypair_name}-private"
         context.vm_username = username
         assert os.path.isfile(context.vm_private_ssh_key_path), f"{context.vm_private_ssh_key_path} is no file "
-    
+
     @then("I should be able to SSH into JHs and test their {conn_test} connectivity")
     def step_iterate_steps(context, conn_test: str):
         context.assertline = None
@@ -569,7 +577,7 @@ class StepsDef:
     @then("be able to communicate with the internet")
     def test_internet_connectivity(context):
         context.ssh_client.test_internet_connectivity()
-    
+
     @then("I should be able to collect all network IPs")
     def collect_network_ips(context):
         assert hasattr(context, 'redirs'), f"No redirs found infrastructure not completely built yet"        
@@ -620,20 +628,33 @@ class StepsDef:
     def close_connection(context):
         context.ssh_client.close_conn()
 
-    @then('I attach a floating ip to server {server_name}')
-    def attach_floating_ip_to_server(context, server_name):
-        fip,assertline = tools.attach_floating_ip_to_server(context, server_name)
+    @then("I attach a floating ip to server {server_name}")
+    def attach_floating_ip_to_server(context, server_name: str):
+        """Create new floating IP and attach it to the server.
+
+        Args:
+            context: Behave context object.
+            server_name: Name of the server for floating IP.
+        """
+        fip, assertline = tools.attach_floating_ip_to_server(context, server_name)
         assert assertline == None, assertline
 
-    @then('I start calculating 4000 digits of pi on VM and check the ping response')
+    @then("I start calculating 4000 digits of pi on VM and check the ping response")
     def calculate_pi_on_vm(context):
-        """
+        """Calculate 4000 digits of pi on VM and ping it from another VM to check response time.
+
+        Args:
+            context: Behave context object.
         """
         calc_command = "date +%s && time echo 'scale=4000; 4*a(1)' | bc -l >/dev/null 2>&1 && date +%s"
-        ping_parse_magic = "| tail -n +2 | head -n -4 |awk '{split($0,a,\" \"); print a[1], a[8]}'"
+        ping_parse_magic = (
+            "| tail -n +2 | head -n -4 |awk '{split($0,a,\" \"); print a[1], a[8]}'"
+        )
         ping_command = f"ping -D -c{StepsDef.PING_RETRIES} {context.fip_address} {ping_parse_magic}"
 
-        ping_server_ssh_client = SshClient("213.131.230.11", "ubuntu", context.vm_private_ssh_key_path, context.logger)
+        ping_server_ssh_client = SshClient(
+            "213.131.230.243", "ubuntu", context.vm_private_ssh_key_path, context.logger
+        )
         ping_server_ssh_client.connect()
 
         tasks = [
@@ -650,4 +671,56 @@ class StepsDef:
         context.test_name = context.shared_context.test_name
         context.redirs = context.shared_context.redirs
         context.keypair_name = context.shared_context.keypair_name
-        assert hasattr(context, 'redirs'), "did not get context"
+        assert hasattr(context, 'redirs'), "did not get context"    
+
+    @given("I have deployed jumphosts with floating ips")
+    def get_deployed_jumphosts(context):
+        """Find all jumphosts and get their respective floating ips. Jumphost servers are expected to contain 'jh' substring in their name.
+
+        Args:
+            context: Behave context object.
+        """
+        context.jh_floating_ips = []
+        servers = context.client.compute.servers()
+        for server in servers:
+            if "jh" in server.name.lower():
+                for network_name, network_info in server.addresses.items():
+                    for address in network_info:
+                        if address["OS-EXT-IPS:type"] == "floating":
+                            context.jh_floating_ips.append(address["addr"])
+        assert (
+            context.jh_floating_ips
+        ), f"No jumphosts with attached floating ip address"
+
+    @then("I should be able to ping the jumphosts with floating ips")
+    def ping_jumphosts_fip(context) -> tuple[dict, int]:
+        """Try to ping all jumphosts on their floating ip, collect ping response duration and failure count.
+
+        Args:
+            context: Behave context object.
+
+        Returns:
+            Pair of ping results dictionary (ip_address : ping response time) and ping failure counter.
+        """
+        ping_failure_count = 0
+        ping_results = {}
+        for address in context.jh_floating_ips:
+            start_time = time.time()
+            result = subprocess.run(
+                ["ping", "-c", "1", address],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            end_time = time.time()
+            duration = end_time - start_time
+            if result.returncode != 0:
+                ping_failure_count += 1
+                context.logger.log_error(f"Ping for ip {address} failed.")
+            else:
+                context.logger.log_info(
+                    f"Ping for ip {address} took {duration:.2f} seconds."
+                )
+                ping_results[address] = duration
+
+        context.logger.log_info(f"Ping check results: {ping_results}")
+        return ping_results, ping_failure_count
