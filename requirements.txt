@@ -48,7 +48,7 @@ python-keystoneclient==5.4.0
 python-neutronclient==11.2.0
 pytz==2024.1
 PyYAML==6.0.1
-requests==2.31.0
+requests==2.32.0
 requestsexceptions==1.4.0
 rfc3986==2.0.0
 simplejson==3.19.2
@@ -117,7 +117,7 @@ python-keystoneclient==5.4.0
 python-neutronclient==11.2.0
 pytz==2024.1
 PyYAML==6.0.1
-requests==2.31.0
+requests==2.32.0
 requestsexceptions==1.4.0
 rfc3986==2.0.0
 simplejson==3.19.2
@@ -191,7 +191,7 @@ python-keystoneclient==5.4.0
 python-neutronclient==11.2.0
 pytz==2024.1
 PyYAML==6.0.1
-requests==2.31.0
+requests==2.32.0
 requestsexceptions==1.4.0
 rfc3986==2.0.0
 simplejson==3.19.2
