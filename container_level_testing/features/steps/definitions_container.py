@@ -98,9 +98,9 @@ class KubernetesTestSteps:
         :param container_name: Name of the container to send the request to
         :param ingress_host: Ingress host to use for the request
         """
-        service = context.client.v1.read_namespaced_service(name=container_name, namespace=context.name_space)
+        service = context.v1.read_namespaced_service(name=container_name, namespace=context.name_space)
         node_ip = service.spec.cluster_ip
-        node_port = tools.get_node_port(container_name, namespace=context.name_space)  # Get the node port dynamically
+        node_port = tools.get_node_port(client=context.v1, service_name=container_name, namespace=context.name_space)
         try:
             context.response = requests.get(f"http://{node_ip}:{node_port}")
         except requests.exceptions.RequestException as e:
@@ -195,3 +195,20 @@ class KubernetesTestSteps:
                 # context.logger(f"Pod is successfully deleted")
             else:
                 raise e
+
+    @then('I delete the service named {service_name}')
+    def delete_service(context, service_name):
+        """
+        Delete a Kubernetes service by its name.
+
+        :param context: Behave context object
+        :param service_name: Name of the service to be deleted
+        """
+        try:
+            context.v1.delete_namespaced_service(name=service_name, namespace=context.name_space)
+        except client.exceptions.ApiException as e:
+            if e.status == 404:
+                raise Exception(f"Service {service_name} not found: {e}")
+            else:
+                raise e
+
