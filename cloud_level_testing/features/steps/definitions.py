@@ -23,7 +23,6 @@ class StepsDef:
         context.flavor_name = context.env.get("FLAVOR_NAME")
         context.client = openstack.connect(cloud=cloud_name)
 
-
     @when("A router with name {router_name} exists")
     def router_with_name_exists(context, router_name: str):
         router = context.client.network.find_router(name_or_id=router_name)
@@ -527,13 +526,29 @@ class StepsDef:
     def initialize(context, vm_ip_address: str):
         context.fip_address = vm_ip_address
 
-
     @given("I have a private key at {keypair_name} for {username}")
-    def check_private_key_exists(context, keypair_name: str, username:str):
-        assert keypair_name == context.keypair_name, f"given private key in feature is not the same as in infrastruct"
-        context.vm_private_ssh_key_path = f"{context.keypair_name}-private"
+    def check_private_key_exists(context, keypair_name: str, username: str):
+        """Check if private key exists on host, if not, create new keypair in openstack and save its private key on host.
+
+        Args:
+            context: Behave context object.
+            keypair_name: Name of keypair to use/create.
+            username: Username associated with the keypair.
+        """
+        context.vm_private_ssh_key_path = f"{keypair_name}-private"
         context.vm_username = username
-        assert os.path.isfile(context.vm_private_ssh_key_path), f"{context.vm_private_ssh_key_path} is no file "
+        if not os.path.isfile(context.vm_private_ssh_key_path):
+            context.logger.log_info(f"Private key not found, creating new one")
+            if context.client.get_keypair(name_or_id=keypair_name):
+                assert context.client.delete_keypair(
+                    name=keypair_name
+                ), f"Failed to delete the old keypair {keypair_name}."
+            keypair = context.client.compute.create_keypair(name=keypair_name)
+            assert keypair, f"Keypair with name {keypair_name} doesn't exist"
+            with open(f"{keypair_name}-private", "w") as f:
+                f.write("%s" % keypair.private_key)
+            os.chmod(f"{keypair_name}-private", 0o600)
+        context.keypair_name = keypair_name
 
     @then("I should be able to SSH into JHs and test their {conn_test} connectivity")
     def step_iterate_steps(context, conn_test: str):
@@ -584,7 +599,7 @@ class StepsDef:
     @then("be able to communicate with the internet")
     def test_internet_connectivity(context):
         context.ssh_client.test_internet_connectivity()
-    
+
     @then("I should be able to collect all network IPs")
     def collect_network_ips(context):
         assert hasattr(context, 'redirs'), f"No redirs found infrastructure not completely built yet"        
@@ -638,7 +653,6 @@ class StepsDef:
     def close_connection(context):
         context.ssh_client.close_conn()
 
-
     @then("I attach a floating ip to server {server_name}")
     def attach_floating_ip_to_server(context, server_name: str):
         """Create new floating IP and attach it to the server.
@@ -656,7 +670,7 @@ class StepsDef:
         calc_command = "date +%s && time echo 'scale=4000; 4*a(1)' | bc -l >/dev/null 2>&1 && date +%s"
         ping_parse_magic = "| tail -n +2 | head -n -4 |awk '{split($0,a,\" \"); print a[1], a[8]}'"
         ping_command = f"ping -D -c{StepsDef.PING_RETRIES} {context.fip_address} {ping_parse_magic}"
-        
+
         ping_server_ssh_client = SshClient(context.fip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger)
         ping_server_ssh_client.connect()
 
@@ -672,7 +686,7 @@ class StepsDef:
         ping_server_ssh_client.close_conn()
         context.ssh_client.close_conn()
 
-    @given('I can get the shared context from previouse feature')
+    @given('I can get the shared context from previous feature')
     def step_given_use_value_from_first_feature(context):
         context.test_name = context.shared_context.test_name
         context.redirs = context.shared_context.redirs
@@ -725,7 +739,5 @@ class StepsDef:
                 )
                 ping_results[address] = duration
 
-
         context.logger.log_info(f"Ping check results: {ping_results}")
         return ping_results, ping_failure_count
-
