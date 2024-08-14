@@ -1,70 +1,75 @@
-# Dependencies for Benchmarktests
+# Testflow-Infrastructure
 
-The resources need to be created in this order taken from [api_monitor.sh](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L4300-L4335)
+## Quick Intro:
 
-1. **createRouters**
-1. **createNets**
-1. **createSubNets**
-1. **createRIfaces**
-1. **createSGroups** (with conditions `-a -z "$INTERRUPTED"` and `! -e stop-os-hm`)
-1. **createLBs**
-1. **createJHVols**
-1. **createVIPs**
-1. **createJHPorts**
-1. **createVols**
-1. **createKeypairs**
-1. **createPorts**
-    - Followed by `waitJHVols`
-1. **createJHVMs**
-    - Set `ROUNDVMS=$NOAZS`
-1. **createFIPs**
-    - Followed by `waitVols`
-1. **createVMs**
-    - Update `ROUNDVMS`
-    - Followed by `waitJHVMs`
-    - Check result `RC`:
-        - If `RC != 0`:
-            - If `RC > $NOAZS`, adjust `VMERRORS`
-        - If `RC == 0`:
-            1. **loadbalancer**
-            1. **waitLBs**
-            1. **LBERRORS** based on `LBAASS`
-            1. **waitVMs**
-            1. **setmetaVMs**
-1. **create2ndSubNets**
-1. **create2ndPorts**
+* After following the steps to set up the environment including setting up the monitornig, you should be able to start testing with `behave` a testing framwork. On the Cloud-Level you have several features that describe Test Scenerios for single components of the Openstack functionality, like the `openstack_create_network.feature`.
+So if you want to test whether you are able to create a network you can use that feature like this:
+```
+behave openstack_create_network.feature
+```
+or aswell:
+
+```
+behavex openstack_create_network.feature
+```
+and a test on whether you are able to create a network is running.
+
+* If you want to test whether you can create and delete all openstack resources you simply need this command (for `openstack_testflow.feature` includes all the steps from the creation and delition features):
+```
+behave openstack_testflow.feature
+```
+
+* The Use Case for the `openstack_testflow.feature` and all the creation and deletion features is mostly debugging, because to run a whole infrastructure test this is not sadisfying the dependencies of the variouse resources. But you can set some parameters like the quantity of the resources, if you aim to see if you have a certain quota f.e.
+To get a more detailed view on the test run you have the option `--no-capture` and you will receive prints or informational logs during the test run.
+
+```
+behave --no-capture openstack_create_network.feature
+```
+* After the run each built resource will be deleted to avoid a `DuplicateResource-Error`. If you should still encounter this Error, you will have to delete the resource in question by hand ether in the *openstack cli tool* or in the *plus cloud open* dashboard. But make sure this resource is not in use!
+
+## Real Testing:
+
+* As we provide an automated Infrastructure Testing the real deal lies in the `openstack_benchmark_build_infra.feature`. This Feature is creating all resources and configures them in order to build a complete infrastructure with virtual machine (vm) networks that are accessible through jumphosts (jh) that get certain floating ip and allow a port forwarding to the vms. That means it automatically sets up the ssh-access and the security group rules and makes sure applications like `iperf3` are installed on the hosts. This infrastructure emulates a common openstack infrastructure and allows to run a number of benchmark tests to see whether it has the needed capacity.
+
+* You start an infrastructure test by:
+```
+behave openstack_benchmark_build_infra.feature
+```
+or aswell:
+
+```
+behavex openstack_benchmark_build_infra.feature
+```
+* It will take some time but you can follow allong, if the infrastructure is builds up successfully.
+After the run it deletes all resources.
+
+* If you want run benchmarktests (which is the main goal of this approach), you will have to run the benchmark features together with the `openstack_benchmark_build_infra.feature` like so:
+```
+behave openstack_benchmark_build_infra.feature cloud_level_testing/features/openstack_benchmark_iperf3.feature cloud_level_testing/features/openstack_benchmark_pingVM.feature cloud_level_testing/features/openstack_benchmark_4000pi.feature
+```
+The first feature always has to be the `openstack_benchmark_build_infra.feature`. After that you can use the other features, as they only depend on the infrastructure, they don't need to follow a special order.
+
+* Note all features that fail and have a `@create` or `@delete` tag assigned to them will lead to a deletion of the build up resources right after the feature run. Hence if they are followed by a feature depending on those resources this feature will inevitably fail.
+
+## Extended Description:
+
+* Our approach to use the behave-framework to build up and test an openstack infrastructure automated relies on certain peculiarities of this framework. First of all you have to understand the basic entities of a testrun:
+
+1. 1 testrun can contain multiple features\
+1 feauture can contain multiple steps\
+1 step can contain multiple substeps
 
 
-```mermaid
-graph TD
-    A[createRouters] -->|true| B[createNets]
-    B -->|true| C[createSubNets]
-    C -->|true| D[createRIfaces]
-    D -->|true| E[createSGroups]
-    E -->|true| F[createLBs]
-    F --> G[createJHVols]
-    G -->|true| H[createVIPs]
-    H -->|true| I[createJHPorts]
-    I -->|true| J[createVols]
-    J -->|true| K[createKeypairs]
-    K -->|true| L[createPorts]
-    L --> M[waitJHVols]
-    L --> N[createJHVMs]
-    N -->|true| O[set ROUNDVMS]
-    O --> P[createFIPs]
-    P -->|true| Q[waitVols]
-    Q --> R[createVMs]
-    R -->|true| S[update ROUNDVMS]
-    S --> T[waitJHVMs]
-    T --> U{test RC != 0}
-    U -->|true| V{test RC > NOAZS}
-    V -->|true| W[update VMERRORS NOAZS]
-    V -->|false| X[update VMERRORS RC]
-    U -->|false| Y[loadbalancer]
-    Y --> Z[waitLBs]
-    Z --> AA{test LBAASS}
-    AA -->|true| AB[set LBERRORS]
-    Y --> AC[waitVMs]
-    AC --> AD[setmetaVMs]
-    AD --> AE[create2ndSubNets]
-    AE --> AF[create2ndPorts]
+1. In the `environment.py` you can define what actions have to be done \
+`before_all` (in the beginning of the testrun), \
+`after_feature` (after every feature) and \
+`after_all` (in the end of the testrun)\
+To calculate for exemple the total duration of the run we set the timer in the `before_all` section and get the result in the `after_all` section, where we also collect the metrics and push them to the prometheus gateway or delete all resources. In the `after_feature` section, we delete ressources if a creation or deletion feature has failed.
+
+1. We tried to keep the steps and features as independent and self contained as possible. But in an infrastructure this is almost impossible, if you don't want to create monolytic steps and functions. Therefore we create an oblect called `context` and an object called `Collector` in the `before_all` section. We store every information, that has to be passed between the steps into the context like the connection to the openstack client. The Collector fetches each resource-id, when a resource is created to ensure that all and only resources that were created in the test run are deleted in the end.
+
+1. However, if we run features, that rely on another feature like on the  `openstack_benchmark_build_infra.feature` the problem occures that the context attributes that are created during a feature run are deleted after each feature. Therefore we created a SharedContext Object that is already initialised `before_all` and stores the data that is necessary for the following features like the test-prefix (context.test_name) and the floating ip and portforwarding (context.redirs).\
+So in the end of `openstack_benchmark_build_infra.feature` the following step must be performed: ```Then I can pass the context to another feature``` (to store the needed information into the `SharedContext`)
+and the following features have to begin with the step: ``` Given I can get the shared context from previouse feature``` (to transfer the shared informations into the new `context` object). 
+
+

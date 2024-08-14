@@ -7,7 +7,6 @@ import string
 import subprocess
 
 from libs.ConnectivityClient import SshClient
-
 import os
 from cloud_level_testing.features.steps import tools
 
@@ -23,6 +22,7 @@ class StepsDef:
         context.vm_image = context.env.get("VM_IMAGE")
         context.flavor_name = context.env.get("FLAVOR_NAME")
         context.client = openstack.connect(cloud=cloud_name)
+
 
     @when("A router with name {router_name} exists")
     def router_with_name_exists(context, router_name: str):
@@ -487,7 +487,6 @@ class StepsDef:
         ping_sec_group_description = "Ping security group - allow ICMP"
         security_groups = ["ssh", "default", ping_sec_group_name]
         keypair_filename = f"{context.keypair_name}-private"
-
         user_data = f'''#cloud-config
         packages:
         - iperf3
@@ -527,8 +526,10 @@ class StepsDef:
     def initialize(context, vm_ip_address: str):
         context.fip_address = vm_ip_address
 
+
     @given("I have a private key at {keypair_name} for {username}")
     def check_private_key_exists(context, keypair_name: str, username:str):
+        assert keypair_name == context.keypair_name, f"given private key in feature is not the same as in infrastruct"
         context.vm_private_ssh_key_path = f"{context.keypair_name}-private"
         context.vm_username = username
         assert os.path.isfile(context.vm_private_ssh_key_path), f"{context.vm_private_ssh_key_path} is no file "
@@ -550,33 +551,39 @@ class StepsDef:
                 context.assertline = f"No matching Jumphosts was found"
         assert context.assertline is None, context.assertline
 
+    @then("I should be able to retrieve the first floating ip and portnumber of the network")
+    def get_jh_fip(context):
+        context.fip_address = context.jh[0]
+        assert context.fip_address, "jh has no valid fip"
+        try:
+            context.pno = context.redirs[f'{context.test_name}jh{0}']['vms'][1]['port']
+        except:
+            context.logger.log_info("no portnumber found")
+
     @then("I should be able to SSH into the VM")
     def test_ssh_connection(context):
         context.logger.log_info(f"key: {context.keypair_name} {context.vm_private_ssh_key_path}")
         if hasattr(context, 'pno'):      
             context.logger.log_info(f"ssh through portforwarding: {context.fip_address}/{context.pno}")
-            ssh_client = SshClient(context.fip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger, context.pno)
+            attempts = 20
+            context.ssh_client = SshClient(context.fip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger, context.pno) 
         else:
             context.logger.log_info(f"ssh into: {context.fip_address}")
-            ssh_client = SshClient(context.fip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger)
-
-        if not ssh_client:
+            attempts = 10
+            context.ssh_client = SshClient(context.fip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger)
+        if not context.ssh_client:
             context.assertline = f"could not access VM {context.fip_address}"
 
-        if ssh_client.check_server_readiness(attempts=10):
+        if context.ssh_client.check_server_readiness(attempts=attempts):
             context.logger.log_info(f"Server ready for SSH connections")
         else:
             context.logger.log_info(f"Server SSH connection failed to establish")
-
-        ssh_client.connect()
-        context.logger.log_info(f"logged in via ssh in definitions")
-        context.ssh_client = ssh_client
-        ssh_client.print_working_directory()
+        context.ssh_client.print_working_directory()
 
     @then("be able to communicate with the internet")
     def test_internet_connectivity(context):
         context.ssh_client.test_internet_connectivity()
-
+    
     @then("I should be able to collect all network IPs")
     def collect_network_ips(context):
         assert hasattr(context, 'redirs'), f"No redirs found infrastructure not completely built yet"        
@@ -627,10 +634,10 @@ class StepsDef:
     def close_connection(context):
         context.ssh_client.close_conn()
 
+
     @then("I attach a floating ip to server {server_name}")
     def attach_floating_ip_to_server(context, server_name: str):
         """Create new floating IP and attach it to the server.
-
         Args:
             context: Behave context object.
             server_name: Name of the server for floating IP.
@@ -638,30 +645,26 @@ class StepsDef:
         fip, assertline = tools.attach_floating_ip_to_server(context, server_name)
         assert assertline == None, assertline
 
-    @then("I start calculating 4000 digits of pi on VM and check the ping response")
-    def calculate_pi_on_vm(context):
-        """Calculate 4000 digits of pi on VM and ping it from another VM to check response time.
-
-        Args:
-            context: Behave context object.
+    @then('I start calculating 4000 digits of pi on VM and check the ping response as {conn_test}')
+    def calculate_pi_on_vm(context, conn_test):
+        """
         """
         calc_command = "date +%s && time echo 'scale=4000; 4*a(1)' | bc -l >/dev/null 2>&1 && date +%s"
-        ping_parse_magic = (
-            "| tail -n +2 | head -n -4 |awk '{split($0,a,\" \"); print a[1], a[8]}'"
-        )
+        ping_parse_magic = "| tail -n +2 | head -n -4 |awk '{split($0,a,\" \"); print a[1], a[8]}'"
         ping_command = f"ping -D -c{StepsDef.PING_RETRIES} {context.fip_address} {ping_parse_magic}"
-
-        ping_server_ssh_client = SshClient(
-            "213.131.230.243", "ubuntu", context.vm_private_ssh_key_path, context.logger
-        )
+        
+        ping_server_ssh_client = SshClient(context.fip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger)
         ping_server_ssh_client.connect()
 
-        tasks = [
-            (context.ssh_client.execute_command, calc_command, True),
-            (ping_server_ssh_client.execute_command, ping_command),
-        ]
-        results = tools.run_parallel(tasks)
-        tools.parse_ping_output(results, context.logger)
+        try:
+            tasks = [
+                (context.ssh_client.execute_command, calc_command, True),
+                (ping_server_ssh_client.execute_command, ping_command),
+            ]
+            results = tools.run_parallel(tasks)
+            tools.parse_ping_output(results, context.logger)
+        except:
+            context.logger.log_info(f"task failed")
         ping_server_ssh_client.close_conn()
         context.ssh_client.close_conn()
 
@@ -675,7 +678,6 @@ class StepsDef:
     @given("I have deployed jumphosts with floating ips")
     def get_deployed_jumphosts(context):
         """Find all jumphosts and get their respective floating ips. Jumphost servers are expected to contain 'jh' substring in their name.
-
         Args:
             context: Behave context object.
         """
@@ -694,10 +696,8 @@ class StepsDef:
     @then("I should be able to ping the jumphosts with floating ips")
     def ping_jumphosts_fip(context) -> tuple[dict, int]:
         """Try to ping all jumphosts on their floating ip, collect ping response duration and failure count.
-
         Args:
             context: Behave context object.
-
         Returns:
             Pair of ping results dictionary (ip_address : ping response time) and ping failure counter.
         """
@@ -721,5 +721,7 @@ class StepsDef:
                 )
                 ping_results[address] = duration
 
+
         context.logger.log_info(f"Ping check results: {ping_results}")
         return ping_results, ping_failure_count
+

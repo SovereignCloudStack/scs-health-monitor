@@ -28,7 +28,6 @@ class TeardownClass:
         # Your teardown logic here
         pass
 
-
 class SharedContext:
     def __init__(self):
         self.__test_name = None
@@ -58,7 +57,6 @@ class SharedContext:
     @keypair_name.setter
     def keypair_name(self, value):
         self.__keypair_name = value
-
 
 def before_all(context):
     context.shared_context = SharedContext()

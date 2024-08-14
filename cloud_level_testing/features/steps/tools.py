@@ -338,7 +338,6 @@ def collect_ips(redirs, test_name, logger: Logger):
         assertline = f"No ips found"
     return ips, assertline
 
-
 def collect_jhs(redirs, test_name, logger: Logger):
     ip_pattern = re.compile(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
     strip_pattern = re.compile(r"'([^']+)'")
@@ -352,7 +351,6 @@ def collect_jhs(redirs, test_name, logger: Logger):
             ip_valid = ip_pattern.search(ip_string)
             if ip_valid:
                 jhs.append(ip_valid.group(1))
-   
     logger.log_info(f"returning jhs: {jhs}")
     return jhs
 
@@ -822,8 +820,6 @@ def create_subnet(client, name, network_id, ip_version=4, **kwargs):
     assert not client.network.find_network(name_or_id=subnet), \
         f"Failed to create subnet with name {subnet}"
     return subnet
-
-
 
 def create_router(client, name, **kwargs):
     """
