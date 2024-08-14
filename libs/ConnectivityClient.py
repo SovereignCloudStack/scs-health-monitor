@@ -2,9 +2,9 @@
 import paramiko
 import paramiko.ssh_exception
 import time
-from prometheus_client import Counter, Histogram
+from prometheus_client import Counter, Histogram, Gauge
 from libs.TimeRecorder import TimeRecorder
-from libs.PrometheusExporter import CommandTypes, LabelNames
+from libs.PrometheusExporter import CommandTypes, LabelNames, LabelValues
 
 from libs.loggerClass import Logger
 
@@ -30,6 +30,8 @@ class MetricName:
     SSH_CONN_TEST_TOT = "ssh_connectivity_tests_total"
     SSH_CONN_DUR = "ssh_connect_duration_seconds"
     PING_TOT = "connectivity_tests_total"
+    IPERF3_BANDWIDTH_SENDER = "iperf3_bandwidth_sender"
+    IPERF3_BANDWIDTH_RECEIVER = "iperf3_bandwidth_receiver"
 
 
 class MetricDescription:
@@ -37,6 +39,8 @@ class MetricDescription:
     SSH_CONN_TEST_TOT = "Total number of SSH connectivity tests"
     SSH_CONN_DUR = "Durations of SSH connections"
     PING_TOT = "Total number of connectivity tests"
+    IPERF3_BANDWIDTH_SENDER = "iperf3 benchmark bandwidth at sender side"
+    IPERF3_BANDWIDTH_RECEIVER = "iperf3 benchmark bandwidth at receiver side"
 
 
 class SshClient:
@@ -59,6 +63,26 @@ class SshClient:
             MetricLabels.ENDPOINT,
             LabelNames.COMMAND_LABEL,
         ],
+    )
+
+    iperf3_bandwidth_sender = Gauge(
+        MetricName.IPERF3_BANDWIDTH_SENDER,
+        MetricDescription.IPERF3_BANDWIDTH_SENDER,
+        [
+            MetricLabels.HOST,
+            MetricLabels.ENDPOINT,
+            LabelNames.COMMAND_LABEL,
+        ]
+    )
+
+    iperf3_bandwidth_receiver = Gauge(
+        MetricName.IPERF3_BANDWIDTH_RECEIVER,
+        MetricDescription.IPERF3_BANDWIDTH_RECEIVER,
+        [
+            MetricLabels.HOST,
+            MetricLabels.ENDPOINT,
+            LabelNames.COMMAND_LABEL,
+        ]
     )
 
     def __init__(self, host, username, key_path, logger: Logger, port=22):
@@ -344,8 +368,10 @@ class SshClient:
         bandwidth = []
     
         iperf_json_dict = json.loads(iperf_json)
-        sendBW = int(Decimal(iperf_json_dict['end']['sum_sent']['bits_per_second']) / 1048576)
-        recvBW = int(Decimal(iperf_json_dict['end']['sum_received']['bits_per_second']) / 1048576)
+        send_bw_bits = int(Decimal(iperf_json_dict['end']['sum_sent']['bits_per_second']))
+        recv_bw_bits = int(Decimal(iperf_json_dict['end']['sum_received']['bits_per_second']))
+        sendBW = send_bw_bits / 1048576
+        recvBW = recv_bw_bits / 1048576
         host_util = f"{iperf_json_dict['end']['cpu_utilization_percent']['host_total']:.1f}%"
         remote_util = f"{iperf_json_dict['end']['cpu_utilization_percent']['remote_total']:.1f}%"
     
@@ -354,6 +380,18 @@ class SshClient:
         bandwidth.extend([sendBW, recvBW])
         sBW = float(Decimal(sendBW) / 1000)
         rBW = float(Decimal(recvBW) / 1000)
+
+        self.iperf3_bandwidth_sender.labels(
+            self.host,
+            "my-endpoint",
+            LabelValues.COMMAND_VALUE_IPERF3,
+        ).set(send_bw_bits)
+
+        self.iperf3_bandwidth_receiver.labels(
+            self.host,
+            "my-endpoint",
+            LabelValues.COMMAND_VALUE_IPERF3,
+        ).set(recv_bw_bits)
 
         self.logger.log_info(f"Bandwith: {bandwidth} SBW: {sBW} RBW: {rBW}\n")
         return sBW,rBW

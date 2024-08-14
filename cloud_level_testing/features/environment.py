@@ -1,10 +1,11 @@
 from cloud_level_testing.features.steps.tools import Tools, Collector, delete_all_test_resources
 from libs.loggerClass import Logger
-from libs.PrometheusExporter import PrometheusExporter, LabelNames
+from libs.PrometheusExporter import PrometheusExporter, LabelNames, LabelValues
 from libs.DateTimeProvider import DateTimeProvider
 from libs.Formatter import Formatter
 
 import openstack
+from prometheus_client import Gauge
 
 DEFAULT_PROMETHEUS_BATCH_NAME = "SCS-Health-Monitor"
 DEFAULT_CLOUD_NAME = "gx"
@@ -111,7 +112,22 @@ def after_feature(context, feature):
 def after_all(context):
     context.stop_time = DateTimeProvider.get_current_utc_time()
     print(f"timer stopped: {context.stop_time}")
-    totDur = DateTimeProvider.calc_totDur(context, context.start_time, context.stop_time)
+    duration_seconds = 0
+    tot_dur = DateTimeProvider.calc_totDur(context, context.start_time, context.stop_time)
+    if tot_dur:
+        duration_seconds = tot_dur.microseconds / 1000
+    # Set metric total test duration
+    tot_dur_metric = Gauge(
+        "total_test_duration_seconds",
+        "Total duration of test run",
+        [
+            LabelNames.COMMAND_LABEL
+        ],
+    )
+    tot_dur_metric.labels(
+        LabelValues.COMMAND_VALUE_TOT_DUR
+    ).set(duration_seconds)
+
     if context.collector:
         cloud_name = context.env.get("CLOUD_NAME")
         context.client = openstack.connect(cloud=cloud_name)
