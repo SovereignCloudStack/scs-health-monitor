@@ -1,10 +1,10 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 class DateTimeProvider:
     @staticmethod
     def get_current_utc_time():
         return datetime.now(timezone.utc)
-    def calc_totDur(context, start, stop):
+    def calc_totDur(context, start, stop) -> timedelta | None:
         totDur = None
         if not start:
             context.logger.log_error("no start time found")

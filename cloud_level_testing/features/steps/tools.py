@@ -886,7 +886,8 @@ def target_source_calc(jh_name, redirs, logger):
     target_ip = redirs[jh_name]['addr']
     source_ip = redirs[jh_name]['fip']
     pno = redirs[jh_name]['vms'][vm_quantity - 1]['port']
+    vm_name =  redirs[jh_name]['vms'][vm_quantity - 1]['vm_name']
     logger.log_debug(f"{jh_name}: vm_quantity: {vm_quantity} target_ip: {target_ip} source_ip: {source_ip} pno: {pno}")
     if not source_ip or not target_ip or source_ip == target_ip:
         logger.log_debug(f"IPerf3: {source_ip}<->{target_ip}: skipped")
-    return target_ip, source_ip, pno
+    return target_ip, source_ip, pno, vm_name
