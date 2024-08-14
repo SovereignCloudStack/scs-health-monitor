@@ -2,9 +2,9 @@
 import paramiko
 import paramiko.ssh_exception
 import time
-from prometheus_client import Counter, Histogram
+from prometheus_client import Counter, Histogram, Gauge
 from libs.TimeRecorder import TimeRecorder
-from libs.PrometheusExporter import CommandTypes, LabelNames
+from libs.PrometheusExporter import CommandTypes, LabelNames, LabelValues
 
 from libs.loggerClass import Logger
 
@@ -17,6 +17,10 @@ class MetricLabels:
     STATUS_CODE = "status_code"
     HOST = "host"
     ENDPOINT = "endpoint"
+    SENDER_IP = "sender_ip"
+    SENDER_NAME = "sender_name"
+    RECEIVER_IP = "receiver_ip"
+    RECEIVER_NAME = "receiver_name"
  #   RESULT = "testresult"
 
 
@@ -30,6 +34,10 @@ class MetricName:
     SSH_CONN_TEST_TOT = "ssh_connectivity_tests_total"
     SSH_CONN_DUR = "ssh_connect_duration_seconds"
     PING_TOT = "connectivity_tests_total"
+    IPERF3_BANDWIDTH_SENDER = "iperf3_bandwidth_sender_gigabits"
+    IPERF3_BANDWIDTH_RECEIVER = "iperf3_bandwidth_receiver_gigabits"
+    IPERF3_CPU_SENDER = "iperf3_cpu_utilization_sender_percentage"
+    IPERF3_CPU_RECEIVER = "iperf3_cpu_utilization_receiver_percentage"
 
 
 class MetricDescription:
@@ -37,9 +45,18 @@ class MetricDescription:
     SSH_CONN_TEST_TOT = "Total number of SSH connectivity tests"
     SSH_CONN_DUR = "Durations of SSH connections"
     PING_TOT = "Total number of connectivity tests"
+    IPERF3_BANDWIDTH_SENDER = "iperf3 benchmark bandwidth at sender side"
+    IPERF3_BANDWIDTH_RECEIVER = "iperf3 benchmark bandwidth at receiver side"
+    IPERF3_CPU_SENDER = "CPU utilization of sender during iperf3 run"
+    IPERF3_CPU_RECEIVER = "CPU utilization of receiver during iperf3 run"
 
 
 class SshClient:
+
+    """
+    Connection metrics
+    """
+
     conn_total_count = Counter(
         MetricName.SSH_TOT,
         MetricDescription.SSH_TOT,
@@ -59,6 +76,42 @@ class SshClient:
             MetricLabels.ENDPOINT,
             LabelNames.COMMAND_LABEL,
         ],
+    )
+
+    """
+    Iperf3 metrics
+    """
+
+    iperf_common_labels = [
+        MetricLabels.SENDER_IP,
+        MetricLabels.SENDER_NAME,
+        MetricLabels.RECEIVER_IP,
+        MetricLabels.RECEIVER_NAME,
+        LabelNames.COMMAND_LABEL,
+    ]
+
+    iperf3_bandwidth_sender = Gauge(
+        MetricName.IPERF3_BANDWIDTH_SENDER,
+        MetricDescription.IPERF3_BANDWIDTH_SENDER,
+        labelnames=iperf_common_labels,
+    )
+
+    iperf3_bandwidth_receiver = Gauge(
+        MetricName.IPERF3_BANDWIDTH_RECEIVER,
+        MetricDescription.IPERF3_BANDWIDTH_RECEIVER,
+        labelnames=iperf_common_labels,
+    )
+
+    iperf3_cpu_sender = Gauge(
+        MetricName.IPERF3_CPU_SENDER,
+        MetricDescription.IPERF3_CPU_SENDER,
+        labelnames=iperf_common_labels,
+    )
+
+    iperf3_cpu_receiver = Gauge(
+        MetricName.IPERF3_CPU_RECEIVER,
+        MetricDescription.IPERF3_CPU_RECEIVER,
+        labelnames=iperf_common_labels,
     )
 
     def __init__(self, host, username, key_path, logger: Logger, port=22):
@@ -331,7 +384,7 @@ class SshClient:
         return iperf_json
 
 
-    def parse_iperf_result(self,iperf_json, source_ip, target_ip):
+    def parse_iperf_result(self,iperf_json, source_ip, source_name, target_ip, target_name):
         '''
             Parses the result from iperf3
             Args:
@@ -344,23 +397,49 @@ class SshClient:
         bandwidth = []
     
         iperf_json_dict = json.loads(iperf_json)
-        sendBW = int(Decimal(iperf_json_dict['end']['sum_sent']['bits_per_second']) / 1048576)
-        recvBW = int(Decimal(iperf_json_dict['end']['sum_received']['bits_per_second']) / 1048576)
-        host_util = f"{iperf_json_dict['end']['cpu_utilization_percent']['host_total']:.1f}%"
-        remote_util = f"{iperf_json_dict['end']['cpu_utilization_percent']['remote_total']:.1f}%"
+        send_bw_bits = int(Decimal(iperf_json_dict['end']['sum_sent']['bits_per_second']))
+        recv_bw_bits = int(Decimal(iperf_json_dict['end']['sum_received']['bits_per_second']))
+        sendBW = send_bw_bits / 1048576
+        recvBW = recv_bw_bits / 1048576
+        host_util = iperf_json_dict['end']['cpu_utilization_percent']['host_total']
+        remote_util = iperf_json_dict['end']['cpu_utilization_percent']['remote_total']
     
-        self.logger.log_info(f"IPerf3: {source_ip}-{target_ip}: sendbw: {sendBW} Mbps receivebw: {recvBW} Mbps cpuhost {host_util} cpuremote {remote_util}\n")
+        self.logger.log_info(f"IPerf3: {source_ip}-{target_ip}: sendbw: {sendBW} Mbps receivebw: {recvBW} Mbps cpuhost {host_util:.1f}% cpuremote {remote_util:.1f}%\n")
     
         bandwidth.extend([sendBW, recvBW])
         sBW = float(Decimal(sendBW) / 1000)
         rBW = float(Decimal(recvBW) / 1000)
+
+        iperf_common_label_values = [
+            source_ip,
+            source_name,
+            target_ip,
+            target_name,
+            LabelValues.COMMAND_VALUE_IPERF3,
+        ]
+
+        self.iperf3_bandwidth_sender.labels(
+            *iperf_common_label_values,
+        ).set(sBW)
+
+        self.iperf3_bandwidth_receiver.labels(
+            *iperf_common_label_values,
+        ).set(rBW)
+
+        self.iperf3_cpu_sender.labels(
+            *iperf_common_label_values,
+        ).set(host_util)
+
+        self.iperf3_cpu_receiver.labels(
+            *iperf_common_label_values,
+        ).set(remote_util)
 
         self.logger.log_info(f"Bandwith: {bandwidth} SBW: {sBW} RBW: {rBW}\n")
         return sBW,rBW
 
     
             
-    def run_iperf_test(self, conn_test, testname, target_ip, source_ip):
+    def run_iperf_test(self, conn_test, testname, target_ip, target_name, source_ip, source_name):
         '''
             iterates through jh (one per network) picks the last vm accessable through jh and sets it as target
             the jh is set as source
@@ -369,7 +448,7 @@ class SshClient:
 
         iperf_json = self.get_iperf3(target_ip)
         if iperf_json:
-            self.parse_iperf_result(iperf_json, source_ip, target_ip)
+            self.parse_iperf_result(iperf_json, source_ip, source_name, target_ip, target_name)
             self.conn_test_count.labels(
                 ResultStatusCodes.SUCCESS, self.host, target_ip, conn_test
             ).inc()

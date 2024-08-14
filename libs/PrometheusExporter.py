@@ -18,6 +18,10 @@ class LabelNames:
     METHOD = "method"
  #   RESULT = "testresult"
 
+class LabelValues:
+    COMMAND_VALUE_IPERF3 = "iperf3"
+    COMMAND_VALUE_TOT_DUR = "totDur"
+
 
 # Class is intended to be used only internally for prometheus exporter
 class CustomCollector(Collector):
