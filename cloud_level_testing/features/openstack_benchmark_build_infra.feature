@@ -5,6 +5,7 @@ Feature: Build benchmark infrastructure
 
   Scenario Outline: Build the benchmark infrastructure used for benchmark tests
 
+    Given I have a private key at <keypair_name> for <username>
     Given I want to build the benchmark infrastructure by using resources having the infix <test_infix>
     Then I should be able to create a router connected to the external network named <ext_net>
     Then I should be able to fetch availability zones
@@ -21,6 +22,6 @@ Feature: Build benchmark infrastructure
     Then I can pass the context to another feature
     
     Examples: Build benchmark infrastructure
-    | test_infix | ext_net  | keypair_name  | quantity_vms  | port_start | port_end |
-    | infra      | ext01    | test-keypair  |      2        |     222    |    229   |
+    | test_infix | ext_net  | keypair_name  | quantity_vms  | port_start | port_end |username|
+    | infra      | ext01    | infra-keypair |       2       |    222     |    229   | ubuntu |
   

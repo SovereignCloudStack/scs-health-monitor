@@ -138,7 +138,6 @@ class BenchmarkInfra:
     @then(
         "I should be able to create a jump host for each az using a key pair named {keypair_name}")
     def infra_create_jumphosts(context, keypair_name: str):
-        context.keypair_name = keypair_name
         for az in context.azs:
             jh_name = BenchmarkInfra.calculate_jh_name_by_az(context, az)
 
