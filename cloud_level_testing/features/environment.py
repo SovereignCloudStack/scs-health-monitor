@@ -115,7 +115,7 @@ def after_all(context):
     duration_seconds = 0
     tot_dur = DateTimeProvider.calc_totDur(context, context.start_time, context.stop_time)
     if tot_dur:
-        duration_seconds = tot_dur.microseconds / 1000
+        duration_seconds = tot_dur.total_seconds()
     # Set metric total test duration
     tot_dur_metric = Gauge(
         "total_test_duration_seconds",
