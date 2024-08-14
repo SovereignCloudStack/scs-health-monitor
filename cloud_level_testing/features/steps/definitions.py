@@ -18,12 +18,11 @@ class StepsDef:
 
     @given("I connect to OpenStack")
     def given_i_connect_to_openstack(context):
-        # cloud_name = context.env.get("CLOUD_NAME")
-        # context.test_name = context.env.get("TESTS_NAME_IDENTIFICATION")
-        # context.vm_image = context.env.get("VM_IMAGE")
-        # context.flavor_name = context.env.get("FLAVOR_NAME")
-        # context.client = openstack.connect(cloud=cloud_name)
-        pass
+        cloud_name = context.env.get("CLOUD_NAME")
+        context.test_name = context.env.get("TESTS_NAME_IDENTIFICATION")
+        context.vm_image = context.env.get("VM_IMAGE")
+        context.flavor_name = context.env.get("FLAVOR_NAME")
+        context.client = openstack.connect(cloud=cloud_name)
 
     @when("A router with name {router_name} exists")
     def router_with_name_exists(context, router_name: str):
