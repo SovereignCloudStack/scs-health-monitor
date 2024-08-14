@@ -128,6 +128,7 @@ class StepsDef:
     @then("I should be able to list networks")
     def list_networks(context):
         networks = context.client.network.networks()
+        context.logger.log_info(list(network.id for network in networks))
         assert networks, "Failed to list networks. No networks found."
 
     @then("I should be able to create {network_quantity:d} networks")

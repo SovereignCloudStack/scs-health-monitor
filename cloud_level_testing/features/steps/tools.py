@@ -302,6 +302,7 @@ def check_volumes_created(client, test_name):
             assert volume.status == "available", f"Volume {volume.name} not available"
             return volume.status
 
+
 def attach_floating_ip_to_server(context, server_name):
     assertline = None
     try:
@@ -312,13 +313,14 @@ def attach_floating_ip_to_server(context, server_name):
     except:
         fip = None
         assertline = f"Server with name {server_name} not found"
-    
+
     try:
         floating_ip_id = get_floating_ip_id(context, fip)
         context.collector.floating_ips.append(floating_ip_id)
-    except: 
+    except:
         assertline = f"Failed to get the ID of floating ip {fip}."
     return fip, assertline
+
 
 def collect_float_ips(client, logger: Logger):
     ips = []
@@ -331,12 +333,14 @@ def collect_float_ips(client, logger: Logger):
         assertline = f"No ips found"
     return ips, assertline
 
+
 def collect_ips(redirs, test_name, logger: Logger):
     assertline = None
     ips = [vm["addr"] for vm in redirs[f"{test_name}jh0"]["vms"]]
     if len(ips) == 0:
         assertline = f"No ips found"
     return ips, assertline
+
 
 def collect_jhs(redirs, test_name, logger: Logger):
     ip_pattern = re.compile(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
@@ -353,6 +357,7 @@ def collect_jhs(redirs, test_name, logger: Logger):
                 jhs.append(ip_valid.group(1))
     logger.log_info(f"returning jhs: {jhs}")
     return jhs
+
 
 def get_floating_ip_id(context, floating_ip: str) -> str | None:
     """Get ID of floating IP based on its address.
@@ -745,7 +750,6 @@ def create_vm(client, name, image_name, flavor_name, network_id, **kwargs):
 
 
 def create_jumphost(client, name, network_name, keypair_name, vm_image, flavor_name, security_groups, **kwargs):
-
     keypair_filename = f"{keypair_name}-private"
 
     image = client.compute.find_image(name_or_id=vm_image)
@@ -821,6 +825,7 @@ def create_subnet(client, name, network_id, ip_version=4, **kwargs):
         f"Failed to create subnet with name {subnet}"
     return subnet
 
+
 def create_router(client, name, **kwargs):
     """
     Create router
@@ -886,4 +891,3 @@ def target_source_calc(jh_name, redirs, logger):
     if not source_ip or not target_ip or source_ip == target_ip:
         logger.log_debug(f"IPerf3: {source_ip}<->{target_ip}: skipped")
     return target_ip, source_ip, pno, vm_name
-
