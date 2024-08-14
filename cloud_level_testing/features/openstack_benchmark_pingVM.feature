@@ -9,5 +9,5 @@ Feature: Benchmark ping VMs
     Then I should be able to SSH into JHs and test their <conn_test> connectivity
     Examples: Build benchmark infrastructure
     | keypair_name  | username | conn_test |
-    | infra-keypair | ubuntu	 |   ping		 |
+    | infra-keypair |  ubuntu  |   ping	   |
 
