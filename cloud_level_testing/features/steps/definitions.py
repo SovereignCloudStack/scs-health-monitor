@@ -607,13 +607,16 @@ class StepsDef:
         context.logger.log_info(f"{jh_quantity} jump hosts and iterations")
         for i in range(0,jh_quantity):
             jh_name=f'{context.test_name}jh{i}'
-            target_ip, source_ip, pno = tools.target_source_calc(jh_name, context.redirs, context.logger)
+            target_ip, source_ip, pno, vm_name = tools.target_source_calc(jh_name, context.redirs, context.logger)
             context.fip_address = context.jh[i]
             context.pno = pno
             context.execute_steps('''
                 Then I should be able to SSH into the VM
                 ''')
-            context.assertline = context.ssh_client.run_iperf_test(conn_test, context.test_name, target_ip, source_ip=context.fip_address)      
+            target_name = jh_name
+            source_name = vm_name
+            context.assertline = context.ssh_client.run_iperf_test(
+                conn_test, context.test_name, target_ip, target_name, context.fip_address, source_name)
         assert context.assertline == None, context.assertline
 
     @then("be able to ping all IPs to test {conn_test} connectivity") 
