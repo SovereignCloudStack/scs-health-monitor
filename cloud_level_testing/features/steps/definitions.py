@@ -17,12 +17,12 @@ class StepsDef:
 
     @given("I connect to OpenStack")
     def given_i_connect_to_openstack(context):
-        # cloud_name = context.env.get("CLOUD_NAME")
-        # context.test_name = context.env.get("TESTS_NAME_IDENTIFICATION")
-        # context.vm_image = context.env.get("VM_IMAGE")
-        # context.flavor_name = context.env.get("FLAVOR_NAME")
-        # context.client = openstack.connect(cloud=cloud_name)
-        pass
+        cloud_name = context.env.get("CLOUD_NAME")
+        context.test_name = context.env.get("TESTS_NAME_IDENTIFICATION")
+        context.vm_image = context.env.get("VM_IMAGE")
+        context.flavor_name = context.env.get("FLAVOR_NAME")
+        context.client = openstack.connect(cloud=cloud_name)
+
 
     @when("A router with name {router_name} exists")
     def router_with_name_exists(context, router_name: str):
@@ -592,14 +592,6 @@ class StepsDef:
         if assertline != None:
             context.assertline = assertline
 
-    @then("I should be able to collect all network IPs")
-    def collect_network_ips(context):
-        assert hasattr(context, 'redirs'), f"No redirs found infrastructure not completely built yet"        
-        assert isinstance(context.redirs,dict), "redirs is no dictionary"
-        context.ips, assertline = tools.collect_ips(context.redirs, context.test_name, context.logger)
-        if assertline != None:
-            context.assertline = assertline
-
     @given("I have deployed JHs")
     def ensure_jh_deployed(context):
         assert hasattr(context, 'redirs'), f"No redirs found infrastructure not completely built yet"        
@@ -622,22 +614,6 @@ class StepsDef:
                 Then I should be able to SSH into the VM
                 ''')
             context.assertline = context.ssh_client.run_iperf_test(conn_test, context.test_name, target_ip, source_ip=context.fip_address)      
-        assert context.assertline == None, context.assertline
-
-    @then('I should be able to SSH into VMs and perform {conn_test} test')
-    def substeps(context, conn_test):
-        context.assertline=None
-        jh_quantity = len(context.jh)
-        context.logger.log_info(f"{jh_quantity} jump hosts and iterations")
-        for i in range(0,jh_quantity):
-            jh_name=f'{context.test_name}jh{i}'
-            target_ip, source_ip, pno = tools.target_source_calc(jh_name, context.redirs, context.logger)
-            context.fip_address = context.jh[i]
-            context.pno = pno
-            context.execute_steps('''
-                Then I should be able to SSH into the VM
-                ''')
-            context.assertline = context.ssh_client.run_iperf_test(conn_test, context.test_name, target_ip, source_ip)      
         assert context.assertline == None, context.assertline
 
     @then("be able to ping all IPs to test {conn_test} connectivity") 
@@ -669,22 +645,15 @@ class StepsDef:
         fip, assertline = tools.attach_floating_ip_to_server(context, server_name)
         assert assertline == None, assertline
 
-    @then("I start calculating 4000 digits of pi on VM and check the ping response")
-    def calculate_pi_on_vm(context):
-        """Calculate 4000 digits of pi on VM and ping it from another VM to check response time.
-
-        Args:
-            context: Behave context object.
+    @then('I start calculating 4000 digits of pi on VM and check the ping response as {conn_test}')
+    def calculate_pi_on_vm(context, conn_test):
+        """
         """
         calc_command = "date +%s && time echo 'scale=4000; 4*a(1)' | bc -l >/dev/null 2>&1 && date +%s"
-        ping_parse_magic = (
-            "| tail -n +2 | head -n -4 |awk '{split($0,a,\" \"); print a[1], a[8]}'"
-        )
+        ping_parse_magic = "| tail -n +2 | head -n -4 |awk '{split($0,a,\" \"); print a[1], a[8]}'"
         ping_command = f"ping -D -c{StepsDef.PING_RETRIES} {context.fip_address} {ping_parse_magic}"
-
-        ping_server_ssh_client = SshClient(
-            "213.131.230.243", "ubuntu", context.vm_private_ssh_key_path, context.logger
-        )
+        
+        ping_server_ssh_client = SshClient(context.fip_address, context.vm_username, context.vm_private_ssh_key_path, context.logger)
         ping_server_ssh_client.connect()
 
         try:
