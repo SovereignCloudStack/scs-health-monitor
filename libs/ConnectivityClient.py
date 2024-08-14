@@ -78,7 +78,6 @@ class SshClient:
         ],
     )
 
-
     """
     Iperf3 metrics
     """
@@ -458,4 +457,3 @@ class SshClient:
                 ResultStatusCodes.FAILURE, self.host, target_ip, conn_test
             ).inc()
             return f"no iperf-response json"
-        
