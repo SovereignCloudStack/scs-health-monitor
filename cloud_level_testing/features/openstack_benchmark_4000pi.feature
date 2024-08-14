@@ -12,4 +12,4 @@ Feature: Test VM under load
 
   Examples:
     |keypair_name| username | conn_test |
-    |test-keypair|  ubuntu  | 4000pi    |
+    |test-keypair|  ubuntu  |   4000pi  |
