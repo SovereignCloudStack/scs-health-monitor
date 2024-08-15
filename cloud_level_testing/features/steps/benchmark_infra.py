@@ -4,7 +4,6 @@ import jinja2
 import base64
 
 import tools
-from environment import SharedContext
 
 DEFAULT_SECURITY_GROUPS = ["ssh", "default", "ping-sg"]
 DEFAULT_IPERF3_PORT = 5201

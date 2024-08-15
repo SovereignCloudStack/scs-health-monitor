@@ -1,9 +1,9 @@
 # Kubernetes BDD Testing Framework Documentation
 ## Overview
 
-This framework is designed to facilitate Behavior-Driven Development (BDD) for testing Kubernetes deployments using the behave Python library. The framework allows you to write human-readable tests that validate Kubernetes clusters, pods, services, and other resources.
-Installation
-Prerequisites
+This framework is designed to facilitate Behavior-Driven Development (BDD) for testing Kubernetes deployments using the
+behave Python library. The framework allows you to write human-readable tests that validate Kubernetes clusters, pods,
+services, and other resources.
 
 Before you begin, ensure you have the following installed on your machine:
 
@@ -15,7 +15,7 @@ Helm (Kubernetes package manager)
 
 
 
-## Steps to Install
+## Usage
 
 1. Clone the Repository:
 ``` bash
@@ -26,8 +26,21 @@ cd scs-health-monitor
 
 It's recommended to use a virtual environment to avoid conflicts with other Python packages.
 
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+``` bash
+# create python virtual environment
+python3 -m venv <environment_name>
+
+# activate the python virtual environment in windows command prompt
+<environment_name>/Scripts/activate   
+
+# activate the python virtual environment in Unix or MacOS
+source <environment_name>/bin/activate
+
+# install all the python dependencies
+python -m pip install -r requirements.txt 
+```
+
 
 3. Install Required Python Packages:
 
@@ -50,6 +63,41 @@ For Linux:
 ```bash 
 sudo apt-get install helm
 ```
+
+For Windows:
+
+The easeiest way is to use linux kernel for windows and proceed there.
+
+____
+
+In this repository (under main directory) you have to create two files that will be referenced by `env.yaml` and `clouds.yaml`
+* env.yaml:
+```
+   OS_AUTH_TYPE: ""
+   OS_AUTH_URL: ""
+   OS_IDENTITY_API_VERSION: ""
+   OS_REGION_NAME: ""
+   OS_INTERFACE: ""
+   OS_APPLICATION_CREDENTIAL_ID: ""
+   OS_APPLICATION_CREDENTIAL_SECRET: ""
+   OS_PROJECT_NAME: ""
+   OS_USER_DOMAIN_NAME: ""
+   OS_PROJECT_DOMAIN_NAME: "" 
+
+   ```
+* clouds.yaml:
+```
+clouds:
+  gx:
+    region_name:
+    auth_type:
+    auth_url:
+    identity_api_version:
+    interface:
+    application_credential_id:
+    application_credential_secret:
+```
+
 
 ## Configuration
 ### Kubernetes Configuration
@@ -116,19 +164,12 @@ Creating New Step Definitions
 To add new behavior or extend existing features, define new steps in the Python files located in container_level_testing/features/steps/. These files map Gherkin steps to Python code.
 
 ```python
-@given('a Kubernetes cluster')
-def step_given_kubernetes_cluster(context):
-    config.load_kube_config()
-    context.v1 = client.CoreV1Api()
-    context.response = None
-    context.ping_response = None
-    context.v1.list_node()
-    result = subprocess.run(["kubectl", "get", "nodes"], capture_output=True, text=True)
-    if result.returncode != 0:
-        raise Exception(f"Failed to connect to Kubernetes cluster: {result.stderr}")
+@given('describe what test is doing')
+def name_of_the_test(context):
+    ## Body of the test  
 ```
 
-#### Creating New Feature Files
+### Creating New Feature Files
 
 1. Create a New Feature File:
 
@@ -141,9 +182,9 @@ Define the behavior you want to test using Given-When-Then steps.
 Feature: New Kubernetes Feature
 
   Scenario: A new feature scenario
-    Given a Kubernetes cluster
-    When I create a new feature resource
-    Then the resource should be correctly configured
+    Given name of the function 
+    When name of another function with logic
+    Then step with assertion to verify if step before was succeded 
 ```
 
 3. Implement the Step Definitions:
@@ -195,8 +236,9 @@ Use the following command to apply the ingress resource:
 kubectl apply -f my-ingress.yaml
 ```
 
-### Troubleshooting
-#### Common Errors
+## Troubleshooting
+
+### Common Errors
 
 * Connection Errors: Ensure that Kubernetes and Ingress services are correctly configured and running.
 
@@ -215,7 +257,26 @@ kubectl get services
 kubectl get pods
 ```
 
-### Conclusion
+## Observability stack
+
+For informations about setting up Observability Stack, please use this [file](https://github.com/SovereignCloudStack/scs-health-monitor/blob/main/docs/ObservabilityStack/SetupObservabilityStack.md)
+
+___
+
+## Adding fixes/new functionalities to the project flow:
+
+1) Create branch for issue `git checkout -b SPACECAT-<issue_number>-<issue_name>`.
+2) Add the changes made `git add -u` or `git add <file_name>`.
+3) Commit the changes using `git commit -s -m "message"`.
+   - The "-s" flag is important, the commit won't go through otherwise
+4) To push the current branch and the changes and set the remote as upstream, use `git push --set-upstream origin SPACECAT-<issue_number>-<issue_name>`.
+   - Alternatively push the changes if the branch already exists in the remote repository.
+5) After work is done, create a pull request for the branch.
+6) Ask another team member to review the changes, when he approves the changes, merge the chages into main branch.
+
+___
+
+## Conclusion
 
 This framework provides a robust, BDD-based approach to testing Kubernetes clusters and resources. By following the above instructions, you can extend, modify, and run tests tailored to your specific needs.
 
