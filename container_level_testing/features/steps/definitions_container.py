@@ -2,7 +2,6 @@ from behave import given, when, then
 from kubernetes import client, config, stream
 import requests
 import time
-import subprocess
 from http import HTTPStatus
 import container_level_testing.features.steps.container_tools as tools
 
