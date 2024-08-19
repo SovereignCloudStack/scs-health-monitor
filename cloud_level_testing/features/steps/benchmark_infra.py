@@ -170,8 +170,8 @@ iptables -t nat -A PREROUTING -s 0/0 -i $(cat /tmp/iface) -j DNAT -p tcp --dport
 
             user_data = f"""#cloud-config
 packages:
-- iperf3
 - jq
+- iperf3
 
 # A little bit hacky: We provide the script base64 encoded,
 # otherwise cloud-init complains about invalid characters.
@@ -226,8 +226,8 @@ runcmd:
     def infra_create_vms(context, quantity: int, keypair_name: str):
         user_data = f'''#cloud-config
 packages:
-- iperf3
 - jq
+- iperf3
         '''
         for num in range(0, quantity):
             vm_name = BenchmarkInfra.derive_vm_name(context, num)

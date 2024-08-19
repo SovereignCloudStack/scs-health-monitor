@@ -628,6 +628,7 @@ class StepsDef:
             context.pno = pno
             context.execute_steps('''
                 Then I should be able to SSH into the VM
+                Then I should sleep for 10 seconds
                 ''')
             target_name = jh_name
             source_name = vm_name
