@@ -369,25 +369,28 @@ class SshClient:
         if sftp:
             sftp.close()
 
-    def get_iperf3(self, target_ip, retries = 3):
-        print(f"target {target_ip}")
+    def get_iperf3(self, target_ip, retries = 5):
+        """
+            performs an iperf3-client request on the server addressed by the target ip
+            Args:
+                target_ip: (string) network ip address of the iperf3 server, usually the jh 
+                retries: (int) number of retries in case of failure
+            Returns:
+                iperf_json: (json) iperf response as json
+            Raises:
+                checks if command is succesfully executed
+                and whether the iperf response contains any errors
+        """
         iperf_command = f"iperf3 -t5 -J -c {target_ip} | jq"
         iperf_json = None
         substring = "error"
         error = False
         for i in range(1, retries):
-
             try:
                 iperf_json = self.execute_command(iperf_command)
-                print(f"get_iperf3 {iperf_json}")
                 self.logger.log_info(f"received Iperf response as json")
-                # for keys in iperf_json.keys():
-                #     if substring in keys:
-                #         error= True
-                #         break
                 if iperf_json.find(substring) != -1:
                     error= True
-                   
             except:
                 error = True
                 self.logger.log_error(f"Iperf request failed retry {i}")
@@ -464,8 +467,7 @@ class SshClient:
             the jh is set as source
         '''
         #self.transfer_script(f"{testname}-wait")
-        #iperf_json = self.get_iperf3(target_ip)
-        iperf_json = self.get_iperf3(server_fip)
+        iperf_json = self.get_iperf3(target_ip)
         if iperf_json:
             self.parse_iperf_result(iperf_json, source_ip, source_name, target_ip, target_name)
             self.conn_test_count.labels(
