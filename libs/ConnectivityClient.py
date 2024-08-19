@@ -464,7 +464,8 @@ class SshClient:
             the jh is set as source
         '''
         #self.transfer_script(f"{testname}-wait")
-        iperf_json = self.get_iperf3(target_ip)
+        #iperf_json = self.get_iperf3(target_ip)
+        iperf_json = self.get_iperf3(server_fip)
         if iperf_json:
             self.parse_iperf_result(iperf_json, source_ip, source_name, target_ip, target_name)
             self.conn_test_count.labels(
