@@ -369,18 +369,36 @@ class SshClient:
         if sftp:
             sftp.close()
 
-    def get_iperf3(self, target_ip, retries = 3):
-
+    def get_iperf3(self, target_ip, retries = 5):
+        """
+            performs an iperf3-client request on the server addressed by the target ip
+            Args:
+                target_ip: (string) network ip address of the iperf3 server, usually the jh 
+                retries: (int) number of retries in case of failure
+            Returns:
+                iperf_json: (json) iperf response as json
+            Raises:
+                checks if command is succesfully executed
+                and whether the iperf response contains any errors
+        """
         iperf_command = f"iperf3 -t5 -J -c {target_ip} | jq"
         iperf_json = None
+        substring = "error"
+        error = False
         for i in range(1, retries):
             try:
                 iperf_json = self.execute_command(iperf_command)
                 self.logger.log_info(f"received Iperf response as json")
-                break
+                if iperf_json.find(substring) != -1:
+                    error= True
             except:
-                self.logger.log_error(f"Iperf failed retry {i}")
-                time.sleep(16)
+                error = True
+                self.logger.log_error(f"Iperf request failed retry {i}")
+            if iperf_json != None and error == False:
+                self.logger.log_info(f"Iperf without any errors")
+                break
+            self.logger.log_error(f"Iperf retry {i}")
+            time.sleep(10)    
         return iperf_json
 
 
@@ -397,6 +415,8 @@ class SshClient:
         bandwidth = []
     
         iperf_json_dict = json.loads(iperf_json)
+        print(iperf_json_dict)
+        
         send_bw_bits = int(Decimal(iperf_json_dict['end']['sum_sent']['bits_per_second']))
         recv_bw_bits = int(Decimal(iperf_json_dict['end']['sum_received']['bits_per_second']))
         sendBW = send_bw_bits / 1048576
@@ -405,6 +425,8 @@ class SshClient:
         remote_util = iperf_json_dict['end']['cpu_utilization_percent']['remote_total']
     
         self.logger.log_info(f"IPerf3: {source_ip}-{target_ip}: sendbw: {sendBW} Mbps receivebw: {recvBW} Mbps cpuhost {host_util:.1f}% cpuremote {remote_util:.1f}%\n")
+
+    
     
         bandwidth.extend([sendBW, recvBW])
         sBW = float(Decimal(sendBW) / 1000)
@@ -438,14 +460,12 @@ class SshClient:
         return sBW,rBW
 
     
-            
-    def run_iperf_test(self, conn_test, testname, target_ip, target_name, source_ip, source_name):
+    def run_iperf_test(self, conn_test, testname ,server_fip, target_ip, target_name, source_ip, source_name):
         '''
             iterates through jh (one per network) picks the last vm accessable through jh and sets it as target
             the jh is set as source
         '''
         #self.transfer_script(f"{testname}-wait")
-
         iperf_json = self.get_iperf3(target_ip)
         if iperf_json:
             self.parse_iperf_result(iperf_json, source_ip, source_name, target_ip, target_name)
@@ -457,4 +477,3 @@ class SshClient:
                 ResultStatusCodes.FAILURE, self.host, target_ip, conn_test
             ).inc()
             return f"no iperf-response json"
-        
