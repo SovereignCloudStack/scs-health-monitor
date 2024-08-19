@@ -621,11 +621,12 @@ class StepsDef:
         context.assertline=None
         jh_quantity = len(context.jh)
         context.logger.log_info(f"{jh_quantity} jump hosts and iterations")
-        for i in range(0,jh_quantity):
+        for i in range(0,jh_quantity):            
             jh_name=f'{context.test_name}jh{i}'
             target_ip, source_ip, pno, vm_name = tools.target_source_calc(jh_name, context.redirs, context.logger)
             context.fip_address = context.jh[i]
             context.pno = pno
+            context.logger.log_info(f"target {target_ip}, source {source_ip} fip {context.fip_address}/{context.pno}")
             context.execute_steps('''
                 Then I should be able to SSH into the VM
                 Then I should sleep for 10 seconds
@@ -633,7 +634,7 @@ class StepsDef:
             target_name = jh_name
             source_name = vm_name
             context.assertline = context.ssh_client.run_iperf_test(
-                conn_test, context.test_name, target_ip, target_name, context.fip_address, source_name)
+                conn_test, context.test_name, context.fip_address, target_ip ,target_name, source_ip, source_name)    
         assert context.assertline == None, context.assertline
 
     @then("be able to ping all IPs to test {conn_test} connectivity") 
@@ -742,3 +743,8 @@ class StepsDef:
 
         context.logger.log_info(f"Ping check results: {ping_results}")
         return ping_results, ping_failure_count
+    
+    @then("I should sleep for {slseconds:d} seconds")
+    def sleep_temp(context, slseconds):
+        context.logger.log_info(f"sleeping {slseconds}s")     
+        time.sleep(slseconds)
