@@ -8,8 +8,8 @@ Feature: Test VM under load
     And I have a private key at <keypair_name> for <username>
     Then I should be able to retrieve the first floating ip and portnumber of the network
     Then I should be able to SSH into the VM
-    Then I start calculating 4000 digits of pi on VM and check the ping response as <conn_test>
+    Then I start calculating 4000 digits of pi on VM and check the ping response
 
   Examples:
-    |keypair_name | username | conn_test |
-    |infra-keypair|  ubuntu  |  4000pi   |
+    |keypair_name | username |
+    |infra-keypair|  ubuntu  |
