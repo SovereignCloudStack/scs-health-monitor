@@ -60,9 +60,17 @@ class SharedContext:
         self.__keypair_name = value
 
 def before_all(context):
+    """
+        behave framework hook: code will run before each test run
+        and establishes openstack client connection, loads the environment 
+        initialises a shared context and the setup class such as the logger 
+        the collector and prometheus exporter
+        that can be passed between features and starts the timer 
+        Args:
+            context(object): context
+    """
     context.shared_context = SharedContext()
     context.start_time = DateTimeProvider.get_current_utc_time()
-    print(f"timer set: {context.start_time}")
     
     setup_class = SetupClass()
     setup_class.setup()
@@ -110,13 +118,18 @@ def after_feature(context, feature):
 
 
 def after_all(context):
+    """
+        behave framework hook: code will run after each test run
+        and cleans up the infrastructure, calculates the total duration
+        abnd pushes the metrics through the prometheus push gateway       
+        Args:
+            context(object): context
+    """
     context.stop_time = DateTimeProvider.get_current_utc_time()
-    print(f"timer stopped: {context.stop_time}")
     duration_seconds = 0
     tot_dur = DateTimeProvider.calc_totDur(context, context.start_time, context.stop_time)
     if tot_dur:
         duration_seconds = tot_dur.total_seconds()
-    # Set metric total test duration
     tot_dur_metric = Gauge(
         "total_test_duration_seconds",
         "Total duration of test run",

@@ -11,7 +11,6 @@ class Inspector:
         self.env = self.load_env_from_yaml()
         self.client = openstack.connect(cloud="gx")
         self.test_name = self.env.get("TESTS_NAME_IDENTIFICATION")
-        print(self.test_name)
 
     def load_env_from_yaml(self):
         with open(self.env_file_path, "r") as file:

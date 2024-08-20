@@ -498,7 +498,6 @@ def delete_wait_script(testname):
     script_path = f'{testname}-wait'
     try:
         os.remove(script_path)
-        print("\b")
     except:
         assertline = f"Failed to delete script file {script_path}"
     return assertline

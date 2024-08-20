@@ -415,7 +415,6 @@ class SshClient:
         bandwidth = []
     
         iperf_json_dict = json.loads(iperf_json)
-        print(iperf_json_dict)
         
         send_bw_bits = int(Decimal(iperf_json_dict['end']['sum_sent']['bits_per_second']))
         recv_bw_bits = int(Decimal(iperf_json_dict['end']['sum_received']['bits_per_second']))
