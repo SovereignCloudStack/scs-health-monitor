@@ -671,9 +671,10 @@ def delete_all_test_resources(context):
 
 
 def parse_ping_output(context, data: list[str], logger: Logger):
-    """Parse the outputs of the ping response test and print them to logger.
+    """Parse the outputs of the ping response test, print them to logger and add them to prometheus exporter registry.
 
     Args:
+        context: Behave context object.
         data: Ssh command stdout data.
         logger: Default context logger.
     """
