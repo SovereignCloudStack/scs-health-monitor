@@ -72,7 +72,7 @@ ____
 
 In this repository (under main directory) you have to create two files that will be referenced by `env.yaml` and `clouds.yaml`
 * env.yaml:
-```
+``` yaml
    OS_AUTH_TYPE: v3applicationcredential
    OS_AUTH_URL: https://api.gx-scs.sovereignit.cloud:5000
    OS_IDENTITY_API_VERSION: 3
@@ -91,7 +91,7 @@ In this repository (under main directory) you have to create two files that will
 
    ```
 * clouds.yaml:
-```
+``` yaml
 clouds:
   gx:
     region_name:
