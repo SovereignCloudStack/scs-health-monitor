@@ -42,7 +42,7 @@ There is a possibility to run it on the [behavex](https://github.com/hrcorval/be
 Here are some basic commands to run the tests:
 
 ```bash
-behavex                            # Run all scenarios parallel - not recomended 
+behavex                            # Run all scenarios parallel - not recomended
 behavex --parallel-scheme feature  # Run all of the scenarios, but parallel only the features
 behavex features/                  # Run scenarios in a specific feature file
 behavex -t @tag                    # Run scenarios with a specific tag
@@ -59,23 +59,23 @@ behavex --tags=cleanup
 ## Setting up Prometheus and Prometheus Push Gateway locally
 For the purposes of gathering information from the test cases being performed against OpenStack, Prometheus metrics are being gathered during excecution of the test, then later these metrics are pushed to a Prometheus Push Gateway.
 
-[Here](./docs/ObservabilityStack/SetupObservabilityStack.md) you can find a useful quickstart quide on setting up Promethus Stack and Prometheus push gateway locally.
+[Here](https://github.com/SovereignCloudStack/scs-health-monitor/blob/ba9049292c3da5afcdae52b1cca15759e074e950/docs/ObservabilityStack/SetupObservabilityStack.md) you can find a useful quickstart quide on setting up Promethus Stack and Prometheus push gateway locally.
 
 ## Exporting metrics to Prometheus Push Gateway
 To be able to push the metrics gathered during test executions, you must first configure the prometheus push gateway endpoint. You achieve this by adding these lines to a *env.yaml*:
 
 ``` bash
-# Required 
-# If not present the metrics won't 
+# Required
+# If not present the metrics won't
 # be pushed by the test scenarios
 PROMETHEUS_ENDPOINT: "localhost:30001"
 
-# Optional (default: "SCS-Health-Monitor") 
-# Specify the job label value that 
+# Optional (default: "SCS-Health-Monitor")
+# Specify the job label value that
 # gets added to the metrics
 PROMETHEUS_BATCH_NAME: "SCS-Health-Monitor"
 
-# Required 
+# Required
 # The name of the cloud from clouds.yaml
 # that the test scenarios will be ran on
 CLOUD_NAME: "gx"
@@ -85,7 +85,7 @@ CLOUD_NAME: "gx"
 APPEND_TIMESTAMP_TO_BATCH_NAME: true
 ```
 
-This *env.yaml* file must be placed in the root of the repository. This is where you should be also issuing all the *behave <...>* commands to execute the test scenarios.
+This `env.yaml` file must be placed in the root of the repository. This is where you should be also issuing all the `behave` commands to execute the test scenarios.
 
 ## Collaborators
 - Piotr Bigos [@piobig2871](https://github.com/piobig2871)
