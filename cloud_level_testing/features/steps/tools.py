@@ -56,26 +56,80 @@ class Collector:
         )
 
     def create_router(self, name, **kwargs):
+        """
+        Create a new router and add its ID to the list of routers.
+
+        Args:
+            name (str): The name of the router to be created.
+            **kwargs: Additional parameters to be passed to the `create_router` function.
+        Returns:
+            router (dict): router object
+        """
         router = create_router(self.client, name, **kwargs)
         self.routers.append(router.id)
         return router
 
     def create_network(self, name, **kwargs):
+        """
+        Create a new network and add its ID to the list of network.
+
+        Args:
+            name (str): The name of the router to be created.
+            **kwargs: Additional parameters to be passed to the `create_network` function.
+        Returns:
+            net (dict): network object
+        """        
         net = create_network(self.client, name, **kwargs)
         self.networks.append(net.id)
         return net
 
     def create_subnet(self, name, network_id, ip_version=4, **kwargs):
+        """
+        Create a new subnet and add its ID to the list of subnets.
+
+        Args:
+            name (str): The name of the subnet to be created.
+            network_id (str): The ID of the network to which the subnet will be associated.
+            ip_version (int, optional): The IP version for the subnet (default is 4).
+            **kwargs: Additional parameters to be passed to the `create_subnet` function.
+
+        Returns:
+            subnet (dict): The subnet object created by the `create_subnet` function.
+        """
         subnet = create_subnet(self.client, name, network_id, ip_version, **kwargs)
         self.subnets.append(subnet.id)
         return subnet
 
     def add_interface_to_router(self, router, subnet_id):
+        """
+        Add a subnet interface to a router and track the association.
+
+        Args:
+            router (dict): The router object to which the subnet interface will be added.
+            subnet_id (str): The ID of the subnet to be attached to the router.
+
+        Returns:
+            router_update (dict): The updated router object after adding the interface 
+            by the `add_interface_to_router` function.
+        """
         router_update = add_interface_to_router(self.client, router, subnet_id)
         self.router_subnets.append({"router": router.id, "subnet": subnet_id})
         return router_update
 
     def find_router(self, name_or_id):
+        """
+        Find and retrieve a router by its name or ID.
+
+        Args:
+            name_or_id (str): The name or ID of the router to be found.
+
+        Returns:
+            dict: The router object if found by the `find_router` function.
+
+        Example:
+            >>> router = instance.find_router(name_or_id="new-router")
+            >>> print(router["id"])
+        """
         return find_router(self.client, name_or_id)
 
     def find_server(self, name_or_id):
