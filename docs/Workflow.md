@@ -73,21 +73,21 @@ ____
 In this repository (under main directory) you have to create two files that will be referenced by `env.yaml` and `clouds.yaml`
 * env.yaml:
 ```
-OS_AUTH_TYPE: v3applicationcredential
-OS_AUTH_URL: https://api.gx-scs.sovereignit.cloud:5000
-OS_IDENTITY_API_VERSION: 3
-OS_REGION_NAME: "RegionOne"
-OS_INTERFACE: public
-OS_APPLICATION_CREDENTIAL_ID:
-OS_APPLICATION_CREDENTIAL_SECRET:
-PROMETHEUS_ENDPOINT: "localhost:30001"
-PROMETHEUS_BATCH_NAME: "SCS-Health-Monitor"
-CLOUD_NAME: "gx"
-APPEND_TIMESTAMP_TO_BATCH_NAME: false
-TESTS_NAME_IDENTIFICATION: "scs-hm"
-VM_IMAGE: "Ubuntu 20.04"
-FLAVOR_NAME: "SCS-1V:1:10"
-ENVIRONMENT: "http://localhost"
+   OS_AUTH_TYPE: v3applicationcredential
+   OS_AUTH_URL: https://api.gx-scs.sovereignit.cloud:5000
+   OS_IDENTITY_API_VERSION: 3
+   OS_REGION_NAME: "RegionOne"
+   OS_INTERFACE: public
+   OS_APPLICATION_CREDENTIAL_ID:
+   OS_APPLICATION_CREDENTIAL_SECRET:
+   PROMETHEUS_ENDPOINT: "localhost:30001"
+   PROMETHEUS_BATCH_NAME: "SCS-Health-Monitor"
+   CLOUD_NAME: "gx"
+   APPEND_TIMESTAMP_TO_BATCH_NAME: false
+   TESTS_NAME_IDENTIFICATION: "scs-hm"
+   VM_IMAGE: "Ubuntu 20.04"
+   FLAVOR_NAME: "SCS-1V:1:10"
+   ENVIRONMENT: "http://localhost"
 
    ```
 * clouds.yaml:
