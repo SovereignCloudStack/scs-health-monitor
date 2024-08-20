@@ -1,4 +1,4 @@
-# Kubernetes BDD Testing Framework Documentation
+# BDD Testing Framework Documentation
 ## Overview
 
 This framework is designed to facilitate Behavior-Driven Development (BDD) for both cloud level testing
