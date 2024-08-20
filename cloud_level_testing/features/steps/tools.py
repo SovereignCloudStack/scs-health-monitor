@@ -10,6 +10,7 @@ import re
 import yaml
 from openstack.exceptions import DuplicateResource
 import openstack
+from prometheus_client import Gauge
 
 
 class Collector:
@@ -669,7 +670,7 @@ def delete_all_test_resources(context):
     context.collector.delete_security_groups()
 
 
-def parse_ping_output(data: list[str], logger: Logger):
+def parse_ping_output(context, data: list[str], logger: Logger):
     """Parse the outputs of the ping response test and print them to logger.
 
     Args:
@@ -693,6 +694,12 @@ def parse_ping_output(data: list[str], logger: Logger):
     logger.log_info(f"Calc start: {start_time}")
     logger.log_info(f"Calc ended: {end_time}")
     logger.log_info(f"Calc took approx {calc_time}")
+    response_gauge = Gauge(
+        "pi_calc_bench_avg_ping",
+        "Average ping response during 4000pi calculation",
+        registry=context.prometheusExporter.registry,
+    )
+    response_gauge.set(calc_average(response_times))
 
 
 def calc_average(values: list[float]) -> float:

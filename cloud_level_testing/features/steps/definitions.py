@@ -881,9 +881,9 @@ class StepsDef:
                 (ping_server_ssh_client.execute_command, ping_command),
             ]
             results = tools.run_parallel(tasks)
-            tools.parse_ping_output(results, context.logger)
-        except:
-            context.logger.log_info(f"task failed")
+            tools.parse_ping_output(context, results, context.logger)
+        except Exception as e:
+            context.logger.log_info(f"Task failed with exception: {e}")
         ping_server_ssh_client.close_conn()
         context.ssh_client.close_conn()
 
