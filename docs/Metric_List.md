@@ -180,7 +180,7 @@ Finally the main loop is also analized, focussing on the relevant functions that
 | ssh (in function wait222)	    | `JHVM$JHNO` (var `$JHNO` is idx of jump host in `$NOAZS`) | Duration of pinging one jump host | Number of jump hosts unable to ping | [L3016-L3049](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L3016-L3049) | Ping each JumpHost VM (var `$NOAZS`) and measure duration this took, including errors. Then test if ssh port is reachable via netcat. | 100 % |
 | ssh (in function wait222) | `VM$JHNO:$pno` (var $pno is port number) | Duration since calling `wait222` (including ssh test above) until logging this message (L3092) | `1` if netcat connection attempt timed out; `0` otherwise | [L3016-L3096](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L3016-L3096) | For each JumpHost iterate over each VM (port forwarding rule `REDIRS`: `${REDIRS[$JHNO]}`) and try to access port number (`pno`) by executing netcat (`nc $NCPROXY -w 2 ${FLOATS[$JHNO]} $pno`). (If netcat took too long (`$ctr -ge $MAXWAIT`), check status of VM by calling OpenStack Nova. If `provisioning_status` is not `ACTIVE`, send alarm.)|  100 % |
 | ssh (in function testjhinet)	 | `JHVM$JHNO` | Duration it takes for executing the tasks for one JumpHost | Return code of `testlsandping()`: `1`: ping failed; `2`: ls or user_data injection failed | [L3185-L3220](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L3185-L3220)| For each JumpHost perform ping test against the host itself and call `[testlsandping()](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L3103)` which tests ssh and internet ping.|60 % |
-| totDur | Max cycle time (`$MAXCYC`), an calculated upper bound (including magic numbers) how long one iteration may take depending on the tasks which are performed | Relative performance (`$RELPERF`) | Number of slow iterations, which is incremented by one when `$THISRUNTIME` is greater than `$MAXCYC` | [L4455-L4484](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L4455-L4484) | Log measured relative duration of current iteration (var `$RELPERF`, relative performance/time; calculated `echo "scale=2; 10*$THISRUNTIME/$MAXCYC" \| bc -l`). Send alert if performance of one cycle is slow. See commit [7fa38](https://github.com/SovereignCloudStack/openstack-health-monitor/commit/7fa38f9f86280bc409783e81c7b6cd0345dca530). FYI: `$TOTTIME` is the overall runtime summing up all iterations and is present in overall stats. |	 88 % |		
+| totDur | Max cycle time (`$MAXCYC`), an calculated upper bound (including magic numbers) how long one iteration may take depending on the tasks which are performed | Relative performance (`$RELPERF`) | Number of slow iterations, which is incremented by one when `$THISRUNTIME` is greater than `$MAXCYC` | [L4455-L4484](https://github.com/SovereignCloudStack/openstack-health-monitor/blob/084e8960d9348af7b3c5c9927a1ebaebf4be48f9/api_monitor.sh#L4455-L4484) | Log measured relative duration of current iteration (var `$RELPERF`, relative performance/time; calculated `echo "scale=2; 10*$THISRUNTIME/$MAXCYC" \| bc -l`). Send alert if performance of one cycle is slow. See commit [7fa38](https://github.com/SovereignCloudStack/openstack-health-monitor/commit/7fa38f9f86280bc409783e81c7b6cd0345dca530). FYI: `$TOTTIME` is the overall runtime summing up all iterations and is present in overall stats. |	 100 % |		
 
 
 #### Dependencies for Benchmarktests
@@ -254,7 +254,7 @@ graph TD
     AD --> AE[create2ndSubNets]
     AE --> AF[create2ndPorts]
 
-
+```
 
 ## Parent Functions
 
@@ -278,6 +278,7 @@ graph TD
 * Dependencies: relies on the external functions: `translate`, `mytimeout`, `log_grafana`, `sendalarm` and `errwait` for translating commands, enforcing timeouts, logging, error handling, and alarm notification
 
 * Code:
+
 ```
 # Command wrapper for openstack commands
 # Collecting timing, logging, and extracting id

@@ -94,10 +94,26 @@ class Collector:
             self.client.network.delete_security_group(security_group)
             self.security_groups.remove(security_group)
 
-    def create_jumphost(self, name, network_name, keypair_name, vm_image, flavor_name,
-                        security_groups, **kwargs):
-        vm = create_jumphost(self.client, name, network_name, keypair_name, vm_image, flavor_name,
-                             security_groups, **kwargs)
+    def create_jumphost(
+        self,
+        name,
+        network_name,
+        keypair_name,
+        vm_image,
+        flavor_name,
+        security_groups,
+        **kwargs,
+    ):
+        vm = create_jumphost(
+            self.client,
+            name,
+            network_name,
+            keypair_name,
+            vm_image,
+            flavor_name,
+            security_groups,
+            **kwargs,
+        )
         self.virtual_machines.append(vm.id)
         return vm
 
@@ -119,17 +135,23 @@ class Collector:
             ~openstack.network.v2.security_group.SecurityGroup: The new security group or None
         """
         security_group = self.client.network.create_security_group(
-            name=sec_group_name,
-            description=description
+            name=sec_group_name, description=description
         )
         self.security_groups.append(security_group.id)
-        assert security_group is not None, f"Security group with name {security_group.name} was not found"
+        assert (
+            security_group is not None
+        ), f"Security group with name {security_group.name} was not found"
         return security_group
 
-    def create_security_group_rule(self, sec_group_id: str, protocol: str,
-                                   port_range_min: int = None, port_range_max: int = None,
-                                   direction: str = 'ingress', remote_ip_prefix: str = '0.0.0.0/0'):
-
+    def create_security_group_rule(
+        self,
+        sec_group_id: str,
+        protocol: str,
+        port_range_min: int = None,
+        port_range_max: int = None,
+        direction: str = "ingress",
+        remote_ip_prefix: str = "0.0.0.0/0",
+    ):
         """Create security group rule for specified security group
 
         Args:
@@ -152,7 +174,9 @@ class Collector:
             remote_ip_prefix=remote_ip_prefix,
         )
         self.security_groups_rules.append(sec_group_rule.id)
-        assert sec_group_rule is not None, f"Rule for security group {sec_group_id} was not created"
+        assert (
+            sec_group_rule is not None
+        ), f"Rule for security group {sec_group_id} was not created"
         return sec_group_rule
 
 
@@ -256,12 +280,12 @@ def delete_subent_ports(client, subnet_id=None):
 
 
 def ensure_volume_exist(
-        client,
-        volume_name: str,
-        size: int = 10,
-        interval: int = 2,
-        wait: int = 120,
-        test_name: str = "scs-hm",
+    client,
+    volume_name: str,
+    size: int = 10,
+    interval: int = 2,
+    wait: int = 120,
+    test_name: str = "scs-hm",
 ):
     if check_volumes_created(client=client, test_name=test_name) == "available":
         volumes = list(client.block_store.volumes(name=volume_name))
@@ -347,8 +371,8 @@ def collect_jhs(redirs, test_name, logger: Logger):
     strip_pattern = re.compile(r"'([^']+)'")
     jhs = []
     for key, value in redirs.items():
-        if f'{test_name}jh' in key and 'fip' in value:
-            ip_string = value['fip']
+        if f"{test_name}jh" in key and "fip" in value:
+            ip_string = value["fip"]
             strip_me = strip_pattern.search(ip_string)
             if strip_me:
                 ip_string = strip_me.group(1)
@@ -418,18 +442,18 @@ def create_security_group(context, sec_group_name: str, description: str):
     )
     context.collector.security_groups.append(security_group.id)
     assert (
-            security_group is not None
+        security_group is not None
     ), f"Security group with name {security_group.name} was not found"
     return security_group
 
 
 def create_security_group_rule(
-        context,
-        sec_group_id: str,
-        protocol: str,
-        port_range_min: int = None,
-        port_range_max: int = None,
-        direction: str = "ingress",
+    context,
+    sec_group_id: str,
+    protocol: str,
+    port_range_min: int = None,
+    port_range_max: int = None,
+    direction: str = "ingress",
 ):
     """Create security group rule for specified security group.
 
@@ -453,21 +477,21 @@ def create_security_group_rule(
     )
     context.collector.security_groups_rules.append(sec_group_rule.id)
     assert (
-            sec_group_rule is not None
+        sec_group_rule is not None
     ), f"Rule for security group {sec_group_id} was not created"
     return sec_group_rule
 
 
 def create_wait_script(conn_test, testname):
     """
-            creates temp script locally and makes it executable 
-            script checks if the command $1 exists, waits for the system boot to finish 
-            if necessary and retries for up to 100 seconds if the command is not found
-        
-                not in use for now
-        """
+    creates temp script locally and makes it executable
+    script checks if the command $1 exists, waits for the system boot to finish
+    if necessary and retries for up to 100 seconds if the command is not found
+
+        not in use for now
+    """
     assertline = None
-    script_path = f'{testname}-wait'
+    script_path = f"{testname}-wait"
     secondary = None
     if "iperf" in conn_test:
         secondary = "iperf"
@@ -485,7 +509,7 @@ def create_wait_script(conn_test, testname):
             exit 1
             """
     try:
-        with open(script_path, 'w') as file:
+        with open(script_path, "w") as file:
             file.write(script_content)
         os.chmod(script_path, 0o755)
     except:
@@ -495,10 +519,9 @@ def create_wait_script(conn_test, testname):
 
 def delete_wait_script(testname):
     assertline = None
-    script_path = f'{testname}-wait'
+    script_path = f"{testname}-wait"
     try:
         os.remove(script_path)
-        print("\b")
     except:
         assertline = f"Failed to delete script file {script_path}"
     return assertline
@@ -740,7 +763,7 @@ def create_vm(client, name, image_name, flavor_name, network_id, **kwargs):
             image_id=image.id,
             flavor_id=flavor.id,
             networks=[{"uuid": network_id}],
-            **kwargs
+            **kwargs,
         )
         client.compute.wait_for_server(server)
     except DuplicateResource as e:
@@ -749,7 +772,16 @@ def create_vm(client, name, image_name, flavor_name, network_id, **kwargs):
     return server
 
 
-def create_jumphost(client, name, network_name, keypair_name, vm_image, flavor_name, security_groups, **kwargs):
+def create_jumphost(
+    client,
+    name,
+    network_name,
+    keypair_name,
+    vm_image,
+    flavor_name,
+    security_groups,
+    **kwargs,
+):
     keypair_filename = f"{keypair_name}-private"
 
     image = client.compute.find_image(name_or_id=vm_image)
@@ -763,13 +795,15 @@ def create_jumphost(client, name, network_name, keypair_name, vm_image, flavor_n
     if not keypair:
         keypair = client.compute.create_keypair(name=keypair_name)
         assert keypair, f"Keypair with name {keypair_name} doesn't exist"
-        with open(keypair_filename, 'w') as f:
+        with open(keypair_filename, "w") as f:
             f.write("%s" % keypair.private_key)
         os.chmod(keypair_filename, 0o600)
 
     for security_group in security_groups:
         security_group = client.network.find_security_group(security_group)
-        assert security_group, f"Security Group with name {security_group} doesn't exist"
+        assert (
+            security_group
+        ), f"Security Group with name {security_group} doesn't exist"
 
     server = client.create_server(
         name=name,
@@ -780,7 +814,7 @@ def create_jumphost(client, name, network_name, keypair_name, vm_image, flavor_n
         security_groups=security_groups,
         wait=True,
         auto_ip=False,
-        **kwargs
+        **kwargs,
     )
     server = client.compute.wait_for_server(server)
     created_jumphost = client.compute.find_server(name_or_id=name)
@@ -798,7 +832,8 @@ def create_network(client, name, **kwargs):
     """
     network = client.network.create_network(name=name, **kwargs)
     assert not client.network.find_network(
-        name_or_id=network), f"Network called {network} not present!"
+        name_or_id=network
+    ), f"Network called {network} not present!"
     return network
 
 
@@ -816,13 +851,13 @@ def create_subnet(client, name, network_id, ip_version=4, **kwargs):
     @param kwargs: additional arguments to be passed to resource create command
     @return: created subnet
     """
-    subnet = client.network.create_subnet(name=name,
-                                          network_id=network_id,
-                                          ip_version=ip_version,
-                                          **kwargs)
+    subnet = client.network.create_subnet(
+        name=name, network_id=network_id, ip_version=ip_version, **kwargs
+    )
     time.sleep(5)
-    assert not client.network.find_network(name_or_id=subnet), \
-        f"Failed to create subnet with name {subnet}"
+    assert not client.network.find_network(
+        name_or_id=subnet
+    ), f"Failed to create subnet with name {subnet}"
     return subnet
 
 
@@ -870,24 +905,29 @@ def create_lb(client, name, **kwargs):
     @param kwargs: additional arguments to be passed to resource create command
     @return created lb
     """
-    assert (client.load_balancer.create_load_balancer(name=name, **kwargs).
-            provisioning_status == "PENDING_CREATE"), f"Expected LB {name} not in creation"
-    lb = client.load_balancer.wait_for_load_balancer(name_or_id=name,
-                                                     status='ACTIVE',
-                                                     failures=['ERROR'], interval=2,
-                                                     wait=300)
+    assert (
+        client.load_balancer.create_load_balancer(
+            name=name, **kwargs
+        ).provisioning_status
+        == "PENDING_CREATE"
+    ), f"Expected LB {name} not in creation"
+    lb = client.load_balancer.wait_for_load_balancer(
+        name_or_id=name, status="ACTIVE", failures=["ERROR"], interval=2, wait=300
+    )
     assert lb.provisioning_status == "ACTIVE", f"Expected LB {name} not Active"
     assert lb.operating_status == "ONLINE", f"Expected LB {name} not Online"
     return lb
 
 
 def target_source_calc(jh_name, redirs, logger):
-    vm_quantity = len(redirs[jh_name]['vms'])
-    target_ip = redirs[jh_name]['addr']
-    pno = redirs[jh_name]['vms'][vm_quantity - 1]['port']
-    source_ip = redirs[jh_name]['vms'][vm_quantity - 1]['addr']
-    vm_name =  redirs[jh_name]['vms'][vm_quantity - 1]['vm_name']
-    logger.log_info(f"{jh_name}: vm_quantity: {vm_quantity} target_ip: {target_ip} source_ip: {source_ip} pno: {pno}")
+    vm_quantity = len(redirs[jh_name]["vms"])
+    target_ip = redirs[jh_name]["addr"]
+    pno = redirs[jh_name]["vms"][vm_quantity - 1]["port"]
+    source_ip = redirs[jh_name]["vms"][vm_quantity - 1]["addr"]
+    vm_name = redirs[jh_name]["vms"][vm_quantity - 1]["vm_name"]
+    logger.log_info(
+        f"{jh_name}: vm_quantity: {vm_quantity} target_ip: {target_ip} source_ip: {source_ip} pno: {pno}"
+    )
     if not source_ip or not target_ip or source_ip == target_ip:
         logger.log_debug(f"IPerf3: {source_ip}<->{target_ip}: skipped")
     return target_ip, source_ip, pno, vm_name

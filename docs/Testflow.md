@@ -72,4 +72,9 @@ To calculate for exemple the total duration of the run we set the timer in the `
 So in the end of `openstack_benchmark_build_infra.feature` the following step must be performed: ```Then I can pass the context to another feature``` (to store the needed information into the `SharedContext`)
 and the following features have to begin with the step: ``` Given I can get the shared context from previouse feature``` (to transfer the shared informations into the new `context` object). 
 
+## Scaling the Benchmark Infrastructure
 
+First of all is the scale of the benchmark infrastructure highly dependent on the amount of **availability zones** in the project. The number of **availability zones determines how many jumphosts (jhs)** and networks are built. If there are for example two availbility zones, two jumphosts are created and and attached to a floating ip each.\ 
+The jumphosts are connected through a shared network but each of them is also **attached to another network of virtual machines (vms)**. The **quantity of vms** can be adjusted in the table of `openstack_benchmark_build_infra.feature`. The vms can be reached from outside the network via port forwarding. Which is enabled by the jh. You can reach the vms by addressing the floating ip of the associated jh and the port number.
+The range of the port numbers can also be specified in the `openstack_benchmark_build_infra.feature` the default range is set from 222 to 229.\
+Apart from that, you cannot change quantities because the infrastructure automatically adjusts in scale depending on the dependencies.
