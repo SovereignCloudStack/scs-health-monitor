@@ -8,5 +8,5 @@ Feature: OpenStack Network Creation
 		Then I should be able to create <lb_quantity> loadbalancers for <subnet_name> in network <network_name>
 
 		Examples: Test loadbalancers
-			| lb_quantity | subnet_name			| network_name 			|
-			| 2	   			| scs-hm-subnet-2 | scs-hm-network-2	|
+			| lb_quantity |   subnet_name 	| network_name 		 |
+			|      2 			| scs-hm-subnet-2 | scs-hm-network-2 |
