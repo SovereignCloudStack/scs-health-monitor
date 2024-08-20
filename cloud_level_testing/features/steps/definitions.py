@@ -857,10 +857,14 @@ class StepsDef:
         assert assertline == None, assertline
 
     @then(
-        "I start calculating 4000 digits of pi on VM and check the ping response as {conn_test}"
+        "I start calculating 4000 digits of pi on VM and check the ping response"
     )
-    def calculate_pi_on_vm(context, conn_test):
-        """ """
+    def calculate_pi_on_vm(context):
+        """Behave step for calculating average ping response of a machine under load, created by calculating 4000 digits of pi.
+
+        Args:
+            context: Behave context object.
+        """
         calc_command = "date +%s && time echo 'scale=4000; 4*a(1)' | bc -l >/dev/null 2>&1 && date +%s"
         ping_parse_magic = (
             "| tail -n +2 | head -n -4 |awk '{split($0,a,\" \"); print a[1], a[8]}'"
