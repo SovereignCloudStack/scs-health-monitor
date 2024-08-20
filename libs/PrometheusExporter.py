@@ -3,11 +3,13 @@ from prometheus_client.samples import Sample
 from prometheus_client.registry import Collector
 import re
 
+
 class CommandTypes:
     API = "api-call"
     IPERF = "iperf3"
     SSH = "ssh"
     PING = "ping"
+
 
 class LabelNames:
     COMMAND_LABEL = "command"
@@ -16,7 +18,9 @@ class LabelNames:
     ENDPOINT_URL = "endpoint"
     STATUS_CODE = "status_code"
     METHOD = "method"
- #   RESULT = "testresult"
+
+
+#   RESULT = "testresult"
 
 class LabelValues:
     COMMAND_VALUE_IPERF3 = "iperf3"
@@ -41,7 +45,7 @@ class CustomCollector(Collector):
             for sample in metric.samples:
                 new_labels = {k: v for k, v in sample.labels.items() if k not in self.excluded_labels}
                 new_sample = Sample(sample.name, new_labels, sample.value, sample.timestamp, sample.exemplar)
-                
+
                 for key, value in self.default_labels.items():
                     self.add_label(key, value, new_sample.labels)
 
@@ -53,7 +57,7 @@ class CustomCollector(Collector):
                 # Add resource label parsed from 'endpoint' label
                 # This is intended for the metrics gathered from the openstack SDK
                 url_value = new_sample.labels.get(LabelNames.ENDPOINT_URL, None)
-                if url_value:                    
+                if url_value:
                     parsed_resource = self.parse_resource_from_metric(url_value)
                     self.add_label(LabelNames.RESOURCE_LABEL, parsed_resource, new_sample.labels)
 
@@ -63,15 +67,16 @@ class CustomCollector(Collector):
     def add_label(self, key, value, labels):
         if not key or not value or not labels:
             return
-        
+
         if key not in labels and key not in self.excluded_labels:
             labels[key] = value
 
     def parse_resource_from_metric(self, url: str):
-        match = re.search(self.url_resource_pattern, url)    
+        match = re.search(self.url_resource_pattern, url)
         return match.group(1) if match else None
 
-class PrometheusExporter: 
+
+class PrometheusExporter:
     def __init__(self, default_labels=None, excluded_labels=None):
         self.registry = CollectorRegistry()
         self.collector = CustomCollector(default_labels, excluded_labels)
