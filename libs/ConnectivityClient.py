@@ -304,8 +304,6 @@ class SshClient:
             class
         Returns:
             prints current working dir
-        Raises:
-            Exception:
         """
         directory = self.execute_command("pwd")
         self.logger.log_info(
@@ -313,7 +311,7 @@ class SshClient:
         )
 
     def check_ssh_ready(self) -> bool:
-        """Check if ssh is ready on a provisioned server.
+        """Check if ssh is ready on a provisioned server and establishes the ssh connection.
         Returns:
             True if server is ready to respond to ssh connection, else False.
         """
@@ -408,7 +406,9 @@ class SshClient:
             Args:
                 iperf_json: response from iperf formatted as json (string)
             Returns:
-                Bandwith
+                Bandwith as metrics
+                sBW: Send Bandwidth
+                rBW: Receiver Bandwidth
         '''
         bold = '\033[1m'
         norm = '\033[0m'
