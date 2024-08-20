@@ -1,9 +1,9 @@
 # Kubernetes BDD Testing Framework Documentation
 ## Overview
 
-This framework is designed to facilitate Behavior-Driven Development (BDD) for testing Kubernetes deployments using the
-behave Python library. The framework allows you to write human-readable tests that validate Kubernetes clusters, pods,
-services, and other resources.
+This framework is designed to facilitate Behavior-Driven Development (BDD) for both cloud level testing
+and container level testing. The framework allows you to write human-readable tests that validate Kubernetes clusters, 
+pods, services, and other resources.
 
 Before you begin, ensure you have the following installed on your machine:
 
@@ -102,7 +102,8 @@ clouds:
 ## Configuration
 ### Kubernetes Configuration
 
-Ensure that your Kubernetes configuration file (kubeconfig) is correctly set up. This file is typically located at ~/.kube/config. The framework uses this configuration to interact with your Kubernetes cluster.
+Ensure that your Kubernetes configuration file (kubeconfig) is correctly set up. This file is typically located at 
+~/.kube/config. The framework uses this configuration to interact with your Kubernetes cluster.
 
 If you want to use a specific context from your kubeconfig, you can set it using:
 ```bash
@@ -259,7 +260,8 @@ kubectl get pods
 
 ## Observability stack
 
-For informations about setting up Observability Stack, please use this [file](https://github.com/SovereignCloudStack/scs-health-monitor/blob/main/docs/ObservabilityStack/SetupObservabilityStack.md)
+For more informations about setting up Observability Stack, please use this 
+[file](https://github.com/SovereignCloudStack/scs-health-monitor/blob/main/docs/ObservabilityStack/SetupObservabilityStack.md)
 
 ___
 
