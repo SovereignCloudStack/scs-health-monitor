@@ -26,7 +26,8 @@ class BenchmarkInfra:
 
     @given(
         "I want to build the benchmark infrastructure by using resources having the infix "
-        "{infix}")
+        "{infix}"
+    )
     def infra_benchmark(context, infix: str):
         context.test_name = f"{context.test_name}-{infix}-"
         context.vm_nets_ids: list = []
@@ -55,13 +56,17 @@ class BenchmarkInfra:
     def calculate_jh_name_by_az(context, az):
         return f"{context.test_name}jh{context.azs.index(az)}"
 
-    @then("I should be able to create a router connected to the external network named {ext_net}")
+    @then(
+        "I should be able to create a router connected to the external network named {ext_net}"
+    )
     def infra_create_router(context, ext_net):
         nets = tools.list_networks(context.client, filter={"name": ext_net})
         assert len(nets) == 1, "Expecting to find exactly one external network."
 
-        context.collector.create_router(name=context.lb_router_name,
-                                        external_gateway_info={'network_id': nets[0].id})
+        context.collector.create_router(
+            name=context.lb_router_name,
+            external_gateway_info={"network_id": nets[0].id},
+        )
 
     @then("I should be able to fetch availability zones")
     def infra_get_azs(context):
@@ -70,14 +75,19 @@ class BenchmarkInfra:
         for az in azs:
             context.azs.append(az["name"])
 
-    @then("I should be able to create networks for both the jump hosts and for each availability "
-          "zone")
+    @then(
+        "I should be able to create networks for both the jump hosts and for each availability "
+        "zone"
+    )
     def infra_create_networks(context):
-        context.jh_net_id = context.collector.create_network(f"{context.test_name}jh").id
+        context.jh_net_id = context.collector.create_network(
+            f"{context.test_name}jh"
+        ).id
         for az in context.azs:
             no = context.azs.index(az)
-            net = context.collector.create_network(f"{context.test_name}vm-{no}",
-                                                   availability_zone_hints=[az])
+            net = context.collector.create_network(
+                f"{context.test_name}vm-{no}", availability_zone_hints=[az]
+            )
             context.vm_nets_ids.append(net.id)
 
     @then("I should be able to create subnets for both the jump hosts and vms")
@@ -86,44 +96,58 @@ class BenchmarkInfra:
         Create two kinds of subnets: One for the jump host and one for the VMs.
         For the latter we create one subnet for each AZ.
         """
-        context.jh_subnet_id = context.collector.create_subnet(name=f"{context.test_name}jh",
-                                                               network_id=context.jh_net_id,
-                                                               cidr="10.250.255.0/24").id
+        context.jh_subnet_id = context.collector.create_subnet(
+            name=f"{context.test_name}jh",
+            network_id=context.jh_net_id,
+            cidr="10.250.255.0/24",
+        ).id
 
         for net in context.vm_nets_ids:
             no = context.vm_nets_ids.index(net)
-            subnet = context.collector.create_subnet(name=f"{context.test_name}vm-{no}",
-                                                     network_id=net,
-                                                     cidr=f"10.250.{no * 4}.0/22")
+            subnet = context.collector.create_subnet(
+                name=f"{context.test_name}vm-{no}",
+                network_id=net,
+                cidr=f"10.250.{no * 4}.0/22",
+            )
             context.vm_subnet_ids.append(subnet.id)
 
     @then("I should be able to connect the router to the jump host subnet")
     def infra_connect_router_to_jh_net(context):
         router = tools.find_router(context.client, context.lb_router_name)
-        router_update = context.collector.add_interface_to_router(router, context.jh_subnet_id)
+        router_update = context.collector.add_interface_to_router(
+            router, context.jh_subnet_id
+        )
 
-        tools.add_value_to_dict_list(context.lb_router_port_ids,
-                                     context.lb_router_name,
-                                     router_update["port_id"])
+        tools.add_value_to_dict_list(
+            context.lb_router_port_ids, context.lb_router_name, router_update["port_id"]
+        )
 
     @then("I should be able to connect the router to the vm subnets")
     def infra_connect_router_to_vm_net(context):
         router = tools.find_router(context.client, context.lb_router_name)
         for vm_subnet_id in context.vm_subnet_ids:
-            router_update = context.collector.add_interface_to_router(router, vm_subnet_id)
+            router_update = context.collector.add_interface_to_router(
+                router, vm_subnet_id
+            )
 
-            tools.add_value_to_dict_list(context.lb_router_port_ids,
-                                         context.lb_router_name,
-                                         router_update["port_id"])
+            tools.add_value_to_dict_list(
+                context.lb_router_port_ids,
+                context.lb_router_name,
+                router_update["port_id"],
+            )
 
-    @then("I should be able to create a security group for the hosts allowing inbound tcp "
-          "connections for the port range {port_start:d} to {port_end:d}")
+    @then(
+        "I should be able to create a security group for the hosts allowing inbound tcp "
+        "connections for the port range {port_start:d} to {port_end:d}"
+    )
     def create_security_group(context, port_start: int, port_end: int):
         sg = context.collector.create_security_group(
             context.host_sec_group_name,
-            "Allow ssh redirection inside network and iperf3"
+            "Allow ssh redirection inside network and iperf3",
         )
-        context.collector.create_security_group_rule(sg["id"], "tcp", port_start, port_end)
+        context.collector.create_security_group_rule(
+            sg["id"], "tcp", port_start, port_end
+        )
         context.collector.create_security_group_rule(
             sg["id"],
             "tcp",
@@ -131,11 +155,14 @@ class BenchmarkInfra:
             DEFAULT_IPERF3_PORT,
             remote_ip_prefix="10.0.0.0/8",
         )
-        context.collector.create_security_group_rule(sg["id"], "icmp", remote_ip_prefix="0.0.0.0/0")
-        #TODO only inner network maybe rewrite pingVM feature to ping only inner network remote_ip_prefix="10.0.0.0/8"
+        context.collector.create_security_group_rule(
+            sg["id"], "icmp", remote_ip_prefix="0.0.0.0/0"
+        )
+        # TODO only inner network maybe rewrite pingVM feature to ping only inner network remote_ip_prefix="10.0.0.0/8"
 
     @then(
-        "I should be able to create a jump host for each az using a key pair named {keypair_name}")
+        "I should be able to create a jump host for each az using a key pair named {keypair_name}"
+    )
     def infra_create_jumphosts(context, keypair_name: str):
         for az in context.azs:
             jh_name = BenchmarkInfra.calculate_jh_name_by_az(context, az)
@@ -165,7 +192,8 @@ iptables -t nat -A PREROUTING -s 0/0 -i $(cat /tmp/iface) -j DNAT -p tcp --dport
 """
 
             template = jinja2.Environment(loader=jinja2.BaseLoader).from_string(
-                forwarding_script_tmpl)
+                forwarding_script_tmpl
+            )
             forwarding_script = template.render(redirs=context.redirs, jh_name=jh_name)
 
             user_data = f"""#cloud-config
@@ -192,17 +220,16 @@ runcmd:
 - iperf3 -Ds 
 """
 
-            context.collector.create_jumphost(jh_name,
-                                              context.jh_net_id,
-                                              keypair_name,
-                                              context.vm_image,
-                                              context.flavor_name,
-                                              DEFAULT_SECURITY_GROUPS + [
-                                                  context.host_sec_group_name
-                                              ],
-                                              availability_zone=az,
-                                              userdata=user_data,
-                                              )
+            context.collector.create_jumphost(
+                jh_name,
+                context.jh_net_id,
+                keypair_name,
+                context.vm_image,
+                context.flavor_name,
+                DEFAULT_SECURITY_GROUPS + [context.host_sec_group_name],
+                availability_zone=az,
+                userdata=user_data,
+            )
 
     @then("I should be able to attach floating ips to the jump hosts")
     def infra_create_floating_ip(context):
@@ -210,7 +237,9 @@ runcmd:
             # fip = context.collector.create_floating_ip(
             #     BenchmarkInfra.calculate_jh_name_by_az(context, az)
             # )
-            fip = tools.attach_floating_ip_to_server(context, BenchmarkInfra.calculate_jh_name_by_az(context, az))
+            fip = tools.attach_floating_ip_to_server(
+                context, BenchmarkInfra.calculate_jh_name_by_az(context, az)
+            )
             # Add jump host internal ip and fip to port forwardings data structure
             for jh_name, redir in context.redirs.items():
                 if jh_name == BenchmarkInfra.calculate_jh_name_by_az(context, az):
@@ -218,50 +247,60 @@ runcmd:
                 # Also set fixed ip of network
                 if not context.redirs[jh_name]["addr"]:
                     jh = context.collector.find_server(jh_name)
-                    context.redirs[jh_name]["addr"] = (
-                        tools.vm_extract_ip_by_type(jh, "fixed"))
+                    context.redirs[jh_name]["addr"] = tools.vm_extract_ip_by_type(
+                        jh, "fixed"
+                    )
 
-    @then("I should be able to create {quantity:d} VMs with a key pair named {keypair_name} and "
-          "strip them over the VM networks")
+    @then(
+        "I should be able to create {quantity:d} VMs with a key pair named {keypair_name} and "
+        "strip them over the VM networks"
+    )
     def infra_create_vms(context, quantity: int, keypair_name: str):
-        user_data = f'''#cloud-config
+        user_data = f"""#cloud-config
 packages:
 - jq
 - iperf3
-        '''
+        """
         for num in range(0, quantity):
             vm_name = BenchmarkInfra.derive_vm_name(context, num)
-            assert len(context.vm_nets_ids) > 0, "Number of VM networks has to be greater than 0"
+            assert (
+                len(context.vm_nets_ids) > 0
+            ), "Number of VM networks has to be greater than 0"
             # Strip VMs over VM networks (basically round-robin)
             vm_net_id = context.vm_nets_ids[num % len(context.vm_nets_ids)]
-            context.collector.create_jumphost(vm_name,
-                                              vm_net_id,
-                                              keypair_name,
-                                              context.vm_image,
-                                              context.flavor_name,
-                                              DEFAULT_SECURITY_GROUPS + [
-                                                  context.host_sec_group_name
-                                              ],
-                                              userdata=user_data,)
+            context.collector.create_jumphost(
+                vm_name,
+                vm_net_id,
+                keypair_name,
+                context.vm_image,
+                context.flavor_name,
+                DEFAULT_SECURITY_GROUPS + [context.host_sec_group_name],
+                userdata=user_data,
+            )
 
-    @then('I should be able to query the ip addresses of the created {quantity:d} VMs')
+    @then("I should be able to query the ip addresses of the created {quantity:d} VMs")
     def infra_vms_query_ips(context, quantity: int):
         for num in range(0, quantity):
             vm_name = BenchmarkInfra.derive_vm_name(context, num)
             vm = context.collector.find_server(vm_name)
             assert vm, f"Expected that vm with name {vm_name} exists"
             networks = vm["addresses"]
-            assert len(networks) == 1, (f"Expecting the VM has exactly one network. "
-                                        f"Found {len(networks)}.")
-            context.az_vm_port_mapping.append({
-                "az": vm["location"]["zone"],
-                "vm_name": vm_name,
-                "addr": list(networks.values())[0][0]["addr"]
-            })
+            assert len(networks) == 1, (
+                f"Expecting the VM has exactly one network. " f"Found {len(networks)}."
+            )
+            context.az_vm_port_mapping.append(
+                {
+                    "az": vm["location"]["zone"],
+                    "vm_name": vm_name,
+                    "addr": list(networks.values())[0][0]["addr"],
+                }
+            )
 
-    @then("I should be able to calculate the port forwardings for the jump hosts by associating "
-          "the VM ip addresses with the jump hosts by az in the port range {port_start:d} to "
-          "{port_end:d}")
+    @then(
+        "I should be able to calculate the port forwardings for the jump hosts by associating "
+        "the VM ip addresses with the jump hosts by az in the port range {port_start:d} to "
+        "{port_end:d}"
+    )
     def infra_calculate_port_forwardings(context, port_start: int, port_end: int):
         """
         Calculate port forwarding for jump hosts redirecting ssh to the actual vms.
@@ -306,16 +345,18 @@ packages:
                         redirs[jh_name] = {
                             "fip": None,  # Add after jump host created
                             "addr": None,
-                            "vms": []
+                            "vms": [],
                         }
                     # Get next free port
                     port = port_start + len(redirs[jh_name]["vms"])
                     assert port <= port_end, "We exceed the supplied port range"
-                    redirs[jh_name]["vms"].append({
-                        "port": port,
-                        "addr": mapping["addr"],
-                        "vm_name": mapping["vm_name"]
-                    })
+                    redirs[jh_name]["vms"].append(
+                        {
+                            "port": port,
+                            "addr": mapping["addr"],
+                            "vm_name": mapping["vm_name"],
+                        }
+                    )
 
         context.redirs = redirs
 
@@ -327,8 +368,9 @@ packages:
     @then("I should be able to delete all subnets of routers")
     def infra_router_delete_subnets(context):
         for router_subnet in context.collector.router_subnets:
-            context.collector.delete_interface_from_router(router_subnet["router"],
-                                                           router_subnet["subnet"])
+            context.collector.delete_interface_from_router(
+                router_subnet["router"], router_subnet["subnet"]
+            )
 
     @then("I should be able to create a loadbalancer")
     # TODO: Remove composit, and move to individual functions
@@ -337,25 +379,35 @@ packages:
     #  TODO: Finish this by spawning Jump Host and VMs. We want to access web services on the VMs via the JH.
     def lb_create_combat(context):
         lb_name = context.test_name
-        tools.create_lb(context.client, name=lb_name,
-                        vip_subnet_id="02390af9-7213-46d5-82b8-36af3734406e")
+        tools.create_lb(
+            context.client,
+            name=lb_name,
+            vip_subnet_id="02390af9-7213-46d5-82b8-36af3734406e",
+        )
         lb_id = "f9963732-1858-4215-9553-8831d162f852"
-        context.client.load_balancer.create_listener(name="listener", protocol="HTTP",
-                                                     protocol_port=80, load_balancer_id=lb_id)
+        context.client.load_balancer.create_listener(
+            name="listener", protocol="HTTP", protocol_port=80, load_balancer_id=lb_id
+        )
         pool_name = "pool"
-        context.client.load_balancer.create_pool(name=pool_name,
-                                                 protocol="HTTP",
-                                                 lb_algorithm="ROUND_ROBIN",
-                                                 loadbalancer_id=lb_id)
+        context.client.load_balancer.create_pool(
+            name=pool_name,
+            protocol="HTTP",
+            lb_algorithm="ROUND_ROBIN",
+            loadbalancer_id=lb_id,
+        )
         pool_id = "8d01205d-d367-4018-ab35-124494ed6258"
         # TODO: Access VM address
-        context.client.load_balancer.create_member(pool_id, name="member-1",
-                                                   subnet="scs-hm-subnet-1",
-                                                   address="10.30.40.139", protocol_port=80)
+        context.client.load_balancer.create_member(
+            pool_id,
+            name="member-1",
+            subnet="scs-hm-subnet-1",
+            address="10.30.40.139",
+            protocol_port=80,
+        )
 
-    @then('I can pass the context to another feature')
+    @then("I can pass the context to another feature")
     def step_then_use_in_another_feature(context):
         context.shared_context.test_name = context.test_name
         context.shared_context.redirs = context.redirs
         context.shared_context.keypair_name = context.keypair_name
-        assert hasattr(context.shared_context,'redirs'), f"context could not be passed"
+        assert hasattr(context.shared_context, "redirs"), f"context could not be passed"

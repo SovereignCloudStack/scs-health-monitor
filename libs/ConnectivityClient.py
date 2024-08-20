@@ -1,4 +1,3 @@
-
 import paramiko
 import paramiko.ssh_exception
 import time
@@ -13,6 +12,7 @@ import time
 import json
 from decimal import Decimal
 
+
 class MetricLabels:
     STATUS_CODE = "status_code"
     HOST = "host"
@@ -21,7 +21,9 @@ class MetricLabels:
     SENDER_NAME = "sender_name"
     RECEIVER_IP = "receiver_ip"
     RECEIVER_NAME = "receiver_name"
- #   RESULT = "testresult"
+
+
+#   RESULT = "testresult"
 
 
 class ResultStatusCodes:
@@ -52,7 +54,6 @@ class MetricDescription:
 
 
 class SshClient:
-
     """
     Connection metrics
     """
@@ -344,40 +345,42 @@ class SshClient:
                 )
                 time.sleep(timeout)
         return False
-    
+
     def transfer_script(self, scriptname):
         """
-            transfers temporary local script to the connected host via sftp, not used for now
-            Args:
-                testname: testname for namespace
-            Returns:
-                
-            Raises:
-                Exception:
-                    if file not found
+        transfers temporary local script to the connected host via sftp, not used for now
+        Args:
+            testname: testname for namespace
+        Returns:
+
+        Raises:
+            Exception:
+                if file not found
         """
 
         sftp = self.client.open_sftp()
         host = self.execute_command("hostname -I")
         directory = self.execute_command("pwd")
-        sftp.put(scriptname,os.path.join(directory,scriptname))
-        peek=self.execute_command("ls -la")        
+        sftp.put(scriptname, os.path.join(directory, scriptname))
+        peek = self.execute_command("ls -la")
         self.logger.log_debug(f"peek: {peek}")
-        self.logger.log_info(f"{scriptname} transfer completed successfully to {host}: {directory}.")
+        self.logger.log_info(
+            f"{scriptname} transfer completed successfully to {host}: {directory}."
+        )
         if sftp:
             sftp.close()
 
-    def get_iperf3(self, target_ip, retries = 5):
+    def get_iperf3(self, target_ip, retries=5):
         """
-            performs an iperf3-client request on the server addressed by the target ip
-            Args:
-                target_ip: (string) network ip address of the iperf3 server, usually the jh 
-                retries: (int) number of retries in case of failure
-            Returns:
-                iperf_json: (json) iperf response as json
-            Raises:
-                checks if command is succesfully executed
-                and whether the iperf response contains any errors
+        performs an iperf3-client request on the server addressed by the target ip
+        Args:
+            target_ip: (string) network ip address of the iperf3 server, usually the jh
+            retries: (int) number of retries in case of failure
+        Returns:
+            iperf_json: (json) iperf response as json
+        Raises:
+            checks if command is succesfully executed
+            and whether the iperf response contains any errors
         """
         iperf_command = f"iperf3 -t5 -J -c {target_ip} | jq"
         iperf_json = None
@@ -388,7 +391,7 @@ class SshClient:
                 iperf_json = self.execute_command(iperf_command)
                 self.logger.log_info(f"received Iperf response as json")
                 if iperf_json.find(substring) != -1:
-                    error= True
+                    error = True
             except:
                 error = True
                 self.logger.log_error(f"Iperf request failed retry {i}")
@@ -396,37 +399,42 @@ class SshClient:
                 self.logger.log_info(f"Iperf without any errors")
                 break
             self.logger.log_error(f"Iperf retry {i}")
-            time.sleep(10)    
+            time.sleep(10)
         return iperf_json
 
-
-    def parse_iperf_result(self,iperf_json, source_ip, source_name, target_ip, target_name):
-        '''
-            Parses the result from iperf3
-            Args:
-                iperf_json: response from iperf formatted as json (string)
-            Returns:
-                Bandwith as metrics
-                sBW: Send Bandwidth
-                rBW: Receiver Bandwidth
-        '''
-        bold = '\033[1m'
-        norm = '\033[0m'
+    def parse_iperf_result(
+        self, iperf_json, source_ip, source_name, target_ip, target_name
+    ):
+        """
+        Parses the result from iperf3
+        Args:
+            iperf_json: response from iperf formatted as json (string)
+        Returns:
+            Bandwith as metrics
+            sBW: Send Bandwidth
+            rBW: Receiver Bandwidth
+        """
+        bold = "\033[1m"
+        norm = "\033[0m"
         bandwidth = []
-    
+
         iperf_json_dict = json.loads(iperf_json)
-        
-        send_bw_bits = int(Decimal(iperf_json_dict['end']['sum_sent']['bits_per_second']))
-        recv_bw_bits = int(Decimal(iperf_json_dict['end']['sum_received']['bits_per_second']))
+
+        send_bw_bits = int(
+            Decimal(iperf_json_dict["end"]["sum_sent"]["bits_per_second"])
+        )
+        recv_bw_bits = int(
+            Decimal(iperf_json_dict["end"]["sum_received"]["bits_per_second"])
+        )
         sendBW = send_bw_bits / 1048576
         recvBW = recv_bw_bits / 1048576
-        host_util = iperf_json_dict['end']['cpu_utilization_percent']['host_total']
-        remote_util = iperf_json_dict['end']['cpu_utilization_percent']['remote_total']
-    
-        self.logger.log_info(f"IPerf3: {source_ip}-{target_ip}: sendbw: {sendBW} Mbps receivebw: {recvBW} Mbps cpuhost {host_util:.1f}% cpuremote {remote_util:.1f}%\n")
+        host_util = iperf_json_dict["end"]["cpu_utilization_percent"]["host_total"]
+        remote_util = iperf_json_dict["end"]["cpu_utilization_percent"]["remote_total"]
 
-    
-    
+        self.logger.log_info(
+            f"IPerf3: {source_ip}-{target_ip}: sendbw: {sendBW} Mbps receivebw: {recvBW} Mbps cpuhost {host_util:.1f}% cpuremote {remote_util:.1f}%\n"
+        )
+
         bandwidth.extend([sendBW, recvBW])
         sBW = float(Decimal(sendBW) / 1000)
         rBW = float(Decimal(recvBW) / 1000)
@@ -456,18 +464,28 @@ class SshClient:
         ).set(remote_util)
 
         self.logger.log_info(f"Bandwith: {bandwidth} SBW: {sBW} RBW: {rBW}\n")
-        return sBW,rBW
+        return sBW, rBW
 
-    
-    def run_iperf_test(self, conn_test, testname ,server_fip, target_ip, target_name, source_ip, source_name):
-        '''
-            iterates through jh (one per network) picks the last vm accessable through jh and sets it as target
-            the jh is set as source
-        '''
-        #self.transfer_script(f"{testname}-wait")
+    def run_iperf_test(
+        self,
+        conn_test,
+        testname,
+        server_fip,
+        target_ip,
+        target_name,
+        source_ip,
+        source_name,
+    ):
+        """
+        iterates through jh (one per network) picks the last vm accessable through jh and sets it as target
+        the jh is set as source
+        """
+        # self.transfer_script(f"{testname}-wait")
         iperf_json = self.get_iperf3(target_ip)
         if iperf_json:
-            self.parse_iperf_result(iperf_json, source_ip, source_name, target_ip, target_name)
+            self.parse_iperf_result(
+                iperf_json, source_ip, source_name, target_ip, target_name
+            )
             self.conn_test_count.labels(
                 ResultStatusCodes.SUCCESS, self.host, target_ip, conn_test
             ).inc()
