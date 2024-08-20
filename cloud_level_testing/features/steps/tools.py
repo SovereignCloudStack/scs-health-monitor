@@ -788,7 +788,6 @@ def get_timestamps(data: str) -> tuple[str, str]:
 
 def run_parallel(tasks: list[tuple], timeout: int = 100) -> list[str]:
     """Run submitted tasks in multithreaded executor and collect the results.
-
     Args:
         tasks: List of tasks written as tuples.
         timeout: Amount of time for executor to wait before terminating the tasks.
@@ -844,6 +843,37 @@ def create_jumphost(
     security_groups,
     **kwargs,
 ):
+    """
+    Create a jumphost in a specified network.
+
+    Args:
+        client (object): The OpenStack client used to interact with the compute and network services.
+        name (str): The name of the jumphost to be created.
+        network_name (str): The name of the network where the jumphost will be connected.
+        keypair_name (str): The name of the keypair to be used for SSH access to the jumphost.
+        vm_image (str): The name or ID of the image to be used for the jumphost.
+        flavor_name (str): The name or ID of the flavor (hardware configuration) to be used for the jumphost.
+        security_groups (list): A list of security group names to apply to the jumphost.
+        **kwargs: Additional arguments to be passed to the `create_server` function.
+
+    Returns:
+        dict: The jumphost server object if successfully created.
+
+    Raises:
+        AssertionError: If any required resource (image, flavor, network, security group) cannot be found or if the jumphost creation fails.
+
+    Example:
+        >>> jumphost = create_jumphost(
+        ...     client=my_client,
+        ...     name="my-jumphost",
+        ...     network_name="my-network",
+        ...     keypair_name="my-keypair",
+        ...     vm_image="ubuntu-20.04",
+        ...     flavor_name="m1.small",
+        ...     security_groups=["default", "ssh-access"]
+        ... )
+        >>> print(jumphost["id"])
+    """    
     keypair_filename = f"{keypair_name}-private"
 
     image = client.compute.find_image(name_or_id=vm_image)
@@ -900,6 +930,21 @@ def create_network(client, name, **kwargs):
 
 
 def list_networks(client, filter: dict = None) -> list:
+    """
+    List networks available in the OpenStack environment, optionally filtered by criteria.
+
+    Args:
+        client (object): The OpenStack client used to interact with the network service.
+        filter (dict, optional): A dictionary of filter criteria to narrow down the list of networks. Default is None.
+
+    Returns:
+        list: A list of network objects matching the filter criteria.
+
+    Example:
+        >>> networks = list_networks(client=my_client, filter={"status": "ACTIVE"})
+        >>> for network in networks:
+        ...     print(network["name"])
+    """
     return list(client.list_networks(filter))
 
 
@@ -956,6 +1001,20 @@ def add_interface_to_router(client, router, subnet_id):
 
 
 def get_availability_zones(client) -> list:
+    """
+    Retrieve a list of availability zones from the network service.
+
+    Args:
+        client (object): The OpenStack client used to interact with the network service.
+
+    Returns:
+        list: A list of availability zone objects.
+
+    Example:
+        >>> availability_zones = get_availability_zones(client=my_client)
+        >>> for zone in availability_zones:
+        ...     print(zone["name"])
+    """
     return list(client.network.availability_zones())
 
 
@@ -982,6 +1041,18 @@ def create_lb(client, name, **kwargs):
 
 
 def target_source_calc(jh_name, redirs, logger):
+    """
+    Calculate and return the target and source IP addresses, port number, and VM name for a specific jump host.
+
+    Args:
+        jh_name (str): The name of the jump host.
+        redirs (dict): A dictionary containing redirection information, including VMs associated with the jump host.
+        logger (object): A logger object used to log information and debug messages.
+
+    Returns:
+        tuple: A tuple containing the target IP address (str), source IP address (str), port number (int), 
+               and VM name (str) of the last VM associated with the specified jump host.
+    """
     vm_quantity = len(redirs[jh_name]["vms"])
     target_ip = redirs[jh_name]["addr"]
     pno = redirs[jh_name]["vms"][vm_quantity - 1]["port"]
