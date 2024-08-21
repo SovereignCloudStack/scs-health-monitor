@@ -10,7 +10,7 @@ To set up Prometheus stack and Prometheus Pushgateway on local Kubernetes using 
 1) Add Helm Chart Repositories:
 
 ```bash
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts 
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 ```
 
@@ -20,7 +20,7 @@ helm repo update
 helm install my-kube-prometheus-stack prometheus-community/kube-prometheus-stack --version 57.0.3 -f "./Values/PrometheusStackValues.yaml"
 ```
 
-This command will install the Prometheus stack on your Kubernetes cluster [using these values](./Values/PrometheusStackValues.yaml).
+This command will install the Prometheus stack on your Kubernetes cluster [using these values](https://github.com/SovereignCloudStack/scs-health-monitor/tree/ba9049292c3da5afcdae52b1cca15759e074e950/docs/ObservabilityStack/Values/PrometheusStackValues.yaml).
 
 3) Install Prometheus Pushgateway:
 
@@ -28,7 +28,7 @@ This command will install the Prometheus stack on your Kubernetes cluster [using
 helm install my-prometheus-pushgateway prometheus-community/prometheus-pushgateway --version 2.8.0 -f "./Values/PrometheusPushGateway.yaml"
 ```
 
-This command will install Prometheus Pushgateway on your Kubernetes cluster [using these values](./Values/PrometheusPushGateway.yaml).
+This command will install Prometheus Pushgateway on your Kubernetes cluster [using these values](https://github.com/SovereignCloudStack/scs-health-monitor/tree/ba9049292c3da5afcdae52b1cca15759e074e950/docs/ObservabilityStack/Values/PrometheusPushGateway.yaml).
 
 4) Set Docker Context:
 
@@ -72,7 +72,7 @@ Remember to replace placeholders such as my-kube-prometheus-stack and my-prometh
 Once you've executed these commands, Prometheus stack and Prometheus Pushgateway should be set up and accessible on your local Kubernetes cluster.
 
 7) Uninstall helm chart
-If you want to reinstall or remove the deployed observability stack, you can use the following commands: 
+If you want to reinstall or remove the deployed observability stack, you can use the following commands:
 
 ```bash
 # List deployed helm charts
