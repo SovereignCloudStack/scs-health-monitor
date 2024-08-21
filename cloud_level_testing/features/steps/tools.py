@@ -56,41 +56,118 @@ class Collector:
         )
 
     def create_router(self, name, **kwargs):
+        """
+        Create a new router and add its ID to the list of routers
+
+        Args:
+            name (str): The name of the router to be created
+            **kwargs: Additional parameters to be passed to the `create_router` function
+        Returns:
+            router (dict): router object
+        """
         router = create_router(self.client, name, **kwargs)
         self.routers.append(router.id)
         return router
 
     def create_network(self, name, **kwargs):
+        """
+        Create a new network and add its ID to the list of network
+
+        Args:
+            name (str): The name of the router to be created.
+            **kwargs: Additional parameters to be passed to the `create_network` function
+        Returns:
+            net (dict): network object
+        """        
         net = create_network(self.client, name, **kwargs)
         self.networks.append(net.id)
         return net
 
     def create_subnet(self, name, network_id, ip_version=4, **kwargs):
+        """
+        Create a new subnet and add its ID to the list of subnets
+
+        Args:
+            name (str): The name of the subnet to be created
+            network_id (str): The ID of the network to which the subnet will be associated
+            ip_version (int, optional): The IP version for the subnet (default is 4)
+            **kwargs: Additional parameters to be passed to the `create_subnet` function
+
+        Returns:
+            subnet (dict): The subnet object created by the `create_subnet` function
+        """
         subnet = create_subnet(self.client, name, network_id, ip_version, **kwargs)
         self.subnets.append(subnet.id)
         return subnet
 
     def add_interface_to_router(self, router, subnet_id):
+        """
+        Add a subnet interface to a router and track the association
+
+        Args:
+            router (dict): The router object to which the subnet interface will be added
+            subnet_id (str): The ID of the subnet to be attached to the router
+
+        Returns:
+            router_update (dict): The updated router object after adding the interface 
+            by the `add_interface_to_router` function
+        """
         router_update = add_interface_to_router(self.client, router, subnet_id)
         self.router_subnets.append({"router": router.id, "subnet": subnet_id})
         return router_update
 
     def find_router(self, name_or_id):
+        """
+        Find and retrieve a router by its name or ID
+
+        Args:
+            name_or_id (str): The name or ID of the router to be found
+
+        Returns:
+            dict: The router object if found by the `find_router` function
+
+        Example:
+            >>> router = instance.find_router(name_or_id="new-router")
+            >>> print(router["id"])
+        """
         return find_router(self.client, name_or_id)
 
     def find_server(self, name_or_id):
+        """
+        Finds a server by its name or ID using the Openstack Client
+
+        Args:
+            name_or_id (str): The name or ID of the server to find
+
+        Returns:
+            object: The server object if found, or `None` if not found
+        """
         return self.client.compute.find_server(name_or_id=name_or_id)
 
     def delete_router_subnets(self):
+        """
+        Deletes subnets from routers.
+
+        Iterates over the router-subnet pairs stored in `self.router_subnets`, removing the subnet interface from 
+        each router. Upon successful removal, the pair is removed from `self.router_subnets`
+
+        Raises:
+        Exception: If removing the interface from the router fails.
+        """
         for router_subnet in self.router_subnets:
             router = router_subnet["router"]
             subnet_id = router_subnet["subnet"]
             res = self.client.network.remove_interface_from_router(router, subnet_id)
             if not res:
-                # success
                 self.router_subnets.remove({"router": router.id, "subnet": subnet_id})
 
     def delete_security_groups(self):
+        """
+        Deletes all security groups.
+
+        Iterates over the list of security groups stored in `self.security_groups` and deletes each one.
+        The security group is removed from the list upon successful deletion.
+        """
         for security_group in self.security_groups:
             self.client.network.delete_security_group(security_group)
             self.security_groups.remove(security_group)
@@ -105,6 +182,21 @@ class Collector:
         security_groups,
         **kwargs,
     ):
+        """
+        Creates a new JumpHost (VM) and attaches it to the specified network
+
+        Args:
+            name (str): The name of the JumpHost to create
+            network_name (str): The name of the network to which the JumpHost will be attached
+            keypair_name (str): The name of the keypair to be used for the JumpHost
+            vm_image (str): The image to use for the VM
+            flavor_name (str): The flavor to use for the VM (i.e., the size of the instance)
+            security_groups (list): A list of security group names to associate with the JumpHost
+            **kwargs: Additional keyword arguments to pass to the `create_jumphost` function
+
+        Returns:
+            object: The created VM object
+        """
         vm = create_jumphost(
             self.client,
             name,
@@ -119,6 +211,20 @@ class Collector:
         return vm
 
     def create_floating_ip(self, server_name):
+        """
+        Creates and attaches a floating IP to the specified server
+        Finds the server by its name and attaches a newly created floating IP to it
+        The floating IP is then appended to an object
+
+        Args:
+            server_name (str): The name of the server to which the floating IP will be attached.
+
+        Returns:
+            object: The floating IP object.
+
+        Raises:
+            AssertionError: If the server with the specified `server_name` is not found.
+        """
         server = self.client.compute.find_server(name_or_id=server_name)
         assert server, f"Server with name {server_name} not found"
         fip = self.client.add_auto_ip(server=server, wait=True, reuse=False)
@@ -191,20 +297,64 @@ class Tools:
 
     @staticmethod
     def env_is_true(value):
+        """
+        Determine if the given value is equivalent to a boolean 'True'
+
+        Args:
+            value (str or bool or None): The value to evaluate, it can be a string, boolean, or None
+
+        Returns:
+            bool: True if the value is equivalent to 'True', otherwise False
+
+        The function behaves as follows:
+        - If the value is `None`, it returns `False`
+        - If the value is a boolean, it returns the boolean value
+        - If the value is a string, it returns `True` if the string is "True" (case-insensitive), otherwise `False`
+        - For any other type of value, it defaults to returning `False`
+
+        Example:
+            >>> env_is_true(None)
+            False
+            >>> env_is_true(True)
+            True
+            >>> env_is_true("True")
+            True
+            >>> env_is_true("false")
+            False
+        """
 
         if value is None:
             return False
         elif isinstance(value, bool):
             return value
-        # If the value is a string, check if it is 'True' (case-insensitive)
         elif isinstance(value, str):
             return value.lower() == "true"
-        # Otherwise, default to False
         else:
             return False
 
 
 def time_it(func):
+    """
+    A decorator that measures and prints the time taken by a function to execute.
+
+    Args:
+        func (callable): The function to be timed.
+
+    Returns:
+        callable: A wrapped function that, when called, executes the original function,
+        prints the time taken for its execution, and returns a tuple containing the function's
+        result and the time taken.
+
+    Example:
+        >>> @time_it
+        ... def example_function():
+        ...     time.sleep(1)
+        ...     return "Done"
+        >>> result, duration = example_function()
+        time taken by example_function is 1.0001
+        >>> print(result, duration)
+        Done 1.0001
+    """
     @wraps(func)
     def wrapper(*args, **kwargs):
         start = time.perf_counter()
@@ -217,12 +367,33 @@ def time_it(func):
 
 
 def add_value_to_dict_list(d, key, value):
+    """
+    Adds a value to a list in a dictionary. If the key does not exist in the dictionary,
+    it initializes the key with an empty list before adding the value
+
+    Args:
+        d (dict): The dictionary where the value should be added
+        key (hashable): The key in the dictionary where the value should be added
+        value (any): The value to add to the list associated with the given key
+    """
     if key not in d:
         d[key] = []
     d[key] = value
 
 
 def create_subnets(num):
+    """
+    Generates a list of subnet CIDRs by splitting predefined IP address ranges
+
+    Args:
+        num (int): The number of subnet CIDRs to generate
+
+    Returns:
+        list: A list of subnet CIDRs as strings
+
+    The function uses a predefined list of IP address ranges and splits each one into smaller subnets
+    It stops generating subnets when the specified number (`num`) is reached
+    """
     subnet_list = []
     ip_addresses = [
         "10.30.40.0/24",
@@ -257,8 +428,8 @@ def create_subnets(num):
 
 def vm_extract_ip_by_type(server, type: str):
     """
-    Iterate addresses of server object and return first floating ip we find.
-    Typical types are 'floating' or 'fixed'.
+    Iterate addresses of server object and return first floating ip we find
+    Typical types are 'floating' or 'fixed'
     @param server:
     @return: floating ip or None if not present
     """
@@ -271,6 +442,16 @@ def vm_extract_ip_by_type(server, type: str):
 
 
 def delete_subent_ports(client, subnet_id=None):
+    """
+    Generates a list of subnet CIDRs by splitting predefined IP address ranges
+    uses a predefined list of IP address ranges and splits each one into smaller subnets until num is reached
+
+    Args:
+        num (int): The number of subnet CIDRs to generate
+
+    Returns:
+        list: A list of subnet CIDRs as strings
+    """
     for port in client.network.ports(network_id=subnet_id):
         for fixed_ip in port.fixed_ips:
             if fixed_ip["subnet_id"] == subnet_id:
@@ -288,6 +469,25 @@ def ensure_volume_exist(
     wait: int = 120,
     test_name: str = "scs-hm",
 ):
+    """
+    Ensures that a volume with the specified name exists and is available
+    If the volume does not exist, it creates a new volume with the specified size 
+    and waits until it becomes available
+
+    Args:
+        client (object): The client object used to interact with the block storage service
+        volume_name (str): The name of the volume to check or create
+        size (int, optional): The size of the volume in GB. Defaults to 10 GB
+        interval (int, optional): The time interval (in seconds) between status checks when waiting for the volume to become available. Defaults to 2 seconds
+        wait (int, optional): The maximum time (in seconds) to wait for the volume to become available. Defaults to 120 seconds
+        test_name (str, optional): The name used to filter the check for existing volumes. Defaults to "scs-hm"
+
+    Returns:
+        None
+
+    Example:
+        >>> ensure_volume_exist(client, volume_name="data-volume", size=20)
+    """
     if check_volumes_created(client=client, test_name=test_name) == "available":
         volumes = list(client.block_store.volumes(name=volume_name))
         if not volumes:
@@ -298,6 +498,17 @@ def ensure_volume_exist(
 
 
 def verify_volumes_deleted(client, test_name):
+    """
+    Verifies that all volumes associated with the given test name have been deleted 
+    from the block storage service
+
+    Args:
+        client (object): The client object used to interact with the block storage service
+        test_name (str): The name prefix used to identify volumes related to the test
+
+    Raises:
+        AssertionError: If any volumes associated with the `test_name` are still found
+    """
     volumes_test = [
         volume
         for volume in client.block_store.volumes()
@@ -307,18 +518,55 @@ def verify_volumes_deleted(client, test_name):
 
 
 def verify_volume_deleted(client, volume_id):
+    """
+    Verifies that a volume associated with the given volume_id has been deleted 
+    from the block storage service
+
+    Args:
+        client (object): The client object used to interact with the block storage service
+        volume_id (str): The ID of the volume to verify deletion
+
+    Raises:
+        AssertionError: If the volume with the specified `volume_id` still exists
+    """
     assert not client.block_store.find_volume(
         name_or_id=volume_id
     ), f"Volume with ID {volume_id} was not deleted"
 
 
 def verify_router_deleted(client, router_id):
+    """
+    Verifies that a specific router in the network service has been deleted
+
+    Args:
+        client (object): The client object used to interact with the network service
+        router_id (str): The ID of the router to verify deletion
+
+    Raises:
+        AssertionError: If the router with the specified `router_id` still exists
+    """
     assert not client.network.find_router(
         name_or_id=router_id
     ), f"Router with ID {router_id} was not deleted"
 
 
 def check_volumes_created(client, test_name):
+    """
+    Checks if volumes associated with the given test name have been created and are available
+    If found, it waits until the volume's status is 'available' and returns that status 
+    An assertion error is raised if the volume does not reach the 'available' status
+
+    Args:
+        client (object): The client object used to interact with the block storage service.
+        test_name (str): The name prefix used to identify volumes related to the test.
+
+    Returns:
+        str: The status of the volume if it is available
+
+    Raises:
+        AssertionError: If the volume is not in the 'available' status
+    
+    """
     for volume in client.volume.volumes():
         if test_name in volume.name:
             volume = client.block_store.wait_for_status(
@@ -329,6 +577,16 @@ def check_volumes_created(client, test_name):
 
 
 def attach_floating_ip_to_server(context, server_name):
+    """
+    Attaches a floating IP to the specified server and adds it to the context 
+
+    Args:
+        context (object): The context object containing the client and logger
+        server_name (str): The name of the server to which the floating IP will be attached
+
+    Returns:
+        tuple: A tuple containing the floating IP and an assert line if an error occurred
+    """
     assertline = None
     try:
         server = context.client.compute.find_server(name_or_id=server_name)
@@ -348,6 +606,17 @@ def attach_floating_ip_to_server(context, server_name):
 
 
 def collect_float_ips(client, logger: Logger):
+    """
+    Retrieves all floating IPs available in the network service, logs each floating IP found
+    If no floating IPs are found, it returns an assert line
+
+    Args:
+        client (object): The client object used to interact with the network service
+        logger (Logger): The logger object used to log debug information
+
+    Returns:
+        tuple: A tuple containing a list of floating IPs and an assert line if no IPs were found
+    """
     ips = []
     assertline = None
     floating_ips = client.network.ips()
@@ -360,6 +629,17 @@ def collect_float_ips(client, logger: Logger):
 
 
 def collect_ips(redirs, test_name, logger: Logger):
+    """
+    Extracts IP addresses from GIVEN dictionary for VMs associated with the specified prefix
+
+    Args:
+        redirs (dict): The dictionary containing redirection data
+        test_name (str): The name of the test to collect IPs for
+        logger (Logger): The logger object used to log information
+
+    Returns:
+        tuple: A tuple containing a list of IPs and an assert line if no IPs were found
+    """
     assertline = None
     ips = [vm["addr"] for vm in redirs[f"{test_name}jh0"]["vms"]]
     if len(ips) == 0:
@@ -368,6 +648,18 @@ def collect_ips(redirs, test_name, logger: Logger):
 
 
 def collect_jhs(redirs, test_name, logger: Logger):
+    """
+    Extracts JumpHost (JH) IP addresses from the given redirection data for a specific test name
+    uses regular expressions to validate and extract IP addresses from the provided data
+
+    Args:
+        redirs (dict): The dictionary containing redirection data
+        test_name (str): The name of the test to collect JumpHost IPs for
+        logger (Logger): The logger object used to log information
+
+    Returns:
+        list: A list of JumpHost IP addresses
+    """
     ip_pattern = re.compile(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
     strip_pattern = re.compile(r"'([^']+)'")
     jhs = []
@@ -734,7 +1026,6 @@ def get_timestamps(data: str) -> tuple[str, str]:
 
 def run_parallel(tasks: list[tuple], timeout: int = 100) -> list[str]:
     """Run submitted tasks in multithreaded executor and collect the results.
-
     Args:
         tasks: List of tasks written as tuples.
         timeout: Amount of time for executor to wait before terminating the tasks.
@@ -790,6 +1081,37 @@ def create_jumphost(
     security_groups,
     **kwargs,
 ):
+    """
+    Create a jumphost in a specified network.
+
+    Args:
+        client (object): The OpenStack client used to interact with the compute and network services.
+        name (str): The name of the jumphost to be created.
+        network_name (str): The name of the network where the jumphost will be connected.
+        keypair_name (str): The name of the keypair to be used for SSH access to the jumphost.
+        vm_image (str): The name or ID of the image to be used for the jumphost.
+        flavor_name (str): The name or ID of the flavor (hardware configuration) to be used for the jumphost.
+        security_groups (list): A list of security group names to apply to the jumphost.
+        **kwargs: Additional arguments to be passed to the `create_server` function.
+
+    Returns:
+        dict: The jumphost server object if successfully created.
+
+    Raises:
+        AssertionError: If any required resource (image, flavor, network, security group) cannot be found or if the jumphost creation fails.
+
+    Example:
+        >>> jumphost = create_jumphost(
+        ...     client=my_client,
+        ...     name="my-jumphost",
+        ...     network_name="my-network",
+        ...     keypair_name="my-keypair",
+        ...     vm_image="ubuntu-20.04",
+        ...     flavor_name="m1.small",
+        ...     security_groups=["default", "ssh-access"]
+        ... )
+        >>> print(jumphost["id"])
+    """    
     keypair_filename = f"{keypair_name}-private"
 
     image = client.compute.find_image(name_or_id=vm_image)
@@ -846,6 +1168,21 @@ def create_network(client, name, **kwargs):
 
 
 def list_networks(client, filter: dict = None) -> list:
+    """
+    List networks available in the OpenStack environment, optionally filtered by criteria.
+
+    Args:
+        client (object): The OpenStack client used to interact with the network service.
+        filter (dict, optional): A dictionary of filter criteria to narrow down the list of networks. Default is None.
+
+    Returns:
+        list: A list of network objects matching the filter criteria.
+
+    Example:
+        >>> networks = list_networks(client=my_client, filter={"status": "ACTIVE"})
+        >>> for network in networks:
+        ...     print(network["name"])
+    """
     return list(client.list_networks(filter))
 
 
@@ -902,6 +1239,20 @@ def add_interface_to_router(client, router, subnet_id):
 
 
 def get_availability_zones(client) -> list:
+    """
+    Retrieve a list of availability zones from the network service.
+
+    Args:
+        client (object): The OpenStack client used to interact with the network service.
+
+    Returns:
+        list: A list of availability zone objects.
+
+    Example:
+        >>> availability_zones = get_availability_zones(client=my_client)
+        >>> for zone in availability_zones:
+        ...     print(zone["name"])
+    """
     return list(client.network.availability_zones())
 
 
@@ -928,6 +1279,18 @@ def create_lb(client, name, **kwargs):
 
 
 def target_source_calc(jh_name, redirs, logger):
+    """
+    Calculate and return the target and source IP addresses, port number, and VM name for a specific jump host.
+
+    Args:
+        jh_name (str): The name of the jump host.
+        redirs (dict): A dictionary containing redirection information, including VMs associated with the jump host.
+        logger (object): A logger object used to log information and debug messages.
+
+    Returns:
+        tuple: A tuple containing the target IP address (str), source IP address (str), port number (int), 
+               and VM name (str) of the last VM associated with the specified jump host.
+    """
     vm_quantity = len(redirs[jh_name]["vms"])
     target_ip = redirs[jh_name]["addr"]
     pno = redirs[jh_name]["vms"][vm_quantity - 1]["port"]

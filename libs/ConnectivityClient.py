@@ -14,6 +14,9 @@ from decimal import Decimal
 
 
 class MetricLabels:
+    """
+    A class containing constant label names used for the metrics
+    """
     STATUS_CODE = "status_code"
     HOST = "host"
     ENDPOINT = "endpoint"
@@ -23,15 +26,18 @@ class MetricLabels:
     RECEIVER_NAME = "receiver_name"
 
 
-#   RESULT = "testresult"
-
-
 class ResultStatusCodes:
+    """
+    A class containing constant status codes representing the result of operations
+    """
     SUCCESS = "200"
     FAILURE = "400"
 
 
 class MetricName:
+    """
+    A class containing constant names for ssh, ping, iperf3 metrics
+    """
     SSH_TOT = "ssh_connections_total"
     SSH_CONN_TEST_TOT = "ssh_connectivity_tests_total"
     SSH_CONN_DUR = "ssh_connect_duration_seconds"
@@ -43,6 +49,9 @@ class MetricName:
 
 
 class MetricDescription:
+    """
+    A class containing descriptions for different metrics
+    """
     SSH_TOT = "Total number of SSH connections"
     SSH_CONN_TEST_TOT = "Total number of SSH connectivity tests"
     SSH_CONN_DUR = "Durations of SSH connections"
@@ -55,7 +64,7 @@ class MetricDescription:
 
 class SshClient:
     """
-    Connection metrics
+    A client for managing SSH connections and related metrics
     """
 
     conn_total_count = Counter(
