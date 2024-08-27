@@ -1,5 +1,7 @@
+import logging
+
 from behave import given, when, then
-from kubernetes import client, config, stream
+from kubernetes import client, config, stream, watch
 import requests
 import time
 from http import HTTPStatus
@@ -17,6 +19,13 @@ class KubernetesTestSteps:
         """
         config.load_kube_config()
         context.v1 = client.CoreV1Api()
+
+        context.logger = logging.Logger(__name__)
+        sh = logging.StreamHandler()
+        shf = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+        sh.setFormatter(shf)
+        context.logger.addHandler(sh)
+
         context.response = None
         context.ping_response = None
         context.name_space = "scs-vp12"
@@ -36,7 +45,15 @@ class KubernetesTestSteps:
         """
         pod = tools.create_container(container_name=container_name)
         context.v1.create_namespaced_pod(namespace=context.name_space, body=pod)
-        time.sleep(10)
+
+        context.logger.info("Watching..")
+        w = watch.Watch()
+        for e in w.stream(func=context.v1.list_namespaced_pod, namespace=context.name_space, timeout_seconds=10):
+            o = e["object"]
+            if o.status.phase == "Running" and o.metadata.name == container_name:
+                context.logger.info(f"Found container {container_name} running")
+                w.stop()
+                return
 
     @then('the container {container_name} should be running')
     def container_running(context, container_name):
@@ -63,7 +80,7 @@ class KubernetesTestSteps:
             namespace=context.name_space, body=tools.create_service(
                 service_name=container_name, port=port))
         # Exception(f"Failed to create service: {result.stderr}")
-        time.sleep(15)
+        # time.sleep(15)
 
     @then('the service for {container_name} should be running')
     def service_running(context, container_name):
@@ -172,9 +189,21 @@ class KubernetesTestSteps:
         :param context: Behave context object
         :param container_name: Name of the container to delete
         """
-        context.v1.delete_namespaced_pod(name=container_name, namespace=context.name_space, body=client.V1DeleteOptions())
-        # context.logger(f"Wait for the pod to be deleted")
-        time.sleep(15)
+        pod = context.v1.delete_namespaced_pod(name=container_name, namespace=context.name_space,
+                                         body=client.V1DeleteOptions(), async_req=True)
+
+        # context.logger.info(f"Pod: {pod}")
+
+        w = watch.Watch()
+        for e in w.stream(func=context.v1.list_namespaced_pod, namespace=context.name_space, timeout_seconds=10):
+            et = e["type"]
+            context.logger.info(f"Event type: {et}")
+            o = e["object"]
+
+            if et == "DELETED" and o.metadata.name == container_name:
+                context.logger.info(f"Found container {container_name} as DELETED")
+                w.stop()
+                return
 
     @then('the container {container_name} should be deleted')
     def container_deleted(context, container_name):
@@ -210,4 +239,3 @@ class KubernetesTestSteps:
                 raise Exception(f"Service {service_name} not found: {e}")
             else:
                 raise e
-

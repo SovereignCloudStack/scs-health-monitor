@@ -22,8 +22,8 @@ def create_container(container_name):
         spec=client.V1PodSpec(
             containers=[client.V1Container(
                 name=container_name,
-                image="busybox",
-                command=["sleep", "0"],
+                image="docker.io/library/alpine:3.20.2",
+                command=["sh", "-c", "apk add --no-cache tini-static && /sbin/tini-static -p SIGKILL -g -v sleep infinity"],
                 ports=[client.V1ContainerPort(container_port=80)]
             )]
         )
@@ -45,7 +45,6 @@ def create_service(service_name, port):
 
 
 def get_node_port(client, service_name, namespace):
-
     try:
         # Get the service details
         service = client.read_namespaced_service(name=service_name, namespace=namespace)
