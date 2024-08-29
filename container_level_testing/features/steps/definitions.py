@@ -50,12 +50,11 @@ class KubernetesTestSteps:
         pod = generate_pod_object(pod_name=container_name)
         context.v1.create_namespaced_pod(namespace=context.namespace, body=pod)
 
-        context.logger.info("Watching..")
         w = watch.Watch()
-        for e in w.stream(func=context.v1.list_namespaced_pod, namespace=context.namespace, timeout_seconds=10):
-            o = e["object"]
-            if o.status.phase == "Running" and o.metadata.name == container_name:
-                context.logger.info(f"Found container {container_name} running")
+        for ev in w.stream(func=context.v1.list_namespaced_pod, namespace=context.namespace, timeout_seconds=10):
+            obj = ev["object"]
+            if obj.status.phase == "Running" and obj.metadata.name == container_name:
+                context.logger.debug(f"Found container {container_name} running")
                 w.stop()
                 return
 
@@ -84,7 +83,6 @@ class KubernetesTestSteps:
             namespace=context.namespace, body=create_service(
                 service_name=container_name, port=port))
         # Exception(f"Failed to create service: {result.stderr}")
-        # time.sleep(15)
 
     @then('the service for {container_name} should be running')
     def service_running(context, container_name):
@@ -162,7 +160,7 @@ class KubernetesTestSteps:
             pong_ip = context.v1.read_namespaced_pod(dst_container, namespace=context.namespace) \
                 .status.pod_ip
 
-            context.logger.info(f"Got pong IP: {pong_ip}")
+            context.logger.debug(f"Got pong IP: {pong_ip}")
 
             exec_command = ['ping', '-c', '1', pong_ip]
             response = stream.stream(
@@ -198,19 +196,20 @@ class KubernetesTestSteps:
         :param context: Behave context object
         :param container_name: Name of the container to delete
         """
-        pod = context.v1.delete_namespaced_pod(name=container_name, namespace=context.namespace,
-                                               body=client.V1DeleteOptions(), async_req=True)
-
-        # context.logger.info(f"Pod: {pod}")
+        context.v1.delete_namespaced_pod(
+            name=container_name,
+            namespace=context.namespace,
+            body=client.V1DeleteOptions(),
+            async_req=True
+        )
 
         w = watch.Watch()
-        for e in w.stream(func=context.v1.list_namespaced_pod, namespace=context.namespace, timeout_seconds=10):
-            et = e["type"]
-            context.logger.info(f"Event type: {et}")
-            o = e["object"]
+        for ev in w.stream(func=context.v1.list_namespaced_pod, namespace=context.namespace, timeout_seconds=10):
+            et = ev["type"]
+            obj = ev["object"]
 
-            if et == "DELETED" and o.metadata.name == container_name:
-                context.logger.info(f"Found container {container_name} as DELETED")
+            if et == "DELETED" and obj.metadata.name == container_name:
+                context.logger.debug(f"Found container {container_name} as DELETED")
                 w.stop()
                 return
 
