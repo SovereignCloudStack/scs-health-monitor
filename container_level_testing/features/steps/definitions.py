@@ -1,9 +1,13 @@
+import logging
+
 from behave import given, when, then
-from kubernetes import client, config, stream
+from kubernetes import client, config, stream, watch
 import requests
-import time
 from http import HTTPStatus
-import container_level_testing.features.steps.container_tools as tools
+
+from container_level_testing.features.steps.services import create_service
+from container_level_testing.features.steps.tools import get_node_port
+from container_level_testing.features.steps.pods import check_if_pod_running, generate_pod_object
 
 
 class KubernetesTestSteps:
@@ -17,9 +21,18 @@ class KubernetesTestSteps:
         """
         config.load_kube_config()
         context.v1 = client.CoreV1Api()
+
+        # Setup logger
+        context.logger = logging.Logger("kubernetes-runner")
+        sh = logging.StreamHandler()
+        shf = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+        sh.setFormatter(shf)
+        context.logger.addHandler(sh)
+
+        # Set up other context objects
         context.response = None
         context.ping_response = None
-        context.name_space = "scs-vp12"
+        context.namespace = "scs-vp12"
         context.v1.list_node()
         result = context.v1.list_node()
         if not result:
@@ -34,9 +47,16 @@ class KubernetesTestSteps:
         :param context: Behave context object
         :param container_name: Name of the container to create
         """
-        pod = tools.create_container(container_name=container_name)
-        context.v1.create_namespaced_pod(namespace=context.name_space, body=pod)
-        time.sleep(10)
+        pod = generate_pod_object(pod_name=container_name)
+        context.v1.create_namespaced_pod(namespace=context.namespace, body=pod)
+
+        w = watch.Watch()
+        for ev in w.stream(func=context.v1.list_namespaced_pod, namespace=context.namespace, timeout_seconds=10):
+            obj = ev["object"]
+            if obj.status.phase == "Running" and obj.metadata.name == container_name:
+                context.logger.debug(f"Found container {container_name} running")
+                w.stop()
+                return
 
     @then('the container {container_name} should be running')
     def container_running(context, container_name):
@@ -47,7 +67,7 @@ class KubernetesTestSteps:
         :param context: Behave context object
         :param container_name: Name of the container to check
         """
-        tools.check_if_container_running(context.v1, container_name=container_name, namespace=context.name_space)
+        assert check_if_pod_running(context.v1, container_name=container_name, namespace=context.namespace)
 
     @when('I create a service for the container named {container_name} on {port}')
     def create_service(context, container_name, port):
@@ -60,10 +80,9 @@ class KubernetesTestSteps:
         :param port: Port number for the service
         """
         result = context.v1.create_namespaced_service(
-            namespace=context.name_space, body=tools.create_service(
+            namespace=context.namespace, body=create_service(
                 service_name=container_name, port=port))
         # Exception(f"Failed to create service: {result.stderr}")
-        time.sleep(15)
 
     @then('the service for {container_name} should be running')
     def service_running(context, container_name):
@@ -74,7 +93,7 @@ class KubernetesTestSteps:
         :param context: Behave context object
         :param container_name: Name of the container whose service status is checked
         """
-        service = context.v1.read_namespaced_service(name=container_name, namespace=context.name_space)
+        service = context.v1.read_namespaced_service(name=container_name, namespace=context.namespace)
         assert service, f"Expected service {container_name} to be running"
 
     # @when('I send an HTTP request to {container_name}')
@@ -97,9 +116,9 @@ class KubernetesTestSteps:
         :param container_name: Name of the container to send the request to
         :param ingress_host: Ingress host to use for the request
         """
-        service = context.v1.read_namespaced_service(name=container_name, namespace=context.name_space)
+        service = context.v1.read_namespaced_service(name=container_name, namespace=context.namespace)
         node_ip = service.spec.cluster_ip
-        node_port = tools.get_node_port(client=context.v1, service_name=container_name, namespace=context.name_space)
+        node_port = get_node_port(client=context.v1, service_name=container_name, namespace=context.namespace)
         try:
             context.response = requests.get(f"http://{node_ip}:{node_port}")
         except requests.exceptions.RequestException as e:
@@ -138,17 +157,22 @@ class KubernetesTestSteps:
         :param dst_container: Name of the destination container
         """
         try:
-            exec_command = ['ping', '-c', '1', dst_container]
+            pong_ip = context.v1.read_namespaced_pod(dst_container, namespace=context.namespace) \
+                .status.pod_ip
+
+            context.logger.debug(f"Got pong IP: {pong_ip}")
+
+            exec_command = ['ping', '-c', '1', pong_ip]
             response = stream.stream(
                 context.v1.connect_get_namespaced_pod_exec,
                 name=src_container,
-                namespace=context.name_space,
+                namespace=context.namespace,
                 command=exec_command,
                 stderr=True, stdin=False,
                 stdout=True, tty=False)
             context.ping_response = response
 
-            if "1 packets transmitted, 1 received" not in response:
+            if " 0% packet loss" not in response:
                 raise Exception(f"Ping failed: {response}")
         except client.exceptions.ApiException as e:
             raise Exception(f"An error occurred during ping: {e}")
@@ -161,7 +185,7 @@ class KubernetesTestSteps:
 
         :param context: Behave context object
         """
-        assert "1 packets transmitted, 1 received" in context.ping_response
+        assert " 0% packet loss" in context.ping_response
 
     @when('I delete the container named {container_name}')
     def delete_container(context, container_name):
@@ -172,9 +196,22 @@ class KubernetesTestSteps:
         :param context: Behave context object
         :param container_name: Name of the container to delete
         """
-        context.v1.delete_namespaced_pod(name=container_name, namespace=context.name_space, body=client.V1DeleteOptions())
-        # context.logger(f"Wait for the pod to be deleted")
-        time.sleep(15)
+        context.v1.delete_namespaced_pod(
+            name=container_name,
+            namespace=context.namespace,
+            body=client.V1DeleteOptions(),
+            async_req=True
+        )
+
+        w = watch.Watch()
+        for ev in w.stream(func=context.v1.list_namespaced_pod, namespace=context.namespace, timeout_seconds=10):
+            et = ev["type"]
+            obj = ev["object"]
+
+            if et == "DELETED" and obj.metadata.name == container_name:
+                context.logger.debug(f"Found container {container_name} as DELETED")
+                w.stop()
+                return
 
     @then('the container {container_name} should be deleted')
     def container_deleted(context, container_name):
@@ -186,7 +223,7 @@ class KubernetesTestSteps:
         :param container_name: Name of the container to check
         """
         try:
-            context.v1.read_namespaced_pod(name=container_name, namespace=context.name_space)
+            context.v1.read_namespaced_pod(name=container_name, namespace=context.namespace)
             raise AssertionError("Pod still exists")
         except client.exceptions.ApiException as e:
             if e.status == 404:
@@ -204,10 +241,9 @@ class KubernetesTestSteps:
         :param service_name: Name of the service to be deleted
         """
         try:
-            context.v1.delete_namespaced_service(name=service_name, namespace=context.name_space)
+            context.v1.delete_namespaced_service(name=service_name, namespace=context.namespace)
         except client.exceptions.ApiException as e:
             if e.status == 404:
                 raise Exception(f"Service {service_name} not found: {e}")
             else:
                 raise e
-
