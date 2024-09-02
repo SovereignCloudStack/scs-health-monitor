@@ -3,6 +3,8 @@ import time
 import jinja2
 import base64
 
+from openstack.network.v2.floating_ip import FloatingIP
+
 import tools
 
 DEFAULT_SECURITY_GROUPS = ["ssh", "default", "ping-sg"]
@@ -136,13 +138,28 @@ class BenchmarkInfra:
                 router_update["port_id"],
             )
 
+    @then("I should be able to create default security groups")
+    def create_default_security_groups(context):
+        for sg_name in DEFAULT_SECURITY_GROUPS:
+            if tools.check_security_group_exists(context, sg_name) is not None:
+                continue
+            sg = context.collector.create_security_group(sg_name, f"Default security group '{sg_name}'")
+            context.logger.log_info(f"Default security group {sg.name} was created")
+
     @then(
         "I should be able to create a security group for the hosts allowing inbound tcp "
         "connections for the port range {port_start:d} to {port_end:d}"
     )
     def create_security_group(context, port_start: int, port_end: int):
+        sg_name = context.host_sec_group_name
+
+        if tools.check_security_group_exists(context, sg_name) is not None:
+            # Exists already, duplicate will be created
+            context.logger.log_warning(f"Security group {sg_name} already exists! Skipping creation..")
+            return
+
         sg = context.collector.create_security_group(
-            context.host_sec_group_name,
+            sg_name,
             "Allow ssh redirection inside network and iperf3",
         )
         context.collector.create_security_group_rule(
@@ -237,9 +254,11 @@ runcmd:
             # fip = context.collector.create_floating_ip(
             #     BenchmarkInfra.calculate_jh_name_by_az(context, az)
             # )
-            fip = tools.attach_floating_ip_to_server(
+            fip: FloatingIP = tools.attach_floating_ip_to_server(
                 context, BenchmarkInfra.calculate_jh_name_by_az(context, az)
             )
+            fip = fip.floating_ip_address
+
             # Add jump host internal ip and fip to port forwardings data structure
             for jh_name, redir in context.redirs.items():
                 if jh_name == BenchmarkInfra.calculate_jh_name_by_az(context, az):
@@ -268,13 +287,17 @@ packages:
             ), "Number of VM networks has to be greater than 0"
             # Strip VMs over VM networks (basically round-robin)
             vm_net_id = context.vm_nets_ids[num % len(context.vm_nets_ids)]
+            security_groups = DEFAULT_SECURITY_GROUPS + [context.host_sec_group_name]
+
+            context.logger.log_info(f"infra_create_vms security_groups: {security_groups}")
+
             context.collector.create_jumphost(
                 vm_name,
                 vm_net_id,
                 keypair_name,
                 context.vm_image,
                 context.flavor_name,
-                DEFAULT_SECURITY_GROUPS + [context.host_sec_group_name],
+                security_groups=security_groups,
                 userdata=user_data,
             )
 
