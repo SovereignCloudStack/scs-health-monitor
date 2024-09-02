@@ -2,6 +2,12 @@ import ipaddress
 import time
 import datetime
 from functools import wraps
+from typing import Iterator
+
+from openstack.compute.v2.server import Server
+from openstack.network.v2.floating_ip import FloatingIP
+from openstack.network.v2.network import Network
+
 from libs.loggerClass import Logger
 from concurrent.futures import ThreadPoolExecutor
 import os
@@ -78,7 +84,7 @@ class Collector:
             **kwargs: Additional parameters to be passed to the `create_network` function
         Returns:
             net (dict): network object
-        """        
+        """
         net = create_network(self.client, name, **kwargs)
         self.networks.append(net.id)
         return net
@@ -109,7 +115,7 @@ class Collector:
             subnet_id (str): The ID of the subnet to be attached to the router
 
         Returns:
-            router_update (dict): The updated router object after adding the interface 
+            router_update (dict): The updated router object after adding the interface
             by the `add_interface_to_router` function
         """
         router_update = add_interface_to_router(self.client, router, subnet_id)
@@ -148,7 +154,7 @@ class Collector:
         """
         Deletes subnets from routers.
 
-        Iterates over the router-subnet pairs stored in `self.router_subnets`, removing the subnet interface from 
+        Iterates over the router-subnet pairs stored in `self.router_subnets`, removing the subnet interface from
         each router. Upon successful removal, the pair is removed from `self.router_subnets`
 
         Raises:
@@ -244,10 +250,12 @@ class Collector:
         security_group = self.client.network.create_security_group(
             name=sec_group_name, description=description
         )
+
+        assert (security_group is not None), \
+            f"Security group with name {sec_group_name} could not be created"
+
         self.security_groups.append(security_group.id)
-        assert (
-            security_group is not None
-        ), f"Security group with name {security_group.name} was not found"
+
         return security_group
 
     def create_security_group_rule(
@@ -471,7 +479,7 @@ def ensure_volume_exist(
 ):
     """
     Ensures that a volume with the specified name exists and is available
-    If the volume does not exist, it creates a new volume with the specified size 
+    If the volume does not exist, it creates a new volume with the specified size
     and waits until it becomes available
 
     Args:
@@ -499,7 +507,7 @@ def ensure_volume_exist(
 
 def verify_volumes_deleted(client, test_name):
     """
-    Verifies that all volumes associated with the given test name have been deleted 
+    Verifies that all volumes associated with the given test name have been deleted
     from the block storage service
 
     Args:
@@ -519,7 +527,7 @@ def verify_volumes_deleted(client, test_name):
 
 def verify_volume_deleted(client, volume_id):
     """
-    Verifies that a volume associated with the given volume_id has been deleted 
+    Verifies that a volume associated with the given volume_id has been deleted
     from the block storage service
 
     Args:
@@ -553,7 +561,7 @@ def verify_router_deleted(client, router_id):
 def check_volumes_created(client, test_name):
     """
     Checks if volumes associated with the given test name have been created and are available
-    If found, it waits until the volume's status is 'available' and returns that status 
+    If found, it waits until the volume's status is 'available' and returns that status
     An assertion error is raised if the volume does not reach the 'available' status
 
     Args:
@@ -565,7 +573,7 @@ def check_volumes_created(client, test_name):
 
     Raises:
         AssertionError: If the volume is not in the 'available' status
-    
+
     """
     for volume in client.volume.volumes():
         if test_name in volume.name:
@@ -576,9 +584,9 @@ def check_volumes_created(client, test_name):
             return volume.status
 
 
-def attach_floating_ip_to_server(context, server_name):
+def attach_floating_ip_to_server(context, server_name) -> FloatingIP:
     """
-    Attaches a floating IP to the specified server and adds it to the context 
+    Attaches a floating IP to the specified server and adds it to the context
 
     Args:
         context (object): The context object containing the client and logger
@@ -587,22 +595,38 @@ def attach_floating_ip_to_server(context, server_name):
     Returns:
         tuple: A tuple containing the floating IP and an assert line if an error occurred
     """
-    assertline = None
-    try:
-        server = context.client.compute.find_server(name_or_id=server_name)
-        fip = context.client.add_auto_ip(server=server, wait=True, reuse=False)
-        context.fip_address = fip
-        context.logger.log_info(f"Attached floating ip: {fip}")
-    except:
-        fip = None
-        assertline = f"Server with name {server_name} not found"
+    server: Server = context.client.compute.find_server(name_or_id=server_name)
+    assert server is not None
 
-    try:
-        floating_ip_id = get_floating_ip_id(context, fip)
-        context.collector.floating_ips.append(floating_ip_id)
-    except:
-        assertline = f"Failed to get the ID of floating ip {fip}."
-    return fip, assertline
+    # Find all available networks that are marked as "external" (connection to outside the cluster)
+    external_networks: Iterator[Network] = context.client.network.networks(is_router_external=True)
+
+    # Then iterate over them and take one as floating IP source pool
+    counter_external_networks = 0
+    chosen_external_network: Network | None = None
+    for network in external_networks:
+        context.logger.log_info(f"Network in external_networks: {network}")
+        counter_external_networks += 1
+        chosen_external_network = network
+
+    # Checking the counter and the chosen network might be redundant, but you cannot
+    # count the len() of the iterator above. We want to make sure both cases are tested.
+    assert counter_external_networks > 0, "There are no external facing networks available"
+    assert chosen_external_network is not None
+
+    fip: FloatingIP = context.client.create_floating_ip(
+        network=chosen_external_network.id,
+        server=server,
+        wait=True,
+        timeout=60)
+    assert fip is not None
+
+    context.fip_address = fip.floating_ip_address
+    context.logger.log_info(f"Attached floating ip: {fip}")
+
+    context.collector.floating_ips.append(fip.id)
+
+    return fip
 
 
 def collect_float_ips(client, logger: Logger):
@@ -1111,7 +1135,7 @@ def create_jumphost(
         ...     security_groups=["default", "ssh-access"]
         ... )
         >>> print(jumphost["id"])
-    """    
+    """
     keypair_filename = f"{keypair_name}-private"
 
     image = client.compute.find_image(name_or_id=vm_image)
@@ -1130,9 +1154,8 @@ def create_jumphost(
         os.chmod(keypair_filename, 0o600)
 
     for security_group in security_groups:
-        security_group = client.network.find_security_group(security_group)
         assert (
-            security_group
+            client.network.find_security_group(security_group) is not None
         ), f"Security Group with name {security_group} doesn't exist"
 
     server = client.create_server(
@@ -1199,7 +1222,6 @@ def create_subnet(client, name, network_id, ip_version=4, **kwargs):
     subnet = client.network.create_subnet(
         name=name, network_id=network_id, ip_version=ip_version, **kwargs
     )
-    time.sleep(5)
     assert not client.network.find_network(
         name_or_id=subnet
     ), f"Failed to create subnet with name {subnet}"
@@ -1288,7 +1310,7 @@ def target_source_calc(jh_name, redirs, logger):
         logger (object): A logger object used to log information and debug messages.
 
     Returns:
-        tuple: A tuple containing the target IP address (str), source IP address (str), port number (int), 
+        tuple: A tuple containing the target IP address (str), source IP address (str), port number (int),
                and VM name (str) of the last VM associated with the specified jump host.
     """
     vm_quantity = len(redirs[jh_name]["vms"])

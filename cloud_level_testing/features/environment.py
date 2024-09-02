@@ -1,3 +1,5 @@
+import os
+
 from cloud_level_testing.features.steps.tools import (
     Tools,
     Collector,
@@ -13,7 +15,7 @@ from prometheus_client import Gauge
 
 DEFAULT_PROMETHEUS_BATCH_NAME = "SCS-Health-Monitor"
 DEFAULT_CLOUD_NAME = "gx"
-DEFAULT_LOG_LEVEL = "INFO"
+DEFAULT_LOG_LEVEL = os.environ.get("LOGLEVEL", "INFO")
 
 
 class SetupClass:
@@ -84,6 +86,8 @@ def before_all(context):
     cloudName = context.env.get("CLOUD_NAME", DEFAULT_CLOUD_NAME)
 
     context.logger = Logger(level=DEFAULT_LOG_LEVEL)
+    context.logger.log_info(f"Starting logger in level {DEFAULT_LOG_LEVEL}")
+
     context.prometheusExporter = PrometheusExporter()
     context.prometheusExporter.add_default_label(LabelNames.CLOUD_LABEL, cloudName)
 
@@ -113,7 +117,7 @@ def after_feature(context, feature):
         context.logger.log_info(
             f"Feature '{feature.name}' failed: performing cleanup or additional actions"
         )
-        if "create" in feature.tags or "delete" in feature.tag:
+        if "create" in feature.tags or "delete" in feature.tags:
             if context.collector:
                 context.logger.log_info(
                     f"Feature '{feature.name}' is a deletion or creation feature: performing cleanup"
