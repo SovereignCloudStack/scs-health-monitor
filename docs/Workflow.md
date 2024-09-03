@@ -156,7 +156,7 @@ This will execute all the scenarios defined in the .feature files within the fea
 
 To run a specific feature file, use:
 ```bash
-behave container_level_testing/features/container_creation.feature
+behave container_level_testing/features/container_creation_deletion.feature
 ```
 
 ### Adding New Features

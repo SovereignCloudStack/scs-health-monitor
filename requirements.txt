@@ -235,7 +235,6 @@ jmespath==1.0.1
 jsonpatch==1.33
 jsonpointer==2.4
 keystoneauth1==5.6.0
-kubernetes @ git+https://github.com/kubernetes-client/python.git@7a278c794a101989cc19fe8eef1e9799235d9805
 MarkupSafe==2.1.5
 msgpack==1.0.8
 mypy-extensions==1.0.0
@@ -319,7 +318,6 @@ jmespath==1.0.1
 jsonpatch==1.33
 jsonpointer==2.4
 keystoneauth1==5.6.0
-kubernetes @ git+https://github.com/kubernetes-client/python.git@7a278c794a101989cc19fe8eef1e9799235d9805
 MarkupSafe==2.1.5
 msgpack==1.0.8
 mypy-extensions==1.0.0
@@ -373,3 +371,4 @@ websocket-client==1.8.0
 wrapt==1.16.0
 yml==0.0.1
 zipp==3.17.0
+kubernetes==30.1.0

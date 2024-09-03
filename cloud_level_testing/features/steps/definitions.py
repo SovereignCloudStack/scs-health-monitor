@@ -280,8 +280,12 @@ class StepsDef:
 
     @then("I should be able to create {subnet_quantity:d} subnets")
     def create_subnet(context, subnet_quantity: int):
+        counter_networks = 0
         for network in context.client.network.networks():
             if f"{context.test_name}-network" in network.name:
+                context.logger.log_info(f"Creating subnets for network: {network}")
+                counter_networks += 1
+
                 cidr = tools.create_subnets(num=subnet_quantity)
                 for num in range(1, subnet_quantity + 1):
                     subnet = tools.create_subnet(
@@ -290,11 +294,13 @@ class StepsDef:
                         network_id=network.id,
                         cidr=cidr[num - 1],
                     )
+                    context.logger.log_info(f"Created subnet {subnet.name}")
                     context.collector.subnets.append(subnet.id)
-            else:
-                continue
+
+        context.logger.log_info(f"Subnets in collector: {context.collector.subnets}, "
+                                f"wished: {subnet_quantity*counter_networks}")
         assert (
-            len(context.collector.subnets) == subnet_quantity
+            len(context.collector.subnets) == (subnet_quantity * counter_networks)
         ), f"Failed to create the desired amount of subnets"
 
     @then("I should be able to delete subnets")
@@ -651,9 +657,8 @@ class StepsDef:
             )
 
         for security_group in security_groups:
-            security_group = tools.check_security_group_exists(context, security_group)
             assert (
-                security_group
+                tools.check_security_group_exists(context, security_group) is not None
             ), f"Security Group with name {security_group} doesn't exist"
 
         server = tools.create_jumphost(
@@ -771,7 +776,7 @@ class StepsDef:
         assert hasattr(
             context, "redirs"
         ), f"No redirs found infrastructure not completely built yet"
-        assert isinstance(context.redirs, dict), "redirs is no dictionary"
+        assert isinstance(context.redirs, dict), f"redirs is no dictionary, but is {type(context.redirs)}"
         context.ips, assertline = tools.collect_ips(
             context.redirs, context.test_name, context.logger
         )
@@ -784,7 +789,7 @@ class StepsDef:
             context, "redirs"
         ), f"No redirs found infrastructure not completely built yet"
         context.logger.log_debug(f"vm data {context.redirs}")
-        assert isinstance(context.redirs, dict), "redirs is no dictionary"
+        assert isinstance(context.redirs, dict), f"redirs is no dictionary, but is {type(context.redirs)}"
         context.jh = tools.collect_jhs(
             context.redirs, context.test_name, context.logger
         )
@@ -853,8 +858,8 @@ class StepsDef:
             context: Behave context object.
             server_name: Name of the server for floating IP.
         """
-        fip, assertline = tools.attach_floating_ip_to_server(context, server_name)
-        assert assertline == None, assertline
+        fip = tools.attach_floating_ip_to_server(context, server_name)
+        assert fip is not None
 
     @then(
         "I start calculating 4000 digits of pi on VM and check the ping response"
