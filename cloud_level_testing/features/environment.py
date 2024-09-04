@@ -148,10 +148,10 @@ def after_all(context):
     )
     tot_dur_metric.labels(LabelValues.COMMAND_VALUE_TOT_DUR).set(duration_seconds)
 
-    # if context.collector:
-    #     cloud_name = context.env.get("CLOUD_NAME")
-    #     context.client = openstack.connect(cloud=cloud_name)
-    #     delete_all_test_resources(context)
+    if context.collector:
+        cloud_name = context.env.get("CLOUD_NAME")
+        context.client = openstack.connect(cloud=cloud_name)
+        delete_all_test_resources(context)
 
     formattedDuration = f"from_{Formatter.format_date_time(context.start_time)}_to_{Formatter.format_date_time(context.stop_time)}"
     teardown_class = TeardownClass()
