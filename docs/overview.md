@@ -10,59 +10,62 @@ The SCS Health Monitor project aims to ensure the robustness and reliability of 
 
 To get started with the SCS Health Monitor project, follow these steps:
 
-1. Clone [the repository](https://github.com/SovereignCloudStack/scs-health-monitor) to your local machine.
+1. Clone this repository to your local machine.
 2. Install the required dependencies listed in the `requirements.txt` file.
 3. Review the existing Gherkin scenarios in the `features` directory to understand the testing coverage.
-4. Create a *clouds.yaml* file int the root of the repository to be able to perform API calls to OpenStack.
-5. Create a *env.yaml* file containing configuration needed for performing the tests
+4. Create a *[clouds.yaml](/assets/config-examples/clouds.yaml)* file in the root of the repository-clone to configure API access to OpenStack (see example).
+5. Create a *[env.yaml](/assets/config-examples/env.yaml)* file containing configuration needed for performing the tests (see example).
+   (Configure at least the `CLOUD_NAME` to specify which project should be used)
 6. Execute the tests using Behave library to validate the functionality and performance of your OpenStack environment.
 
 ## Usage
 
-Here are some basic commands to run the tests:
+### Execute a specific test
 
 ```bash
-behave             # Run all scenarios
-behave features/   # Run scenarios in a specific feature file
-behave -t @tag     # Run scenarios with a specific tag
-
-# EXAMPLES
-
-# Runs openstack_create_network.feature feature
-behave ./features/openstack_create_network.feature
-
-#runs both features
-behave
-
-# Runs tests tagged with "network" tag
-behave --tags=network
+./scs-health-monitor behave cloud_level_testing/features/openstack_create_network.feature
 ```
+
+Here are some basic commands to run the tests:
+
+### Execute a series of tests
+
+*  Run all scenarios for IaaS
+   ```bash
+   ./scs-health-monitor behave cloud_level_testing/features/
+   ```
+*  Run all scenarios for KaaS
+   ```bash
+   ./scs-health-monitor behave container_level_testing/features/
+   ```
+*  Run all scenarios for IaaS with the "network" and the "cleanup" tag
+   ```bash
+   ./scs-health-monitor behave --tags=network  cloud_level_testing/features/
+   ./scs-health-monitor behave --tags=cleanup  cloud_level_testing/features/
+   ```
+
+* Run all of the IaaS scenarios, but parallel only the features
+   ```bash
+   ./scs-health-monitor behavex --parallel-scheme cloud_level_testing/features/
+   ```
 
 There is a possibility to run it on the [behavex](https://github.com/hrcorval/behavex) framework as well. To get more information, [here](https://pypi.org/project/behavex/) is a link to the documentation.
 Here are some basic commands to run the tests:
 
-```bash
-behavex                            # Run all scenarios parallel - not recomended
-behavex --parallel-scheme feature  # Run all of the scenarios, but parallel only the features
-behavex features/                  # Run scenarios in a specific feature file
-behavex -t @tag                    # Run scenarios with a specific tag
+## Publish results to Prometheus
 
-# EXAMPLES
+The scs-health-monitor is capable to puhlish the results to a prometheus instance.
+Details of the available measurements are available in the [METRIC OVERVIEW](docs/Metric_List.md).
 
-# Runs openstack_create_network.feature feature
-behavex ./features/openstack_create_network.feature
+### Setting up Prometheus and Prometheus Push Gateway locally
 
-# Runs tests tagged with "cleanup" tag
-behavex --tags=cleanup
-```
-
-## Setting up Prometheus and Prometheus Push Gateway locally
 For the purposes of gathering information from the test cases being performed against OpenStack, Prometheus metrics are being gathered during excecution of the test, then later these metrics are pushed to a Prometheus Push Gateway.
 
-[Here](https://github.com/SovereignCloudStack/scs-health-monitor/blob/ba9049292c3da5afcdae52b1cca15759e074e950/docs/ObservabilityStack/SetupObservabilityStack.md) you can find a useful quickstart quide on setting up Promethus Stack and Prometheus push gateway locally.
+[Here](./docs/ObservabilityStack/SetupObservabilityStack.md) you can find a useful quickstart quide on setting up Promethus Stack and Prometheus push gateway locally.
 
-## Exporting metrics to Prometheus Push Gateway
-To be able to push the metrics gathered during test executions, you must first configure the prometheus push gateway endpoint. You achieve this by adding these lines to a *env.yaml*:
+### Exporting metrics to Prometheus Push Gateway
+
+To be able to push the metrics gathered during test executions, you must first configure the prometheus push gateway endpoint. You achieve this by adding these lines to a *[env.yaml](/assets/config-examples/env.yaml)*:
 
 ``` bash
 # Required
@@ -85,9 +88,27 @@ CLOUD_NAME: "gx"
 APPEND_TIMESTAMP_TO_BATCH_NAME: true
 ```
 
-This `env.yaml` file must be placed in the root of the repository. This is where you should be also issuing all the `behave` commands to execute the test scenarios.
+This *env.yaml* file must be placed in the root of the repository. This is where you should be also issuing all the *behave <...>* commands to execute the test scenarios.
+
+## Use a docker image
+
+* Create a docker image
+  ```bash
+  docker build --progress plain -t scs-health-monitor -f Dockerfile .
+  ```
+* Execute a docker image
+  ```bash
+  sudo chown 1001:1001 ./env.yaml ./clouds.yaml ./ca-certificates.crt
+  DOCKER_MOUNTS="-v ./env.yaml:/installation/env.yaml -v ./clouds.yaml:/installation/clouds.yaml -v ./ca-certificates.crt:/installation/ca-certificates.crt"
+  # A shell
+  docker run -ti ${DOCKER_MOUNTS?not set} --rm --entrypoint /bin/bash --name scs-health-monitor scs-health-monitor
+  # Entrypoint execution
+  docker run -ti ${DOCKER_MOUNTS?not set} --rm --name scs-health-monitor scs-health-monitor behave <ARGUMENTS>
+  docker run -ti ${DOCKER_MOUNTS?not set} --rm --name scs-health-monitor scs-health-monitor behave cloud_level_testing/features/openstack_create_network.feature
+  ```
 
 ## Collaborators
+
 - Piotr Bigos [@piobig2871](https://github.com/piobig2871)
 - Erik Kostelanský [@Erik-Kostelansky-dNation](https://github.com/Erik-Kostelansky-dNation)
 - Katharina Trentau [@fraugabel](https://github.com/fraugabel)
