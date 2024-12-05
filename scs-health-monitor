@@ -17,6 +17,9 @@ create_env(){
    set +e
 }
 
+# make export of created files easier
+umask 0000
+
 if [ "$1" = "bash" ];then
   exec bash
 fi

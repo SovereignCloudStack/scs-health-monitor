@@ -97,11 +97,18 @@ This *env.yaml* file must be placed in the root of the repository. This is where
   docker build --progress plain -t scs-health-monitor -f Dockerfile .
   ```
 * Execute a docker image
-   ```bash
-  docker run -ti --rm --entrypoint /bin/bash --name scs-health-monitor scs-health-monitor
-  docker run -ti --rm --name scs-health-monitor <ARGUMENTS>
+  ```bash
+  sudo chown 1001:1001 ./env.yaml ./clouds.yaml ./ca-certificates.crt
+  DOCKER_MOUNTS="-v ./env.yaml:/installation/env.yaml -v ./clouds.yaml:/installation/clouds.yaml -v ./ca-certificates.crt:/installation/ca-certificates.crt"
+  # A shell
+  docker run -ti ${DOCKER_MOUNTS?not set} --rm --entrypoint /bin/bash --name scs-health-monitor scs-health-monitor
+  # Entrypoint execution
+  docker run -ti ${DOCKER_MOUNTS?not set} --rm --name scs-health-monitor scs-health-monitor behave <ARGUMENTS>
+  docker run -ti ${DOCKER_MOUNTS?not set} --rm --name scs-health-monitor scs-health-monitor behave cloud_level_testing/features/openstack_create_network.feature
   ```
+
 ## Collaborators
+
 - Piotr Bigos [@piobig2871](https://github.com/piobig2871)
 - Erik Kostelanský [@Erik-Kostelansky-dNation](https://github.com/Erik-Kostelansky-dNation)
 - Katharina Trentau [@fraugabel](https://github.com/fraugabel)
