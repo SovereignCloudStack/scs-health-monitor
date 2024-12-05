@@ -1,0 +1,50 @@
+#!/bin/bash
+
+rundir="$(dirname $(readlink -f $0))"
+cd "$rundir" || exit 1
+
+modification_time(){
+  python3 -c "import os; print(int(os.path.getmtime('$1')))"
+}
+
+create_env(){
+   set -e
+   rm -rf "${rundir}/venv"
+   python3 -m venv "${rundir}/venv"
+   source "${rundir}/venv/bin/activate"
+   pip install -r "${rundir}/requirements.txt"
+   touch -r "${rundir}/requirements.txt" "${rundir}/venv/bin/activate"
+   set +e
+}
+
+if [ "$1" = "bash" ];then
+  exec bash
+fi
+
+if ! [ -d "${rundir}/venv" ] ;then
+   echo "Creating venv: ${rundir}/venv" >&2
+   echo
+   create_env
+elif [[ "$(modification_time "${rundir}/requirements.txt")" -gt "$(modification_time "${rundir}/venv/bin/activate")" ]];then
+   echo "Recreating venv: ${rundir}/venv" >&2
+   echo
+   create_env
+else
+   source "${rundir}/venv/bin/activate"
+fi
+
+
+if [ "$1" = "deps" ];then
+   exit 0
+fi
+
+if [ -z "$1" ];then
+   echo "$0 behave|behavex|.. <ARGUMENTS>...."
+   exit 1
+fi
+
+cd "$rundir" || exit 1
+echo "PWD: $PWD"
+source venv/bin/activate
+set -x
+exec $@

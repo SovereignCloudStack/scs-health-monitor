@@ -1,0 +1,13 @@
+.dockerignore
+**/.gitignore
+Thumbs.db
+**/.DS_Store
+.idea
+clouds.yaml
+docker-compose.yml
+Dockerfile
+*.hack
+env.yaml
+*.log
+output
+venv

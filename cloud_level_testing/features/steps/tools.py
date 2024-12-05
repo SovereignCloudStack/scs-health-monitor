@@ -813,18 +813,18 @@ def create_wait_script(conn_test, testname):
     if "iperf" in conn_test:
         secondary = "iperf"
 
-    script_content = f"""
+    script_content = '''
             #!/bin/bash
             let MAXW=100
             if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 5; sync; fi
-            while test \$MAXW -ge 1; do
-            if type -p "{conn_test}">/dev/null || type -p "{secondary}">/dev/null; then exit 0; fi
+            while test $MAXW -ge 1; do
+            if type -p "%s">/dev/null || type -p "%s">/dev/null; then exit 0; fi
             let MAXW-=1
             sleep 1
             if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 1; fi
             done
             exit 1
-            """
+            ''' % (conn_test, secondary)
     try:
         with open(script_path, "w") as file:
             file.write(script_content)
