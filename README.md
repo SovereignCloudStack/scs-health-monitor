@@ -54,7 +54,11 @@ Here are some basic commands to run the tests:
 
 ## Publish results to Prometheus
 
+The scs-health-monitor is capable to puhlish the results to a prometheus instance.
+Details of the available measurements are available in the [METRIC OVERVIEW](docs/Metric_List.md).
+
 ### Setting up Prometheus and Prometheus Push Gateway locally
+
 For the purposes of gathering information from the test cases being performed against OpenStack, Prometheus metrics are being gathered during excecution of the test, then later these metrics are pushed to a Prometheus Push Gateway.
 
 [Here](./docs/ObservabilityStack/SetupObservabilityStack.md) you can find a useful quickstart quide on setting up Promethus Stack and Prometheus push gateway locally.
