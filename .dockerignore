@@ -3,11 +3,10 @@
 Thumbs.db
 **/.DS_Store
 .idea
-clouds.yaml
-docker-compose.yml
 Dockerfile
 *.hack
 env.yaml
+clouds.yaml
 *.log
 output
 venv
