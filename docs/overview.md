@@ -23,7 +23,25 @@ To get started with the SCS Health Monitor project, follow these steps:
       ./scs-health-monitor deps
       ```
 3. Review the existing Gherkin scenarios in the `[cloud_level_testing/features](https://github.com/SovereignCloudStack/scs-health-monitor/tree/main/cloud_level_testing/features)` and `[container_level_testing/features](https://github.com/SovereignCloudStack/scs-health-monitor/tree/main/container_level_testing/features)` directories to understand the testing coverage.
-4. Create a openstack project with a user with "manager" privileges
+4. Create a openstack project with a user with "manager" privileges and suitable quotas:
+
+   * cores: 50
+   * instances: 30
+   * ram: 128000
+   * volumes: 20
+   * gigabytes: 200
+   * security_groups: 50
+
+   You can use the [openstack workload mananger](https://github.com/SovereignCloudStack/openstack-workload-generator)
+   ```
+   ${OPENSTACK_WORKLOAD_MANAGER_INSTALLATION_DIR?the installation dir}/openstack_workload_generator \
+    --create_domains scs-health-monitor \
+    --create_projects test-project \
+    --create_machines none \
+    --clouds_yaml $PWD/clouds.yaml \
+    --config ${OPENSTACK_WORKLOAD_MANAGER_INSTALLATION_DIR}/profiles/health-mon.yaml
+   ```
+
 5. Create a `clouds.yaml` ([example](/assets/config-examples/clouds.yaml)) file in the root of the repository-clone to configure API access to OpenStack.
 6. Create a `env.yaml` ([example](/assets/config-examples/env.yaml)) file containing configuration needed for performing the tests.
    (Configure at least the `CLOUD_NAME` to specify which project should be used)
