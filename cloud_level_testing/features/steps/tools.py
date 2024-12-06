@@ -1,4 +1,5 @@
 import ipaddress
+import textwrap
 import time
 import datetime
 from functools import wraps
@@ -813,7 +814,7 @@ def create_wait_script(conn_test, testname):
     if "iperf" in conn_test:
         secondary = "iperf"
 
-    script_content = '''
+    script_content = textwrap.dedent('''
             #!/bin/bash
             let MAXW=100
             if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 5; sync; fi
@@ -824,7 +825,7 @@ def create_wait_script(conn_test, testname):
             if test ! -f /var/lib/cloud/instance/boot-finished; then sleep 1; fi
             done
             exit 1
-            ''' % (conn_test, secondary)
+            ''') % (conn_test, secondary)
     try:
         with open(script_path, "w") as file:
             file.write(script_content)
