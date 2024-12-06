@@ -7,7 +7,7 @@ Feature: Build benchmark infrastructure
 
     Given I have a private key at <keypair_name> for <username>
     Given I want to build the benchmark infrastructure by using resources having the infix <test_infix>
-    Then I should be able to create a router connected to the external network named <ext_net>
+    Then I should be able to create a router connected to the globally configured public provider network
     Then I should be able to fetch availability zones
     Then I should be able to create networks for both the jump hosts and for each availability zone
     Then I should be able to create subnets for both the jump hosts and vms
@@ -23,5 +23,5 @@ Feature: Build benchmark infrastructure
     Then I can pass the context to another feature
 
     Examples: Build benchmark infrastructure
-    | test_infix | ext_net  | keypair_name  | quantity_vms  | port_start | port_end |username|
-    | infra      | ext01    | infra-keypair |       2       |    222     |    229   | ubuntu |
+    | test_infix | keypair_name  | quantity_vms  | port_start | port_end |username|
+    | infra      | infra-keypair |       2       |    222     |    229   | ubuntu |

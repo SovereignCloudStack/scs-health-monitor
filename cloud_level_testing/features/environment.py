@@ -15,6 +15,7 @@ from prometheus_client import Gauge
 
 DEFAULT_PROMETHEUS_BATCH_NAME = "SCS-Health-Monitor"
 DEFAULT_CLOUD_NAME = "gx"
+DEFAULT_PROVIDER_NETWORK_INTERFACE="public"
 DEFAULT_LOG_LEVEL = os.environ.get("LOGLEVEL", "INFO")
 
 
@@ -95,6 +96,7 @@ def before_all(context):
     cloud_name = context.env.get("CLOUD_NAME")
     context.test_name = context.env.get("TESTS_NAME_IDENTIFICATION")
     context.vm_image = context.env.get("VM_IMAGE")
+    context.provider_network_name = context.env.get("PROVIDER_NETWORK_INTERFACE", DEFAULT_PROVIDER_NETWORK_INTERFACE)
     context.flavor_name = context.env.get("FLAVOR_NAME")
     context.client = openstack.connect(cloud=cloud_name)
 
