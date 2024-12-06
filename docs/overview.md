@@ -62,7 +62,6 @@ Here are some basic commands to run the tests:
    ```
 
 There is a possibility to run it on the [behavex](https://github.com/hrcorval/behavex) framework as well. To get more information, [here](https://pypi.org/project/behavex/) is a link to the documentation.
-Here are some basic commands to run the tests:
 
 ## Publish results to Prometheus
 
@@ -100,7 +99,7 @@ CLOUD_NAME: "gx"
 APPEND_TIMESTAMP_TO_BATCH_NAME: true
 ```
 
-This *env.yaml* file must be placed in the root of the repository. This is where you should be also issuing all the *behave <...>* commands to execute the test scenarios.
+This `env.yaml` file must be placed in the root of the repository. This is where you should be also issuing all the *behave <...>* commands to execute the test scenarios.
 
 ## Use a docker image
 
