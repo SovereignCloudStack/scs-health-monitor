@@ -59,16 +59,18 @@ class BenchmarkInfra:
         return f"{context.test_name}jh{context.azs.index(az)}"
 
     @then(
-        "I should be able to create a router connected to the external network named {ext_net}"
+        "I should be able to create a router connected to the globally configured public provider network"
     )
-    def infra_create_router(context, ext_net):
-        nets = tools.list_networks(context.client, filter={"name": ext_net})
+    def infra_create_router(context):
+        nets = tools.list_networks(context.client, filter={"name": context.provider_network_name})
         assert len(nets) == 1, "Expecting to find exactly one external network."
 
         context.collector.create_router(
             name=context.lb_router_name,
             external_gateway_info={"network_id": nets[0].id},
         )
+        context.logger.log_info(f"Router {context.lb_router_name} connected to "
+                                f"{context.provider_network_name} provider network was created")
 
     @then("I should be able to fetch availability zones")
     def infra_get_azs(context):
