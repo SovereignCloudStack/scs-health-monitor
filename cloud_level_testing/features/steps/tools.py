@@ -28,6 +28,7 @@ class Collector:
         self.routers: list = list()
         self.jumphosts: list = list()
         self.floating_ips: list = list()
+        self.plain_floating_ips: list = list()
         self.security_groups: list = list()
         self.security_groups_rules: list = list()
         self.virtual_machines: list = list()
