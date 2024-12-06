@@ -10,10 +10,10 @@ RUN apt-get update && \
        chown 1001:1001 /installation/ && \
        chmod 755 /installation/ && \
        useradd -u 1001 scs-health-monitor
-
 ADD scs-health-monitor /installation/scs-health-monitor
 ADD requirements.txt /installation/requirements.txt
-RUN /installation/scs-health-monitor true
+RUN /installation/scs-health-monitor deps
+# up to here the steps are splitted to have efficent container build times using the cache layers
 ADD --chown=1001:1001 . /installation/
 
 RUN apt-get remove gcc python3-dev libpython3-dev libldap2-dev libsasl2-dev -y && \

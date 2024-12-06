@@ -10,15 +10,27 @@ The SCS Health Monitor project aims to ensure the robustness and reliability of 
 
 To get started with the SCS Health Monitor project, follow these steps:
 
-1. Clone this repository to your local machine.
-2. Install the required dependencies listed in the `requirements.txt` file.
-3. Review the existing Gherkin scenarios in the `features` directory to understand the testing coverage.
-4. Create a *[clouds.yaml](/assets/config-examples/clouds.yaml)* file in the root of the repository-clone to configure API access to OpenStack (see example).
-5. Create a *[env.yaml](/assets/config-examples/env.yaml)* file containing configuration needed for performing the tests (see example).
+1. Clone [healt-monitor repository](https://github.com/SovereignCloudStack/scs-health-monitor) to your local machine.
+   ```
+   git clone git@github.com:SovereignCloudStack/scs-health-monitor.git
+   cd scs-health-monitor
+   ```
+2. Install the required dependencies
+    * listed in the `[Dockerfile](https://github.com/SovereignCloudStack/scs-health-monitor/blob/main/Dockerfile)` file
+      (see: `apt-get ...`)
+    * listed in the `[requirements.txt](https://github.com/SovereignCloudStack/scs-health-monitor/blob/main/requirements.txt)` file by executing the following command:
+      ```
+      ./scs-health-monitor deps
+      ```
+3. Review the existing Gherkin scenarios in the `[cloud_level_testing/features](https://github.com/SovereignCloudStack/scs-health-monitor/tree/main/cloud_level_testing/features)` and `[container_level_testing/features](https://github.com/SovereignCloudStack/scs-health-monitor/tree/main/container_level_testing/features)` directories to understand the testing coverage.
+4. Create a openstack project with a user with "manager" privileges
+5. Create a `clouds.yaml` ([example](/assets/config-examples/clouds.yaml)) file in the root of the repository-clone to configure API access to OpenStack.
+6. Create a `env.yaml` ([example](/assets/config-examples/env.yaml)) file containing configuration needed for performing the tests.
    (Configure at least the `CLOUD_NAME` to specify which project should be used)
-6. Execute the tests using Behave library to validate the functionality and performance of your OpenStack environment.
+7. Execute the tests using Behave library to validate the functionality and performance of your OpenStack environment.
+   (see [next section](#using-the-test-framework))
 
-## Usage
+## Using the test framework
 
 ### Execute a specific test
 
@@ -115,9 +127,10 @@ This *env.yaml* file must be placed in the root of the repository. This is where
 - Ľubomír Dobrovodský [@dobrovodskydnation](https://github.com/dobrovodskydnation)
 - Tomáš Smädo [@tsmado](https://github.com/tsmado)
 
-## Useful links
+## Useful links and references
 
-### [Openstack python SDK documentation](https://docs.openstack.org/openstacksdk/latest/user/)
-### [Openstack CLI tool documentation](https://docs.openstack.org/python-openstackclient/latest/)
-### [Parameterisation of tests using scenario outlines](https://jenisys.github.io/behave.example/tutorials/tutorial04.html)
-### [Short but concise tutorial on how to setup behave test scenarios](https://behave.readthedocs.io/en/stable/tutorial.html)
+* [Openstack python SDK documentation](https://docs.openstack.org/openstacksdk/latest/user/)
+* [Openstack CLI tool documentation](https://docs.openstack.org/python-openstackclient/latest/)
+* [Parameterisation of tests using scenario outlines](https://jenisys.github.io/behave.example/tutorials/tutorial04.html)
+* [Short but concise tutorial on how to setup behave test scenarios](https://behave.readthedocs.io/en/stable/tutorial.html)
+* [The legacy but complete implementation](https://github.com/SovereignCloudStack/openstack-health-monitor)

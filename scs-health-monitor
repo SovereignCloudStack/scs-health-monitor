@@ -38,6 +38,7 @@ fi
 
 
 if [ "$1" = "deps" ];then
+   echo "INFO: dependencies are now installed in $PWD/venv"
    exit 0
 fi
 
