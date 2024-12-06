@@ -224,3 +224,4 @@ terraform.rc
 *.lock.hcl
 
 *.pem
+*.crt
