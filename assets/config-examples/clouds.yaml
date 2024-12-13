@@ -1,0 +1,13 @@
+---
+clouds:
+  scs-health-monitor-test-project:
+    auth:
+      auth_url: "https://api-internal.zone1.landscape.scs.community:5000/v3"
+      password: yolobanana
+      project_domain_name: scs-health-monitor
+      project_name: scs-health-monitor-test-project
+      user_domain_name: scs-health-monitor
+      username: scs-health-monitor-admin
+    #cacert: /home/foo/.config/openstack/ca-certificates.crt
+    endpoint_type: internalURL
+    identity_api_version: 3
