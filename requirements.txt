@@ -12,7 +12,7 @@ click==8.1.7
 cliff==4.6.0
 cmd2==2.4.3
 configobj==5.0.8
-cryptography==42.0.5
+cryptography==43.0.1
 csscompressor==0.9.5
 debtcollector==3.0.0
 decorator==5.1.1
