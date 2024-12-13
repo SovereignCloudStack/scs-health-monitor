@@ -1,0 +1,14 @@
+.dockerignore
+**/.gitignore
+Thumbs.db
+**/.DS_Store
+.idea
+Dockerfile
+*.hack
+env.yaml
+clouds.yaml
+secure.yaml
+*.crt
+*.log
+output
+venv
