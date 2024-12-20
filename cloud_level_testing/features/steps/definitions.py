@@ -21,6 +21,7 @@ class StepsDef:
         context.test_name = context.env.get("TESTS_NAME_IDENTIFICATION")
         context.vm_image = context.env.get("VM_IMAGE")
         context.flavor_name = context.env.get("FLAVOR_NAME")
+        context.provider_network_name = context.env.get("PROVIDER_NETWORK_INTERFACE")
         context.client = openstack.connect(cloud=cloud_name)
 
     @when("A router with name {router_name} exists")
@@ -474,6 +475,23 @@ class StepsDef:
                 context.compute.delete_availability_zone(name=zone.name)
 
     @then(
+        "Then I should be able to create a plain floating ip which is not associated to something"
+    )
+    def create_floating_ip_plain(
+        context,
+        wait=False,
+        timeout=60,
+    ):
+        ip = FloatingIPCloudMixin.create_floating_ip(
+            network=context.provider_network_name,
+            wait=wait,
+            timeout=timeout,
+        )
+        floating_ip = FloatingIPCloudMixin.get_floating_ip(ip.id)
+        context.collector.plain_floating_ips.append(floating_ip.id)
+        assert floating_ip is None, f"plain floating ip was not created"
+
+    @then(
         "I should be able to create a floating ip on {subnet}, on {server}, with {fixed_address}, for {nat_destination}"
         "on {port}"
     )
@@ -511,6 +529,20 @@ class StepsDef:
             context.collector.floating_ips.remove(ip_id)
         assert (
             len(context.collector.floating_ips) == 0
+        ), f"Failed to delete floating IPs"
+
+    @then("I should be able to delete all previously plain floating ips")
+    def delete_all_plain_floating_ip(context):
+        for ip_id in context.collector.plain_floating_ips[:]:
+            FloatingIPCloudMixin.delete_floating_ip(floating_ip_id=ip_id)
+            floating_ip = FloatingIPCloudMixin.get_floating_ip(ip_id)
+            context.logger.log_info(f"Deleting plain floating ip with {ip_id}")
+            assert (
+                    floating_ip is not None
+            ), f"floating ip with id {ip_id} was not deleted"
+            context.collector.floating_ips.remove(ip_id)
+        assert (
+                len(context.collector.floating_ips) == 0
         ), f"Failed to delete floating IPs"
 
     @then("I should be able to create {vms_quantity:d} VMs")
@@ -629,7 +661,7 @@ class StepsDef:
         ping_sec_group_name = "ping-sg"
         ping_sec_group_description = "Ping security group - allow ICMP"
         security_groups = ["ssh", "default", ping_sec_group_name]
-        keypair_filename = f"{context.keypair_name}-private"
+        keypair_filename = f"{keypair_name}-private"
         user_data = f"""#cloud-config
         packages:
         - iperf3

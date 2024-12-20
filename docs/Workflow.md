@@ -147,7 +147,7 @@ Feature: Container Management
 You can run the tests using the behave command from the root of your project:
 
 ```bash
-behave
+./scs-health-monitor behave
 ```
 
 This will execute all the scenarios defined in the .feature files within the features directory.
@@ -156,7 +156,7 @@ This will execute all the scenarios defined in the .feature files within the fea
 
 To run a specific feature file, use:
 ```bash
-behave container_level_testing/features/container_creation_deletion.feature
+./scs-health-monitor behave container_level_testing/features/container_creation_deletion.feature
 ```
 
 ### Adding New Features
