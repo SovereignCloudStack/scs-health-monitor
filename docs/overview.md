@@ -117,7 +117,7 @@ CLOUD_NAME: "gx"
 APPEND_TIMESTAMP_TO_BATCH_NAME: true
 ```
 
-This `env.yaml` file must be placed in the root of the repository. This is where you should be also issuing all the *behave <...>* commands to execute the test scenarios.
+This `env.yaml` file must be placed in the root of the repository. This is where you should be also issuing all the *behave \<...\>* commands to execute the test scenarios.
 
 ## Use a docker image
 
