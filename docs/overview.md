@@ -6,6 +6,8 @@ Welcome to the SCS Health Monitor project! This repository is dedicated to setti
 
 The SCS Health Monitor project aims to ensure the robustness and reliability of OpenStack environments by simulating various scenarios and assessing their performance under different loads. By employing the Gherkin language and the Behave library, we can define clear, human-readable test cases that cover a wide range of functionalities, from basic system checks to complex stress tests.
 
+See [Rationale.md](Rationale.md) for more background on the chosen technologies.
+
 ## Getting Started
 
 To get started with the SCS Health Monitor project, follow these steps:
