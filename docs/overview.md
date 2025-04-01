@@ -1,16 +1,18 @@
 # SCS Health Monitor
 
-Welcome to the SCS Health Monitor project! This repository is dedicated to setting up scenarios for functionality and load testing on a deployed OpenStack environment. We utilize Gherkin language to write testing scenarios, and Python's Behave library to execute these tests.
+Welcome to the SCS Health Monitor project! This repository is dedicated to setting up scenarios for functionality and load testing on a deployed OpenStack environment. We utilize the Gherkin language to write testing scenarios, and Python's Behave library to execute these tests.
 
 ## Description
 
-The SCS Health Monitor project aims to ensure the robustness and reliability of OpenStack environments by simulating various scenarios and assessing their performance under different loads. By employing Gherkin language and Behave library, we can define clear, human-readable test cases that cover a wide range of functionalities, from basic system checks to complex stress tests.
+The SCS Health Monitor project aims to ensure the robustness and reliability of OpenStack environments by simulating various scenarios and assessing their performance under different loads. By employing the Gherkin language and the Behave library, we can define clear, human-readable test cases that cover a wide range of functionalities, from basic system checks to complex stress tests.
+
+See [Rationale.md](Rationale.md) for more background on the chosen technologies.
 
 ## Getting Started
 
 To get started with the SCS Health Monitor project, follow these steps:
 
-1. Clone [healt-monitor repository](https://github.com/SovereignCloudStack/scs-health-monitor) to your local machine.
+1. Clone [health-monitor repository](https://github.com/SovereignCloudStack/scs-health-monitor) to your local machine.
    ```
    git clone git@github.com:SovereignCloudStack/scs-health-monitor.git
    cd scs-health-monitor
@@ -23,7 +25,7 @@ To get started with the SCS Health Monitor project, follow these steps:
       ./scs-health-monitor deps
       ```
 3. Review the existing Gherkin scenarios in the `[cloud_level_testing/features](https://github.com/SovereignCloudStack/scs-health-monitor/tree/main/cloud_level_testing/features)` and `[container_level_testing/features](https://github.com/SovereignCloudStack/scs-health-monitor/tree/main/container_level_testing/features)` directories to understand the testing coverage.
-4. Create a openstack project with a user with "manager" privileges and suitable quotas:
+4. Create an openstack project with a user with "manager" privileges and suitable quotas:
 
    * cores: 50
    * instances: 30
@@ -32,14 +34,14 @@ To get started with the SCS Health Monitor project, follow these steps:
    * gigabytes: 200
    * security_groups: 50
 
-   You can use the [openstack workload mananger](https://github.com/SovereignCloudStack/openstack-workload-generator)
+   You can use the [openstack workload generator](https://github.com/SovereignCloudStack/openstack-workload-generator)
    ```
-   ${OPENSTACK_WORKLOAD_MANAGER_INSTALLATION_DIR?the installation dir}/openstack_workload_generator \
+   ${OPENSTACK_WORKLOAD_GENERATOR_INSTALLATION_DIR}/openstack_workload_generator \
     --create_domains scs-health-monitor \
     --create_projects test-project \
     --create_machines none \
     --clouds_yaml $PWD/clouds.yaml \
-    --config ${OPENSTACK_WORKLOAD_MANAGER_INSTALLATION_DIR}/profiles/health-mon.yaml
+    --config ${OPENSTACK_WORKLOAD_GENERATOR_INSTALLATION_DIR}/profiles/health-mon.yaml
    ```
 
 5. Create a `clouds.yaml` ([example](/assets/config-examples/clouds.yaml)) file in the root of the repository-clone to configure API access to OpenStack.
@@ -83,14 +85,14 @@ There is a possibility to run it on the [behavex](https://github.com/hrcorval/be
 
 ## Publish results to Prometheus
 
-The scs-health-monitor is capable to puhlish the results to a prometheus instance.
+The scs-health-monitor is capable to publish the results to a prometheus instance.
 Details of the available measurements are available in the [METRIC OVERVIEW](docs/Metric_List.md).
 
 ### Setting up Prometheus and Prometheus Push Gateway locally
 
 For the purposes of gathering information from the test cases being performed against OpenStack, Prometheus metrics are being gathered during excecution of the test, then later these metrics are pushed to a Prometheus Push Gateway.
 
-[Here](./ObservabilityStack/SetupObservabilityStack.md) you can find a useful quickstart quide on setting up Promethus Stack and Prometheus push gateway locally.
+[Here](./ObservabilityStack/SetupObservabilityStack.md) you can find a useful quickstart guide on setting up Promethus Stack and Prometheus push gateway locally.
 
 ### Exporting metrics to Prometheus Push Gateway
 
@@ -117,7 +119,7 @@ CLOUD_NAME: "gx"
 APPEND_TIMESTAMP_TO_BATCH_NAME: true
 ```
 
-This `env.yaml` file must be placed in the root of the repository. This is where you should be also issuing all the *behave <...>* commands to execute the test scenarios.
+This `env.yaml` file must be placed in the root of the repository. This is where you should be also issueing all the *behave \<...\>* commands to execute the test scenarios.
 
 ## Use a docker image
 
